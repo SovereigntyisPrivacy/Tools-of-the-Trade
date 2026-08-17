@@ -11,7 +11,7 @@ function Settings() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        updateTheme({ bgImage: reader.result });
+        updateTheme({ bgImage: reader.result, bgPosX: 50, bgPosY: 50 });
       };
       reader.readAsDataURL(file);
     }
@@ -26,11 +26,7 @@ function Settings() {
 
       <div className="settings-content">
         
-        {/* Sovereign Tools Hardcoded Promo */}
-        <section 
-          className="settings-group promo-banner" 
-          onClick={() => window.open('https://github.com/xNoOnex/SovereignTools1', '_blank')}
-        >
+        <section className="settings-group promo-banner" onClick={() => window.open('https://github.com/xNoOnex/SovereignTools1', '_blank')}>
           <div className="promo-content">
             <h3>🛡️ Sovereign Tools</h3>
             <p>Take back your privacy. Get the ultimate offline utility and privacy suite.</p>
@@ -43,52 +39,41 @@ function Settings() {
           
           <label>
             Text Size ({theme.textSize}px)
-            <input 
-              type="range" 
-              min="12" max="32" 
-              value={theme.textSize}
-              onChange={(e) => updateTheme({ textSize: Number(e.target.value) })}
-            />
+            <input type="range" min="12" max="32" value={theme.textSize} onChange={(e) => updateTheme({ textSize: Number(e.target.value) })}/>
           </label>
 
-          <label>
-            Text Color
-            <input 
-              type="color" 
-              value={theme.textColor}
-              onChange={(e) => updateTheme({ textColor: e.target.value })}
-            />
-          </label>
+          <div className="color-row">
+            <span>Text Color</span>
+            <label className="clean-color-picker" style={{ backgroundColor: theme.textColor }}>
+              <input type="color" value={theme.textColor} onChange={(e) => updateTheme({ textColor: e.target.value })}/>
+            </label>
+          </div>
 
-          <label>
-            Background Color
-            <input 
-              type="color" 
-              value={theme.bgColor}
-              onChange={(e) => updateTheme({ bgColor: e.target.value })}
-            />
-          </label>
+          <div className="color-row">
+            <span>Background Color</span>
+            <label className="clean-color-picker" style={{ backgroundColor: theme.bgColor }}>
+              <input type="color" value={theme.bgColor} onChange={(e) => updateTheme({ bgColor: e.target.value })}/>
+            </label>
+          </div>
 
           <label>
             Custom Wallpaper
-            <input 
-              type="file" 
-              accept="image/*" 
-              onChange={handleImageUpload} 
-            />
+            <input type="file" accept="image/*" onChange={handleImageUpload} />
           </label>
+          
           {theme.bgImage && (
-             <button className="action-btn" onClick={() => updateTheme({ bgImage: '' })}>Clear Wallpaper</button>
+             <div className="wallpaper-adjustments">
+               <label>Slide Horizontal (Left/Right)
+                 <input type="range" min="0" max="100" value={theme.bgPosX ?? 50} onChange={(e) => updateTheme({ bgPosX: Number(e.target.value) })}/>
+               </label>
+               <label>Slide Vertical (Up/Down)
+                 <input type="range" min="0" max="100" value={theme.bgPosY ?? 50} onChange={(e) => updateTheme({ bgPosY: Number(e.target.value) })}/>
+               </label>
+               <button className="action-btn" style={{marginTop: '10px'}} onClick={() => updateTheme({ bgImage: '' })}>Clear Wallpaper</button>
+             </div>
           )}
         </section>
 
-        <section className="settings-group">
-          <h3>Support the Creator</h3>
-          <p>If ToT helps you out in the field, consider supporting development!</p>
-          <button className="action-btn" onClick={() => window.open('https://github.com/sponsors', '_blank')}>
-            Support the Project
-          </button>
-        </section>
       </div>
     </div>
   );
