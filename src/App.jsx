@@ -6,6 +6,8 @@ import './App.css';
 const Dashboard = lazy(() => import('./views/Dashboard'));
 const Settings = lazy(() => import('./views/Settings'));
 const CalculatorHub = lazy(() => import('./views/CalculatorHub'));
+const TimesheetCalc = lazy(() => import('./views/TimesheetCalc'));
+const TaxCalc = lazy(() => import('./views/TaxCalc'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -29,6 +31,8 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/calculator" element={<CalculatorHub />} />
+              <Route path="/calculator/timesheet" element={<TimesheetCalc />} />
+              <Route path="/calculator/tax" element={<TaxCalc />} />
             </Routes>
           </Suspense>
         </Router>
