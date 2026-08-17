@@ -29,6 +29,11 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Inject Consistent Debug Keystore
+        run: |
+          mkdir -p ~/.android
+          cp .github/debug.keystore ~/.android/debug.keystore
+
       - name: Grant Execute Permission for Gradle
         run: cd android && chmod +x gradlew
 
