@@ -12,18 +12,15 @@ function TimesheetCalc() {
 
   const handleDay = (day, val) => setDays(p => ({...p, [day]: val}));
 
-  // Safe numerical parsing
   const numWage = parseFloat(wage) || 0;
   const numTax = parseFloat(taxRate) || 0;
 
-  // Sum all days for total weekly hours
+  // Running Total
   const totalHours = Object.values(days).reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
   
-  // Auto-calculate Overtime (Standard >40 hrs)
   const regHours = totalHours > 40 ? 40 : totalHours;
   const otHours = totalHours > 40 ? totalHours - 40 : 0;
 
-  // Pay Math
   const regPay = numWage * regHours;
   const otPay = (numWage * 1.5) * otHours;
   const grossPay = regPay + otPay;
@@ -39,25 +36,28 @@ function TimesheetCalc() {
 
       <div className="calc-content" style={{ padding: '20px', overflowY: 'auto', height: '100%', paddingBottom: '100px' }}>
         
-        {/* Pay Rates Configuration */}
+        {/* Pay Rates Configuration (Stacked for Mobile) */}
         <div className="input-card">
           <h3 style={{ margin: '0 0 15px 0', color: '#fff', borderBottom: '1px solid #444', paddingBottom: '10px' }}>Pay Configuration</h3>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <div style={{ flex: 1 }}>
-              <label>Hourly Wage ($)</label>
-              <input type="number" placeholder="0.00" value={wage} onChange={(e) => setWage(e.target.value)} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label>Est. Tax (%)</label>
-              <input type="number" placeholder="15" value={taxRate} onChange={(e) => setTaxRate(e.target.value)} />
-            </div>
-          </div>
+          <label>Hourly Wage ($)</label>
+          <input type="number" placeholder="0.00" value={wage} onChange={(e) => setWage(e.target.value)} style={{ marginBottom: '15px' }} />
+          
+          <label>Estimated Tax Deduction (%)</label>
+          <input type="number" placeholder="15" value={taxRate} onChange={(e) => setTaxRate(e.target.value)} />
         </div>
 
-        {/* 7-Day Weekly Grid */}
+        {/* 7-Day Weekly Grid with Running Total */}
         <div className="input-card">
-          <h3 style={{ margin: '0 0 5px 0', color: '#fff' }}>Weekly Log</h3>
-          <p style={{ fontSize: '0.85em', color: '#aaa', margin: '0 0 15px 0' }}>Auto-calculates OT (1.5x) for hours over 40.</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 5px 0', color: '#fff' }}>Weekly Log</h3>
+              <p style={{ fontSize: '0.85em', color: '#aaa', margin: 0 }}>OT (1.5x) auto-calculates >40 hrs.</p>
+            </div>
+            <div style={{ background: 'rgba(0, 255, 255, 0.1)', padding: '8px 12px', borderRadius: '8px', border: '1px solid #00ffff' }}>
+              <span style={{ display: 'block', fontSize: '0.75em', color: '#00ffff', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Hours</span>
+              <span style={{ display: 'block', fontSize: '1.4em', fontWeight: 'bold', color: '#fff', textAlign: 'center' }}>{totalHours.toFixed(1)}</span>
+            </div>
+          </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {Object.keys(days).map(day => (

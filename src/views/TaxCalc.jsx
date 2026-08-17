@@ -6,12 +6,12 @@ function TaxCalc() {
   
   // Sales Tax State
   const [salesAmount, setSalesAmount] = useState('');
-  const [salesRate, setSalesRate] = useState('5.6'); // Default AZ Sales Tax
+  const [salesRate, setSalesRate] = useState('5.6'); 
 
   // Income Tax State
   const [incomeGross, setIncomeGross] = useState('');
-  const [fedRate, setFedRate] = useState('12'); // Approx standard bracket
-  const [stateRate, setStateRate] = useState('2.5'); // Default AZ Flat Tax
+  const [fedRate, setFedRate] = useState('12'); 
+  const [stateRate, setStateRate] = useState('2.5'); 
 
   // --- Sales Tax Math ---
   const numSalesAmt = parseFloat(salesAmount) || 0;
@@ -42,16 +42,11 @@ function TaxCalc() {
         <div className="input-card" style={{ borderTop: '4px solid #00ffff' }}>
           <h3 style={{ margin: '0 0 15px 0', color: '#fff', borderBottom: '1px solid #444', paddingBottom: '10px' }}>🛒 Sales Tax</h3>
           
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <div style={{ flex: 2 }}>
-              <label>Price / Amount ($)</label>
-              <input type="number" placeholder="0.00" value={salesAmount} onChange={(e) => setSalesAmount(e.target.value)} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label>Tax (%)</label>
-              <input type="number" value={salesRate} onChange={(e) => setSalesRate(e.target.value)} />
-            </div>
-          </div>
+          <label>Price / Amount ($)</label>
+          <input type="number" placeholder="0.00" value={salesAmount} onChange={(e) => setSalesAmount(e.target.value)} style={{ marginBottom: '15px' }} />
+          
+          <label>Sales Tax Rate (%)</label>
+          <input type="number" value={salesRate} onChange={(e) => setSalesRate(e.target.value)} />
 
           <div className="result-card" style={{ marginTop: '15px', padding: '15px', background: 'rgba(0,0,0,0.3)', border: 'none', boxShadow: 'none' }}>
             <div className="result-row">
@@ -70,18 +65,13 @@ function TaxCalc() {
           <h3 style={{ margin: '0 0 15px 0', color: '#fff', borderBottom: '1px solid #444', paddingBottom: '10px' }}>💼 Annual Income Tax</h3>
           
           <label>Gross Annual Income ($)</label>
-          <input type="number" placeholder="0.00" value={incomeGross} onChange={(e) => setIncomeGross(e.target.value)} />
+          <input type="number" placeholder="0.00" value={incomeGross} onChange={(e) => setIncomeGross(e.target.value)} style={{ marginBottom: '15px' }} />
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-            <div style={{ flex: 1 }}>
-              <label>Fed Tax (%)</label>
-              <input type="number" value={fedRate} onChange={(e) => setFedRate(e.target.value)} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label>State Tax (%)</label>
-              <input type="number" value={stateRate} onChange={(e) => setStateRate(e.target.value)} />
-            </div>
-          </div>
+          <label>Federal Tax Bracket (%)</label>
+          <input type="number" value={fedRate} onChange={(e) => setFedRate(e.target.value)} style={{ marginBottom: '15px' }} />
+          
+          <label>State Tax Rate (%)</label>
+          <input type="number" value={stateRate} onChange={(e) => setStateRate(e.target.value)} />
 
           <div className="result-card" style={{ marginTop: '20px', padding: '15px' }}>
              <div className="result-row">
