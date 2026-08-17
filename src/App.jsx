@@ -12,6 +12,8 @@ const SolarCalc = lazy(() => import('./views/SolarCalc'));
 const ElectricCalc = lazy(() => import('./views/ElectricCalc'));
 const ShootingCalc = lazy(() => import('./views/ShootingCalc'));
 const EngineeringCalc = lazy(() => import('./views/EngineeringCalc'));
+const NuclearCalc = lazy(() => import('./views/NuclearCalc'));
+const MathCalc = lazy(() => import('./views/MathCalc'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -41,6 +43,8 @@ function App() {
               <Route path="/calculator/electric" element={<ElectricCalc />} />
               <Route path="/calculator/shooting" element={<ShootingCalc />} />
               <Route path="/calculator/engineering" element={<EngineeringCalc />} />
+              <Route path="/calculator/nuclear" element={<NuclearCalc />} />
+              <Route path="/calculator/math" element={<MathCalc />} />
             </Routes>
           </Suspense>
         </Router>
