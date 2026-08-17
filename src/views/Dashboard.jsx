@@ -23,8 +23,8 @@ function Dashboard() {
     showBanner();
   }, []);
 
+  // Settings is removed from the grid and moved to the corner
   const tools = [
-    { id: 'settings', name: 'Settings', path: '/settings', icon: '⚙️' },
     { id: 'vault', name: 'Stealth Vault', path: '/vault', icon: '🔒' },
     { id: 'schematics', name: 'Schematics', path: '/schematics', icon: '📐' },
     { id: 'cacher', name: 'Zero-Signal Cacher', path: '/cacher', icon: '📡' },
@@ -33,11 +33,17 @@ function Dashboard() {
 
   return (
     <div className="view-wrapper pb-safe">
-      <header className="header">
-        <h1>Tools of the Trade</h1>
+      
+      {/* Floating Top-Right Settings Button */}
+      <button className="corner-settings-btn" onClick={() => navigate('/settings')}>
+        ⚙️
+      </button>
+
+      <header className="header" style={{ paddingTop: '30px' }}>
+        <h1 className="friendly-title">T⚙️⚙️ls of the Trade</h1>
       </header>
       
-      <div className="grid-container">
+      <div className="grid-container" style={{ marginTop: '20px' }}>
         {tools.map((tool) => (
           <button 
             key={tool.id} 

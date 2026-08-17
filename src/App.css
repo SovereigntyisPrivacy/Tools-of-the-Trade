@@ -189,3 +189,46 @@ input[type="range"] {
   width: 100%;
   margin-top: 8px;
 }
+
+/* Floating Corner Settings Button */
+.corner-settings-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s;
+}
+
+.corner-settings-btn:active {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Friendly Glowing Title Pill */
+.friendly-title {
+  font-size: 2.2em !important;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 15px rgba(0, 255, 255, 0.6), 2px 2px 4px #000000 !important;
+  letter-spacing: 1px;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 20px;
+  display: inline-block;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
