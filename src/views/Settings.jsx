@@ -41,20 +41,19 @@ function Settings() {
           <Cropper
             src={rawImage}
             style={{ height: '100%', width: '100%' }}
-            aspectRatio={window.innerWidth / window.innerHeight} // Locks to exact phone shape
-            dragMode="move" // Finger moves the image, not the box
-            viewMode={0} // Free zoom and pan
-            cropBoxMovable={false} // Locks crop box dead center
-            cropBoxResizable={false} // Prevents ruining the screen ratio
+            aspectRatio={window.innerWidth / window.innerHeight}
+            viewMode={3} // MAGIC FIX: Prevents zooming out past the crop box edges!
+            dragMode="move" 
+            cropBoxMovable={false} 
+            cropBoxResizable={false} 
             toggleDragModeOnDblclick={false}
-            autoCropArea={1} // Fills the screen with the crop box
+            autoCropArea={1} 
             background={false}
             responsive={true}
             ref={cropperRef}
           />
         </div>
         
-        {/* 3x2 Button Grid for Complete Image Control */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '15px 0 120px 0' }}>
           <button className="action-btn" onClick={() => cropperRef.current.cropper.zoom(0.1)}>🔍 Zoom In</button>
           <button className="action-btn" onClick={() => cropperRef.current.cropper.zoom(-0.1)}>🔎 Zoom Out</button>

@@ -7,11 +7,9 @@ export const useTheme = () => useContext(ThemeContext);
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState({
     textSize: 16,
-    textColor: '#00ffff', 
+    textColor: '#00ffff',
     bgColor: '#121212',
     bgImage: '',
-    bgPosX: 50,
-    bgPosY: 50,
   });
 
   useEffect(() => {
@@ -19,9 +17,8 @@ export const ThemeProvider = ({ children }) => {
       const { value } = await Preferences.get({ key: 'tot_theme_settings' });
       if (value) {
         const savedTheme = JSON.parse(value);
-        const mergedTheme = { ...theme, ...savedTheme };
-        setTheme(mergedTheme);
-        applyThemeToDOM(mergedTheme);
+        setTheme({ ...theme, ...savedTheme });
+        applyThemeToDOM({ ...theme, ...savedTheme });
       } else {
         applyThemeToDOM(theme);
       }
@@ -37,8 +34,9 @@ export const ThemeProvider = ({ children }) => {
     if (currentTheme.bgImage) {
       root.style.setProperty('--tot-bg', `url(${currentTheme.bgImage})`);
       root.style.backgroundSize = 'cover';
+      root.style.backgroundPosition = 'center center';
+      root.style.backgroundRepeat = 'no-repeat';
       root.style.backgroundAttachment = 'fixed';
-      root.style.backgroundPosition = `${currentTheme.bgPosX ?? 50}% ${currentTheme.bgPosY ?? 50}%`;
     } else {
       root.style.setProperty('--tot-bg', currentTheme.bgColor);
       root.style.backgroundImage = 'none';
