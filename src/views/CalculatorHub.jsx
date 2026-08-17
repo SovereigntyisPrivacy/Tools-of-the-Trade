@@ -1,0 +1,46 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
+function CalculatorHub() {
+  const navigate = useNavigate();
+
+  const calculators = [
+    { id: 'timesheet', icon: '⏱️', title: 'Timesheet & Wage', desc: 'Calculate shifts, hours, pay rates, and projected income.' },
+    { id: 'solar', icon: '☀️', title: 'Solar Array & Battery', desc: 'Calculate panel wattage, battery banks, and inverter loads.' },
+    { id: 'electric', icon: '⚡', title: 'Electrical Load', desc: "Ohm's Law, voltage drop, and circuit capacities." },
+    { id: 'ballistics', icon: '🎯', title: 'Shooting Range', desc: 'Calculate MOA, bullet drop, and windage adjustments.' },
+    { id: 'engineering', icon: '📐', title: 'Engineering', desc: 'Structural limits, materials, and physics formulas.' },
+    { id: 'nuclear', icon: '☢️', title: 'Nuclear Decay', desc: 'Half-life, radiation shielding, and isotope decay rates.' },
+    { id: 'basic', icon: '🧮', title: 'Basic Math', desc: 'Standard mathematical operations.' },
+  ];
+
+  return (
+    <div className="view-wrapper pb-safe">
+      <header className="header">
+        <button className="back-btn" onClick={() => navigate('/')}>← Back</button>
+        <h2>Omni-Calculator</h2>
+      </header>
+      
+      <div className="calc-hub-content">
+        <p className="calc-intro">Select a computation module:</p>
+        <div className="calc-list">
+          {calculators.map(calc => (
+            <button 
+              key={calc.id} 
+              className="calc-list-item" 
+              onClick={() => alert(`${calc.title} Module logic coming next!`)}
+            >
+              <span className="calc-icon">{calc.icon}</span>
+              <div className="calc-details">
+                <span className="calc-title">{calc.title}</span>
+                <span className="calc-desc">{calc.desc}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default CalculatorHub;

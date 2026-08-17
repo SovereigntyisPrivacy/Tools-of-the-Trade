@@ -5,14 +5,12 @@ import './App.css';
 
 const Dashboard = lazy(() => import('./views/Dashboard'));
 const Settings = lazy(() => import('./views/Settings'));
+const CalculatorHub = lazy(() => import('./views/CalculatorHub'));
 
 function GlobalNav() {
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Hide the Home button if we are already on the Dashboard
   if (location.pathname === '/') return null;
-
   return (
     <button className="global-home-btn" onClick={() => navigate('/')}>
       🏠 Home
@@ -30,6 +28,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/calculator" element={<CalculatorHub />} />
             </Routes>
           </Suspense>
         </Router>
