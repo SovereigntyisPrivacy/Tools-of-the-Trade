@@ -8,6 +8,7 @@ const Settings = lazy(() => import('./views/Settings'));
 const CalculatorHub = lazy(() => import('./views/CalculatorHub'));
 const TimesheetCalc = lazy(() => import('./views/TimesheetCalc'));
 const TaxCalc = lazy(() => import('./views/TaxCalc'));
+const SolarCalc = lazy(() => import('./views/SolarCalc'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -33,6 +34,7 @@ function App() {
               <Route path="/calculator" element={<CalculatorHub />} />
               <Route path="/calculator/timesheet" element={<TimesheetCalc />} />
               <Route path="/calculator/tax" element={<TaxCalc />} />
+              <Route path="/calculator/solar" element={<SolarCalc />} />
             </Routes>
           </Suspense>
         </Router>
