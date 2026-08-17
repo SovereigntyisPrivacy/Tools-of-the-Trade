@@ -33,12 +33,9 @@ function Settings() {
     }
   };
 
-  // -----------------------------------------
-  // FULLSCREEN CROPPER UI
-  // -----------------------------------------
   if (rawImage) {
     return (
-      <div className="view-wrapper" style={{ height: '100vh', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingBottom: '80px', paddingTop: '10px' }}>
+      <div className="view-wrapper" style={{ height: '100vh', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingTop: '10px' }}>
         
         <div style={{ flex: 1, background: '#000', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333', marginTop: '50px' }}>
           <Cropper
@@ -54,8 +51,8 @@ function Settings() {
           />
         </div>
         
-        {/* 2x2 Thumb-Friendly Button Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '15px 0' }}>
+        {/* Massive 120px bottom padding added here to permanently clear the ad banner */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '15px 0 120px 0' }}>
           <button className="action-btn" onClick={() => cropperRef.current.cropper.rotate(-90)}>↺ Rotate Left</button>
           <button className="action-btn" onClick={() => cropperRef.current.cropper.rotate(90)}>Rotate Right ↻</button>
           <button className="action-btn" style={{ background: 'rgba(255, 68, 68, 0.2)', border: '1px solid #ff4444', color: '#ff4444' }} onClick={() => setRawImage(null)}>Cancel</button>
@@ -65,11 +62,8 @@ function Settings() {
     );
   }
 
-  // -----------------------------------------
-  // STANDARD SETTINGS UI
-  // -----------------------------------------
   return (
-    <div className="view-wrapper pb-safe">
+    <div className="view-wrapper pb-safe" style={{ paddingBottom: '120px' }}>
       <header className="header">
         <button className="back-btn" onClick={() => navigate('/')}>← Back</button>
         <h2>Settings</h2>
