@@ -51,7 +51,7 @@ function TimesheetCalc() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
             <div>
               <h3 style={{ margin: '0 0 5px 0', color: '#fff' }}>Weekly Log</h3>
-              <p style={{ fontSize: '0.85em', color: '#aaa', margin: 0 }}>OT (1.5x) auto-calculates >40 hrs.</p>
+              <p style={{ fontSize: '0.85em', color: '#aaa', margin: 0 }}>OT (1.5x) auto-calculates over 40 hrs.</p>
             </div>
             <div style={{ background: 'rgba(0, 255, 255, 0.1)', padding: '8px 12px', borderRadius: '8px', border: '1px solid #00ffff' }}>
               <span style={{ display: 'block', fontSize: '0.75em', color: '#00ffff', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Hours</span>
