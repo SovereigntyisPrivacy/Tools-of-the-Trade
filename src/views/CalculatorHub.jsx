@@ -8,7 +8,7 @@ function CalculatorHub() {
     { id: 'timesheet', icon: '⏱️', title: 'Timesheet & Wage', desc: 'Calculate shifts, hours, overtime, and projected net income.', path: '/calculator/timesheet' },
     { id: 'tax', icon: '🏛️', title: 'Tax Calculator', desc: 'Calculate income tax brackets and standard sales tax.', path: '/calculator/tax' },
     { id: 'solar', icon: '☀️', title: 'Solar Array & Battery', desc: 'Calculate panel wattage, battery banks, and inverter loads.', path: '/calculator/solar' },
-    { id: 'electric', icon: '⚡', title: 'Electrical Load', desc: "Ohm's Law, voltage drop, and circuit capacities." },
+    { id: 'electric', icon: '⚡', title: 'Electrical Load', desc: "Ohm's Law, voltage drop, and circuit capacities.", path: '/calculator/electric' },
     { id: 'ballistics', icon: '🎯', title: 'Shooting Range', desc: 'Calculate MOA, bullet drop, and windage adjustments.' },
     { id: 'engineering', icon: '📐', title: 'Engineering', desc: 'Structural limits, materials, and physics formulas.' },
     { id: 'nuclear', icon: '☢️', title: 'Nuclear Decay', desc: 'Half-life, radiation shielding, and isotope decay rates.' },
