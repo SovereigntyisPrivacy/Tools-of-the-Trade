@@ -41,18 +41,23 @@ function Settings() {
           <Cropper
             src={rawImage}
             style={{ height: '100%', width: '100%' }}
-            initialAspectRatio={window.innerWidth / window.innerHeight}
-            guides={true}
-            ref={cropperRef}
-            viewMode={1}
-            dragMode="move"
+            aspectRatio={window.innerWidth / window.innerHeight} // Locks to exact phone shape
+            dragMode="move" // Finger moves the image, not the box
+            viewMode={0} // Free zoom and pan
+            cropBoxMovable={false} // Locks crop box dead center
+            cropBoxResizable={false} // Prevents ruining the screen ratio
+            toggleDragModeOnDblclick={false}
+            autoCropArea={1} // Fills the screen with the crop box
             background={false}
             responsive={true}
+            ref={cropperRef}
           />
         </div>
         
-        {/* Massive 120px bottom padding added here to permanently clear the ad banner */}
+        {/* 3x2 Button Grid for Complete Image Control */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '15px 0 120px 0' }}>
+          <button className="action-btn" onClick={() => cropperRef.current.cropper.zoom(0.1)}>🔍 Zoom In</button>
+          <button className="action-btn" onClick={() => cropperRef.current.cropper.zoom(-0.1)}>🔎 Zoom Out</button>
           <button className="action-btn" onClick={() => cropperRef.current.cropper.rotate(-90)}>↺ Rotate Left</button>
           <button className="action-btn" onClick={() => cropperRef.current.cropper.rotate(90)}>Rotate Right ↻</button>
           <button className="action-btn" style={{ background: 'rgba(255, 68, 68, 0.2)', border: '1px solid #ff4444', color: '#ff4444' }} onClick={() => setRawImage(null)}>Cancel</button>
