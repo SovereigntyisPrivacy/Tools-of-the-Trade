@@ -1,22 +1,72 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../core/ThemeContext';
+import Cropper from 'react-cropper';
+import 'cropperjs/dist/cropper.css';
 
 function Settings() {
   const navigate = useNavigate();
   const { theme, updateTheme } = useTheme();
+  const [rawImage, setRawImage] = useState(null);
+  const cropperRef = useRef(null);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        updateTheme({ bgImage: reader.result, bgPosX: 50, bgPosY: 50 });
+        setRawImage(reader.result); // Hijack the screen to show the cropper
       };
       reader.readAsDataURL(file);
     }
   };
 
+  const saveCrop = () => {
+    if (cropperRef.current && cropperRef.current.cropper) {
+      // Bake the cropped area into an optimized JPEG so it doesn't lag the app
+      const croppedBase64 = cropperRef.current.cropper.getCroppedCanvas({
+        maxWidth: 1080,
+        maxHeight: 1920
+      }).toDataURL('image/jpeg', 0.85);
+      
+      updateTheme({ bgImage: croppedBase64 });
+      setRawImage(null); // Close the cropper
+    }
+  };
+
+  // IF AN IMAGE IS SELECTED: Show the fullscreen cropping studio
+  if (rawImage) {
+    return (
+      <div className="view-wrapper pb-safe" style={{ height: '90vh', display: 'flex', flexDirection: 'column' }}>
+        <header className="header" style={{ justifyContent: 'space-between' }}>
+          <button className="back-btn" onClick={() => setRawImage(null)}>Cancel</button>
+          <h2 style={{ fontSize: '1.2em', margin: 0 }}>Adjust Wallpaper</h2>
+          <button className="action-btn" style={{ background: '#ffffff', color: '#000', fontWeight: 'bold' }} onClick={saveCrop}>Save</button>
+        </header>
+        
+        <div style={{ flex: 1, background: '#000', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' }}>
+          <Cropper
+            src={rawImage}
+            style={{ height: '100%', width: '100%' }}
+            initialAspectRatio={window.innerWidth / window.innerHeight}
+            guides={true}
+            ref={cropperRef}
+            viewMode={1}
+            dragMode="move"
+            background={false}
+            responsive={true}
+          />
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-around', padding: '20px 0' }}>
+          <button className="action-btn" onClick={() => cropperRef.current.cropper.rotate(-90)}>↺ Rotate</button>
+          <button className="action-btn" onClick={() => cropperRef.current.cropper.rotate(90)}>Rotate ↻</button>
+        </div>
+      </div>
+    );
+  }
+
+  // STANDARD SETTINGS MENU
   return (
     <div className="view-wrapper pb-safe">
       <header className="header">
@@ -56,24 +106,23 @@ function Settings() {
             </label>
           </div>
 
-          <label>
+          <label style={{ marginTop: '15px' }}>
             Custom Wallpaper
             <input type="file" accept="image/*" onChange={handleImageUpload} />
           </label>
           
           {theme.bgImage && (
-             <div className="wallpaper-adjustments">
-               <label>Slide Horizontal (Left/Right)
-                 <input type="range" min="0" max="100" value={theme.bgPosX ?? 50} onChange={(e) => updateTheme({ bgPosX: Number(e.target.value) })}/>
-               </label>
-               <label>Slide Vertical (Up/Down)
-                 <input type="range" min="0" max="100" value={theme.bgPosY ?? 50} onChange={(e) => updateTheme({ bgPosY: Number(e.target.value) })}/>
-               </label>
-               <button className="action-btn" style={{marginTop: '10px'}} onClick={() => updateTheme({ bgImage: '' })}>Clear Wallpaper</button>
-             </div>
+             <button className="action-btn" style={{marginTop: '10px'}} onClick={() => updateTheme({ bgImage: '' })}>Clear Wallpaper</button>
           )}
         </section>
 
+        <section className="settings-group">
+          <h3>Support the Creator</h3>
+          <p>If ToT helps you out in the field, consider supporting development!</p>
+          <button className="action-btn" onClick={() => window.open('https://github.com/sponsors', '_blank')}>
+            Support the Project
+          </button>
+        </section>
       </div>
     </div>
   );
