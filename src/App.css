@@ -95,3 +95,42 @@ label {
   font-size: 0.95em;
 }
 
+
+/* Sovereign Tools Promo Banner Styles */
+.promo-banner {
+  background: linear-gradient(135deg, rgba(40,40,40,0.8), rgba(20,20,20,0.9));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.promo-banner:active {
+  transform: scale(0.98);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.promo-content h3 {
+  margin: 0 0 5px 0;
+  color: #ffffff;
+}
+
+.promo-content p {
+  margin: 0 0 15px 0;
+  font-size: 0.9em;
+  color: #cccccc;
+}
+
+.promo-btn {
+  display: inline-block;
+  background: #ffffff;
+  color: #000000;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.85em;
+}
+
+/* Push content up so the AdMob banner doesn't cover anything */
+.pb-safe {
+  padding-bottom: 80px; 
+}

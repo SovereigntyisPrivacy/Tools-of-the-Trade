@@ -1,8 +1,27 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
 
 function Dashboard() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const showBanner = async () => {
+      try {
+        await AdMob.initialize();
+        await AdMob.showBanner({
+          adId: 'ca-app-pub-3940256099942544~3347511713',
+          adSize: BannerAdSize.BANNER,
+          position: BannerAdPosition.BOTTOM_CENTER,
+          margin: 0,
+          isTesting: true
+        });
+      } catch (e) {
+        console.error("AdMob Error:", e);
+      }
+    };
+    showBanner();
+  }, []);
 
   const tools = [
     { id: 'settings', name: 'Settings', path: '/settings', icon: '⚙️' },
@@ -13,7 +32,7 @@ function Dashboard() {
   ];
 
   return (
-    <div className="view-wrapper">
+    <div className="view-wrapper pb-safe">
       <header className="header">
         <h1>Tools of the Trade</h1>
       </header>
@@ -35,4 +54,3 @@ function Dashboard() {
 }
 
 export default Dashboard;
-

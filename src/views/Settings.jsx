@@ -18,13 +18,26 @@ function Settings() {
   };
 
   return (
-    <div className="view-wrapper">
+    <div className="view-wrapper pb-safe">
       <header className="header">
         <button className="back-btn" onClick={() => navigate('/')}>← Back</button>
         <h2>Settings</h2>
       </header>
 
       <div className="settings-content">
+        
+        {/* Sovereign Tools Hardcoded Promo */}
+        <section 
+          className="settings-group promo-banner" 
+          onClick={() => window.open('https://github.com/xNoOnex/SovereignTools1', '_blank')}
+        >
+          <div className="promo-content">
+            <h3>🛡️ Sovereign Tools</h3>
+            <p>Take back your privacy. Get the ultimate offline utility and privacy suite.</p>
+            <span className="promo-btn">View Project &rarr;</span>
+          </div>
+        </section>
+
         <section className="settings-group">
           <h3>Appearance</h3>
           
@@ -82,4 +95,3 @@ function Settings() {
 }
 
 export default Settings;
-
