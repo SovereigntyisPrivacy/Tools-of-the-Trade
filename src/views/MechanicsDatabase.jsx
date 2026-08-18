@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 function MechanicsDatabase() {
   const navigate = useNavigate();
@@ -7,6 +8,7 @@ function MechanicsDatabase() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -15,15 +17,48 @@ function MechanicsDatabase() {
     setLoading(true);
     setSearched(true);
     try {
-      // Appending "repair manual" to bias the OpenLibrary search toward technical documents
-      const searchQuery = `${query} repair manual`;
-      const res = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(searchQuery)}&limit=15`);
+      // Scrape Internet Archive specifically for texts/manuals
+      const archiveQuery = `${query} (manual OR repair OR service OR diagram)`;
+      const res = await fetch(`https://archive.org/advancedsearch.php?q=${encodeURIComponent(archiveQuery)}+AND+mediatype:texts&fl[]=identifier,title,creator,year&rows=15&output=json`);
       const data = await res.json();
-      setResults(data.docs || []);
+      setResults(data.response.docs || []);
     } catch (error) {
       console.error("Mechanics DB Error:", error);
     }
     setLoading(false);
+  };
+
+  const ripToVault = async (identifier, rawTitle) => {
+    setDownloadingId(identifier);
+    try {
+      // Direct raw PDF download URL format for Archive.org
+      const pdfUrl = `https://archive.org/download/${identifier}/${identifier}.pdf`;
+      
+      const response = await fetch(pdfUrl);
+      if (!response.ok) throw new Error('File not found or format unsupported');
+      const blob = await response.blob();
+      
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = async () => {
+        const base64data = reader.result.split(',')[1];
+        const safeTitle = rawTitle.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 40);
+        const fileName = `${safeTitle}.pdf`;
+        
+        await Filesystem.writeFile({
+          path: fileName,
+          data: base64data,
+          directory: Directory.Data
+        });
+        
+        setDownloadingId(null);
+        navigate(`/vault/view/${fileName}`);
+      };
+    } catch (e) {
+      console.error(e);
+      alert("Failed to rip PDF. This specific archive may not have a standard PDF format available.");
+      setDownloadingId(null);
+    }
   };
 
   return (
@@ -34,8 +69,7 @@ function MechanicsDatabase() {
       </header>
 
       <div className="calc-content" style={{ padding: '20px', overflowY: 'auto', height: '100%', paddingBottom: '120px' }}>
-        
-        <p style={{ color: '#ffaa00', fontWeight: 'bold', marginBottom: '15px' }}>⚙️ Vehicle & Machining Archive</p>
+        <p style={{ color: '#ffaa00', fontWeight: 'bold', marginBottom: '15px' }}>⚙️ Unrestricted Archive Database</p>
         
         <form onSubmit={handleSearch} style={{ marginBottom: '25px' }}>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -53,40 +87,29 @@ function MechanicsDatabase() {
         </form>
 
         {loading ? (
-          <div style={{ color: '#aaa', textAlign: 'center', marginTop: '20px' }}>Querying technical archives...</div>
+          <div style={{ color: '#aaa', textAlign: 'center', marginTop: '20px' }}>Querying unrestricted archives...</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {results.map((item, idx) => (
               <div key={idx} style={{ background: 'rgba(20, 20, 20, 0.8)', border: '1px solid #444', borderLeft: '4px solid #ffaa00', borderRadius: '8px', padding: '15px' }}>
                 <div style={{ fontWeight: 'bold', color: '#ffaa00', fontSize: '1.1em', marginBottom: '5px' }}>{item.title}</div>
+                <div style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '5px' }}><span style={{ color: '#fff' }}>Author:</span> {item.creator ? item.creator : 'Unknown'}</div>
+                <div style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '12px' }}><span style={{ color: '#fff' }}>Year:</span> {item.year || 'N/A'}</div>
                 
-                <div style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '5px' }}>
-                  <span style={{ color: '#fff' }}>Author/Publisher:</span> {item.author_name ? item.author_name.join(', ') : 'Unknown'}
-                </div>
-                
-                <div style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '12px' }}>
-                  <span style={{ color: '#fff' }}>Year:</span> {item.first_publish_year || 'N/A'}
-                </div>
-                
-                <a 
-                  href={`https://openlibrary.org${item.key}`} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  style={{ display: 'inline-block', padding: '8px 15px', background: 'rgba(255, 170, 0, 0.1)', color: '#ffaa00', border: '1px solid #ffaa00', borderRadius: '5px', textDecoration: 'none', fontSize: '0.9em', fontWeight: 'bold' }}
+                <button 
+                  onClick={() => ripToVault(item.identifier, item.title)}
+                  disabled={downloadingId === item.identifier}
+                  style={{ width: '100%', padding: '12px', background: 'rgba(255, 170, 0, 0.1)', color: '#ffaa00', border: '1px solid #ffaa00', borderRadius: '5px', fontSize: '1em', fontWeight: 'bold' }}
                 >
-                  View Document ↗
-                </a>
+                  {downloadingId === item.identifier ? '⬇ Extracting Manual...' : '⬇ Save to Stealth Vault'}
+                </button>
               </div>
             ))}
-
             {searched && results.length === 0 && !loading && (
-              <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '20px' }}>
-                No manuals found for that query. Try using just the Make and Model.
-              </div>
+              <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '20px' }}>No manuals found.</div>
             )}
           </div>
         )}
-
       </div>
     </div>
   );
