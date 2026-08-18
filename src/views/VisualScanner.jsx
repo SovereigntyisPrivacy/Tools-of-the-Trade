@@ -31,7 +31,7 @@ function VisualScanner() {
         quality: 80,
         allowEditing: false,
         resultType: CameraResultType.Base64,
-        source: CameraSource.Camera // Forces the native camera to open
+        source: CameraSource.Camera
       });
       setImage(`data:image/jpeg;base64,${photo.base64String}`);
       analyzeImage(photo.base64String);
@@ -86,6 +86,7 @@ function VisualScanner() {
             <p style={{ color: '#aaa', fontSize: '0.9em', marginBottom: '15px' }}>
               To enable visual scanning, enter your free Google Gemini API key. This is stored locally on your device.
             </p>
+            
             <input 
               type="text" 
               placeholder="Paste API Key here..." 
@@ -93,9 +94,27 @@ function VisualScanner() {
               onChange={(e) => setApiKey(e.target.value)}
               style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #444', background: '#000', color: '#fff', marginBottom: '15px' }}
             />
-            <button onClick={saveKey} style={{ width: '100%', padding: '12px', background: '#00cc66', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '8px' }}>
+            
+            <button onClick={saveKey} style={{ width: '100%', padding: '12px', background: '#00cc66', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '8px', marginBottom: '20px' }}>
               Authorize Scanner
             </button>
+
+            {/* Info & Disclaimer Card */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
+              <h4 style={{ color: '#ffaa00', marginTop: 0, marginBottom: '8px' }}>ℹ️ How to get a free key</h4>
+              <p style={{ color: '#ccc', fontSize: '0.85em', lineHeight: '1.4', marginBottom: '12px' }}>
+                You can generate a free developer key right now using your mobile browser. 
+                <br/><br/>
+                <strong style={{ color: '#ff4444' }}>Disclaimer:</strong> Unlike the offline Vault, images scanned here are sent to Google's cloud for AI processing. Do not scan highly sensitive personal documents.
+              </p>
+              <button 
+                onClick={() => window.open('https://aistudio.google.com/app/apikey', '_blank')}
+                style={{ width: '100%', padding: '10px', background: 'transparent', color: '#ffaa00', border: '1px solid #ffaa00', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                Get API Key (Opens Browser) ↗
+              </button>
+            </div>
+
           </div>
         ) : (
           <>
