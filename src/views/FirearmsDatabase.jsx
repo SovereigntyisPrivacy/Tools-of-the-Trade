@@ -17,8 +17,10 @@ function FirearmsDatabase() {
     setLoading(true);
     setSearched(true);
     try {
-      // Strict Search: Forces the archive to look for armory-specific keywords
-      const strictQuery = `(${query}) AND (title:manual OR title:schematic OR title:armorer OR title:operator OR title:field OR subject:manual OR subject:firearm)`;
+      // FIX: Force the engine to require EVERY word in the query (e.g., "Glock AND 19")
+      const formattedQuery = query.trim().split(/\s+/).join(' AND ');
+      
+      const strictQuery = `(${formattedQuery}) AND (title:manual OR title:schematic OR title:armorer OR title:operator OR title:field OR subject:manual OR subject:firearm)`;
       const res = await fetch(`https://archive.org/advancedsearch.php?q=${encodeURIComponent(strictQuery)}+AND+mediatype:texts&fl[]=identifier,title,creator,year&rows=15&output=json`);
       const data = await res.json();
       setResults(data.response?.docs || []);
@@ -31,7 +33,6 @@ function FirearmsDatabase() {
   const ripToVault = async (identifier, rawTitle) => {
     setDownloadingId(identifier);
     try {
-      // Ping the metadata to find the exact filename of the PDF
       const metaRes = await fetch(`https://archive.org/metadata/${identifier}`);
       const metaData = await metaRes.json();
       const pdfFile = metaData.files?.find(f => f.name.endsWith('.pdf'));
@@ -44,7 +45,6 @@ function FirearmsDatabase() {
       const safeTitle = rawTitle.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 40);
       const fileName = `${safeTitle}.pdf`;
       
-      // Stream directly to device storage 
       await Filesystem.downloadFile({
         url: pdfUrl,
         path: fileName,
@@ -105,7 +105,7 @@ function FirearmsDatabase() {
               </div>
             ))}
             {searched && results.length === 0 && !loading && (
-              <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '20px' }}>No manuals found. Try adding "manual" or "armorer" to your search query.</div>
+              <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '20px' }}>No manuals found. The archive may group specific models into a broader "Armorer Manual". Try searching for just the manufacturer.</div>
             )}
           </div>
         )}
