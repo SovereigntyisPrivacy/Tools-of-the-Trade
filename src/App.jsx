@@ -18,6 +18,7 @@ const LifestyleCalc = lazy(() => import('./views/LifestyleCalc'));
 const TechCalc = lazy(() => import('./views/TechCalc'));
 const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
 const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
+const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -40,6 +41,11 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
+              
+              {/* Schematics */}
+              <Route path="/schematics" element={<SchematicsHub />} />
+              
+              {/* Calculators */}
               <Route path="/calculator" element={<CalculatorHub />} />
               <Route path="/calculator/timesheet" element={<TimesheetCalc />} />
               <Route path="/calculator/tax" element={<TaxCalc />} />
