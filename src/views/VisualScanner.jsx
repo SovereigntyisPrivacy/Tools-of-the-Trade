@@ -5,7 +5,7 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 function VisualScanner() {
   const navigate = useNavigate();
   const [apiKey, setApiKey] = useState('');
-  const [engine, setEngine] = useState('gemini'); // Default to Gemini
+  const [engine, setEngine] = useState('gemini'); 
   const [hasKey, setHasKey] = useState(false);
   const [image, setImage] = useState(null);
   const [analysis, setAnalysis] = useState('');
@@ -59,18 +59,29 @@ function VisualScanner() {
                 { text: "You are a tactical field guide. Identify the primary subject in this image. If it is a plant, state its name, edibility, medicinal uses, and toxicity. If it is a pill or chemical, state its likely identity and warnings. If it is a mechanical or electronic component, explain what it is and its function. Be concise, accurate, and format the output cleanly." },
                 { inline_data: { mime_type: "image/jpeg", data: base64Data } }
               ]
-            }]
+            }],
+            // OVERRIDE ALL SAFETY FILTERS
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
           })
         });
         const data = await response.json();
-        if (data.candidates && data.candidates[0].content.parts[0].text) {
+        
+        if (data.candidates && data.candidates[0].content?.parts[0]?.text) {
           setAnalysis(data.candidates[0].content.parts[0].text);
+        } else if (data.candidates && data.candidates[0].finishReason) {
+          setAnalysis(`⚠️ AI Filter Triggered: The engine blocked the response. Finish Reason: ${data.candidates[0].finishReason}`);
+        } else if (data.error) {
+          setAnalysis(`❌ API Error: ${data.error.message}`);
         } else {
-          setAnalysis("Scanner failed to extract meaningful data from the image.");
+          setAnalysis(`Scanner failed. Debug Data: ${JSON.stringify(data).substring(0, 150)}`);
         }
       } 
       else if (engine === 'openai') {
-        // OpenAI GPT-4o Vision API Logic
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -90,8 +101,10 @@ function VisualScanner() {
           })
         });
         const data = await response.json();
-        if (data.choices && data.choices[0].message.content) {
+        if (data.choices && data.choices[0].message?.content) {
           setAnalysis(data.choices[0].message.content);
+        } else if (data.error) {
+          setAnalysis(`❌ API Error: ${data.error.message}`);
         } else {
           setAnalysis("OpenAI Engine failed to process the image.");
         }
@@ -101,7 +114,7 @@ function VisualScanner() {
       }
     } catch (error) {
       console.error("AI API Error:", error);
-      setAnalysis(`Connection to ${engine.toUpperCase()} mainframe failed. Verify your API key and network connection.`);
+      setAnalysis(`Connection to ${engine.toUpperCase()} mainframe failed. Verify your network connection.`);
     }
     setLoading(false);
   };
@@ -115,7 +128,6 @@ function VisualScanner() {
 
       <div className="calc-content" style={{ padding: '20px', overflowY: 'auto', height: '100%', paddingBottom: '120px' }}>
         
-        {/* Engine Selector always visible */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', color: '#fff', marginBottom: '8px', fontWeight: 'bold' }}>Select Neural Engine:</label>
           <select 
@@ -133,7 +145,7 @@ function VisualScanner() {
           <div className="input-card" style={{ borderTop: '4px solid #ff4444' }}>
             <h3 style={{ color: '#fff', marginBottom: '10px' }}>🔑 Engine Authorization</h3>
             <p style={{ color: '#aaa', fontSize: '0.9em', marginBottom: '15px' }}>
-              Enter your API key for <strong>{engine.toUpperCase()}</strong>. By using your own key, Tools of the Trade remains 100% free forever with no hidden subscriptions.
+              Enter your API key for <strong>{engine.toUpperCase()}</strong>. By using your own key, Tools of the Trade remains 100% free forever.
             </p>
             
             <input 
@@ -153,8 +165,6 @@ function VisualScanner() {
                 <h4 style={{ color: '#ffaa00', marginTop: 0, marginBottom: '8px' }}>ℹ️ How to get a free key</h4>
                 <p style={{ color: '#ccc', fontSize: '0.85em', lineHeight: '1.4', marginBottom: '12px' }}>
                   Tap the link below. When Google asks if you are a "developer", <strong>check the box</strong>. You are the developer of your own toolkit! 
-                  <br/><br/>
-                  <strong style={{ color: '#ff4444' }}>Privacy Notice:</strong> Images scanned here are sent to Google's cloud. Do not scan sensitive personal documents.
                 </p>
                 <button 
                   onClick={() => window.open('https://aistudio.google.com/app/apikey', '_blank')}
@@ -193,7 +203,7 @@ function VisualScanner() {
             )}
 
             {analysis && !loading && (
-              <div className="result-card" style={{ background: 'rgba(10, 10, 10, 0.9)', borderLeft: '4px solid #00cc66', padding: '20px' }}>
+              <div className="result-card" style={{ background: 'rgba(10, 10, 10, 0.9)', borderLeft: '4px solid #00cc66', padding: '20px', wordBreak: 'break-word' }}>
                 <h3 style={{ marginTop: 0, color: '#00cc66', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '15px' }}>Identification Results</h3>
                 <div style={{ color: '#fff', fontSize: '1em', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
                   {analysis}
