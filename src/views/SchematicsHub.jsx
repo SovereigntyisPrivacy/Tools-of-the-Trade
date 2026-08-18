@@ -6,6 +6,7 @@ function SchematicsHub() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const categories = [
+    { id: 'ai-scanner', icon: '👁️', title: 'AI Visual Scanner', desc: 'Use device camera to instantly identify plants, pills, and hardware.', path: '/schematics/scanner' },
     { id: 'electronics', icon: '🔌', title: 'Electronics & Wiring', desc: 'Circuit diagrams, pinouts, and hardware teardowns.', path: '/schematics/electronics' },
     { id: 'mechanics', icon: '⚙️', title: 'Mechanics & Engines', desc: 'Vehicle manuals, engine diagrams, and machining blueprints.', path: '/schematics/mechanics' },
     { id: 'botany', icon: '🌿', title: 'Botany & Foraging', desc: 'Plant identification, medicinal uses, and toxicity warnings.' },
@@ -39,7 +40,6 @@ function SchematicsHub() {
 
       <div className="calc-content" style={{ padding: '20px', overflowY: 'auto', height: '100%', paddingBottom: '120px' }}>
         
-        {/* Global Search Bar */}
         <form onSubmit={handleSearch} style={{ marginBottom: '25px' }}>
           <div style={{ display: 'flex', gap: '10px' }}>
             <input 
@@ -61,12 +61,16 @@ function SchematicsHub() {
           {categories.map(cat => (
             <button 
               key={cat.id} 
-              style={{ display: 'flex', alignItems: 'center', background: 'rgba(20, 20, 20, 0.8)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '12px', padding: '15px', textAlign: 'left', width: '100%', cursor: 'pointer' }}
+              style={{ 
+                display: 'flex', alignItems: 'center', background: 'rgba(20, 20, 20, 0.8)', 
+                border: cat.id === 'ai-scanner' ? '1px solid #00cc66' : '1px solid rgba(255, 255, 255, 0.15)', 
+                borderRadius: '12px', padding: '15px', textAlign: 'left', width: '100%', cursor: 'pointer' 
+              }}
               onClick={() => handleCategoryNav(cat)}
             >
               <span style={{ fontSize: '32px', marginRight: '15px', filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.5))' }}>{cat.icon}</span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ color: 'var(--tot-text-color, #00ffff)', fontWeight: '900', fontSize: '1.1em', marginBottom: '4px' }}>{cat.title}</span>
+                <span style={{ color: cat.id === 'ai-scanner' ? '#00cc66' : 'var(--tot-text-color, #00ffff)', fontWeight: '900', fontSize: '1.1em', marginBottom: '4px' }}>{cat.title}</span>
                 <span style={{ color: '#ccc', fontSize: '0.85em', lineHeight: '1.3' }}>{cat.desc}</span>
               </div>
             </button>

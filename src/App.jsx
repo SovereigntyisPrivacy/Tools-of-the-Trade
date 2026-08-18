@@ -26,6 +26,7 @@ const PdfReader = lazy(() => import('./views/PdfReader'));
 // Databases
 const ElectronicsDatabase = lazy(() => import('./views/ElectronicsDatabase'));
 const MechanicsDatabase = lazy(() => import('./views/MechanicsDatabase'));
+const VisualScanner = lazy(() => import('./views/VisualScanner'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -54,6 +55,7 @@ function App() {
               <Route path="/schematics/search" element={<GlobalSearch />} />
               <Route path="/schematics/electronics" element={<ElectronicsDatabase />} />
               <Route path="/schematics/mechanics" element={<MechanicsDatabase />} />
+              <Route path="/schematics/scanner" element={<VisualScanner />} />
               
               {/* Vault */}
               <Route path="/vault" element={<Vault />} />
