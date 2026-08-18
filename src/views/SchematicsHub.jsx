@@ -11,7 +11,7 @@ function SchematicsHub() {
     { id: 'mechanics', icon: '⚙️', title: 'Mechanics & Engines', desc: 'Vehicle manuals, engine diagrams, and machining blueprints.', path: '/schematics/mechanics' },
     { id: 'botany', icon: '🌿', title: 'Botany & Foraging', desc: 'Plant identification, medicinal uses, and toxicity warnings.', path: '/schematics/botany' },
     { id: 'pharmacology', icon: '💊', title: 'Pharmacology', desc: 'Pill identification, dosages, and chemical contraindications.', path: '/schematics/pharmacology' },
-    { id: 'firearms', icon: '🔫', title: 'Firearms & Armory', desc: 'Weapon schematics, assembly/disassembly, and maintenance.' },
+    { id: 'firearms', icon: '🔫', title: 'Firearms & Armory', desc: 'Weapon schematics, assembly/disassembly, and maintenance.', path: '/schematics/firearms' },
     { id: 'library', icon: '📚', title: 'Survival Library', desc: 'Field manuals, medical guides, and PDF reference books.' },
     { id: 'local', icon: '📁', title: 'Local SD Card Storage', desc: 'Browse and load your personally downloaded offline archives.', path: '/vault' }
   ];

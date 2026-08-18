@@ -29,6 +29,7 @@ const MechanicsDatabase = lazy(() => import('./views/MechanicsDatabase'));
 const VisualScanner = lazy(() => import('./views/VisualScanner'));
 const BotanyDatabase = lazy(() => import('./views/BotanyDatabase'));
 const PharmacologyDatabase = lazy(() => import('./views/PharmacologyDatabase'));
+const FirearmsDatabase = lazy(() => import('./views/FirearmsDatabase'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -60,6 +61,7 @@ function App() {
               <Route path="/schematics/scanner" element={<VisualScanner />} />
               <Route path="/schematics/botany" element={<BotanyDatabase />} />
               <Route path="/schematics/pharmacology" element={<PharmacologyDatabase />} />
+              <Route path="/schematics/firearms" element={<FirearmsDatabase />} />
               
               {/* Vault */}
               <Route path="/vault" element={<Vault />} />
