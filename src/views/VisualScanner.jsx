@@ -50,14 +50,14 @@ function VisualScanner() {
     
     try {
       if (engine === 'gemini') {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // FIX: Updated endpoint to gemini-1.5-flash-latest
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{
               parts: [
                 { text: "You are a tactical field guide. Identify the primary subject in this image. If it is a plant, state its name, edibility, medicinal uses, and toxicity. If it is a pill or chemical, state its likely identity and warnings. If it is a mechanical or electronic component, explain what it is and its function. Be concise, accurate, and format the output cleanly." },
-                // CRITICAL FIX: Changed to camelCase (inlineData, mimeType)
                 { inlineData: { mimeType: "image/jpeg", data: base64Data } } 
               ]
             }],
@@ -78,7 +78,6 @@ function VisualScanner() {
         } else if (data.error) {
           setAnalysis(`❌ API Error: ${data.error.message}`);
         } else {
-          // Diagnostic output to see exactly what the server sent back
           setAnalysis(`Scanner failed. Raw API Response: ${JSON.stringify(data, null, 2)}`);
         }
       } 
@@ -110,12 +109,9 @@ function VisualScanner() {
           setAnalysis(`OpenAI Engine failed. Raw API Response: ${JSON.stringify(data, null, 2)}`);
         }
       }
-      else if (engine === 'local') {
-        setAnalysis("Local Offline Node targeting is under construction. Future updates will allow routing to a local IP address.");
-      }
     } catch (error) {
       console.error("AI API Error:", error);
-      setAnalysis(`Connection to ${engine.toUpperCase()} mainframe failed. Verify your network connection. Error: ${error.message}`);
+      setAnalysis(`Connection to ${engine.toUpperCase()} mainframe failed. Error: ${error.message}`);
     }
     setLoading(false);
   };
@@ -148,7 +144,6 @@ function VisualScanner() {
             <p style={{ color: '#aaa', fontSize: '0.9em', marginBottom: '15px' }}>
               Enter your API key for <strong>{engine.toUpperCase()}</strong>. By using your own key, Tools of the Trade remains 100% free forever.
             </p>
-            
             <input 
               type="password" 
               placeholder="Paste API Key here..." 
@@ -156,25 +151,9 @@ function VisualScanner() {
               onChange={(e) => setApiKey(e.target.value)}
               style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #444', background: '#000', color: '#fff', marginBottom: '15px' }}
             />
-            
             <button onClick={saveKey} style={{ width: '100%', padding: '12px', background: '#00cc66', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '8px', marginBottom: '20px' }}>
               Authorize Scanner
             </button>
-
-            {engine === 'gemini' && (
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
-                <h4 style={{ color: '#ffaa00', marginTop: 0, marginBottom: '8px' }}>ℹ️ How to get a free key</h4>
-                <p style={{ color: '#ccc', fontSize: '0.85em', lineHeight: '1.4', marginBottom: '12px' }}>
-                  Tap the link below. When Google asks if you are a "developer", <strong>check the box</strong>. You are the developer of your own toolkit! 
-                </p>
-                <button 
-                  onClick={() => window.open('https://aistudio.google.com/app/apikey', '_blank')}
-                  style={{ width: '100%', padding: '10px', background: 'transparent', color: '#ffaa00', border: '1px solid #ffaa00', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}
-                >
-                  Get API Key (Opens Browser) ↗
-                </button>
-              </div>
-            )}
           </div>
         ) : (
           <>
@@ -184,25 +163,16 @@ function VisualScanner() {
             >
               📷 Activate Camera Uplink
             </button>
-
-            {engine === 'local' && (
-              <div style={{ color: '#aaa', textAlign: 'center', padding: '20px', border: '1px dashed #555', borderRadius: '8px' }}>
-                Local Node targeting requires configuring an IP address for an offline LLM (e.g., LM Studio / Ollama). This feature is coming in a future update.
-              </div>
-            )}
-
             {image && (
               <div style={{ marginBottom: '20px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #444' }}>
                 <img src={image} alt="Scanned Target" style={{ width: '100%', display: 'block' }} />
               </div>
             )}
-
             {loading && (
               <div style={{ color: '#ffaa00', textAlign: 'center', padding: '20px', fontWeight: 'bold', fontSize: '1.1em', background: 'rgba(255, 170, 0, 0.1)', borderRadius: '8px', border: '1px solid #ffaa00' }}>
                 Analyzing spectral data...
               </div>
             )}
-
             {analysis && !loading && (
               <div className="result-card" style={{ background: 'rgba(10, 10, 10, 0.9)', borderLeft: '4px solid #00cc66', padding: '20px', wordBreak: 'break-word' }}>
                 <h3 style={{ marginTop: 0, color: '#00cc66', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '15px' }}>Identification Results</h3>
@@ -211,7 +181,6 @@ function VisualScanner() {
                 </div>
               </div>
             )}
-            
             {engine !== 'local' && (
               <button onClick={() => { localStorage.removeItem(`${engine}_api_key`); setHasKey(false); }} style={{ marginTop: '40px', background: 'transparent', border: 'none', color: '#555', textDecoration: 'underline', width: '100%' }}>
                 Reset API Key

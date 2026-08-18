@@ -17,10 +17,10 @@ function FirearmsDatabase() {
     setLoading(true);
     setSearched(true);
     try {
-      // FIX: Force the engine to require EVERY word in the query (e.g., "Glock AND 19")
-      const formattedQuery = query.trim().split(/\s+/).join(' AND ');
+      // FIX: Force exact phrase matching by wrapping the entire query in quotes
+      const exactMatchQuery = `"${query.trim()}"`;
       
-      const strictQuery = `(${formattedQuery}) AND (title:manual OR title:schematic OR title:armorer OR title:operator OR title:field OR subject:manual OR subject:firearm)`;
+      const strictQuery = `(${exactMatchQuery}) AND (title:manual OR title:schematic OR title:armorer OR title:operator OR title:field OR subject:manual OR subject:firearm)`;
       const res = await fetch(`https://archive.org/advancedsearch.php?q=${encodeURIComponent(strictQuery)}+AND+mediatype:texts&fl[]=identifier,title,creator,year&rows=15&output=json`);
       const data = await res.json();
       setResults(data.response?.docs || []);
@@ -105,7 +105,7 @@ function FirearmsDatabase() {
               </div>
             ))}
             {searched && results.length === 0 && !loading && (
-              <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '20px' }}>No manuals found. The archive may group specific models into a broader "Armorer Manual". Try searching for just the manufacturer.</div>
+              <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '20px' }}>No exact manual matches found. Try shortening your search to just the manufacturer or model series.</div>
             )}
           </div>
         )}
