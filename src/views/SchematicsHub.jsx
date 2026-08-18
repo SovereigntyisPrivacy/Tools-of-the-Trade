@@ -7,7 +7,7 @@ function SchematicsHub() {
 
   const categories = [
     { id: 'electronics', icon: '🔌', title: 'Electronics & Wiring', desc: 'Circuit diagrams, pinouts, and hardware teardowns.', path: '/schematics/electronics' },
-    { id: 'mechanics', icon: '⚙️', title: 'Mechanics & Engines', desc: 'Vehicle manuals, engine diagrams, and machining blueprints.' },
+    { id: 'mechanics', icon: '⚙️', title: 'Mechanics & Engines', desc: 'Vehicle manuals, engine diagrams, and machining blueprints.', path: '/schematics/mechanics' },
     { id: 'botany', icon: '🌿', title: 'Botany & Foraging', desc: 'Plant identification, medicinal uses, and toxicity warnings.' },
     { id: 'pharmacology', icon: '💊', title: 'Pharmacology', desc: 'Pill identification, dosages, and chemical contraindications.' },
     { id: 'firearms', icon: '🔫', title: 'Firearms & Armory', desc: 'Weapon schematics, assembly/disassembly, and maintenance.' },
