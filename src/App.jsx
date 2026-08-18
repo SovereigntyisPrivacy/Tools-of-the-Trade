@@ -14,6 +14,10 @@ const ShootingCalc = lazy(() => import('./views/ShootingCalc'));
 const EngineeringCalc = lazy(() => import('./views/EngineeringCalc'));
 const NuclearCalc = lazy(() => import('./views/NuclearCalc'));
 const MathCalc = lazy(() => import('./views/MathCalc'));
+const LifestyleCalc = lazy(() => import('./views/LifestyleCalc'));
+const TechCalc = lazy(() => import('./views/TechCalc'));
+const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
+const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -45,6 +49,10 @@ function App() {
               <Route path="/calculator/engineering" element={<EngineeringCalc />} />
               <Route path="/calculator/nuclear" element={<NuclearCalc />} />
               <Route path="/calculator/math" element={<MathCalc />} />
+              <Route path="/calculator/lifestyle" element={<LifestyleCalc />} />
+              <Route path="/calculator/tech" element={<TechCalc />} />
+              <Route path="/calculator/builder" element={<BuilderCalc />} />
+              <Route path="/calculator/finance" element={<FinanceCalc />} />
             </Routes>
           </Suspense>
         </Router>

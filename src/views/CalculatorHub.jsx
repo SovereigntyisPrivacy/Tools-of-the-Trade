@@ -12,16 +12,12 @@ function CalculatorHub() {
     { id: 'ballistics', icon: '🎯', title: 'Shooting Range', desc: 'Calculate MOA, bullet drop, and windage adjustments.', path: '/calculator/shooting' },
     { id: 'engineering', icon: '📐', title: 'Engineering', desc: 'Structural limits, materials, and physics formulas.', path: '/calculator/engineering' },
     { id: 'nuclear', icon: '☢️', title: 'Nuclear Decay', desc: 'Half-life, radiation shielding, and isotope decay rates.', path: '/calculator/nuclear' },
+    { id: 'finance', icon: '💰', title: 'Finance & Loans', desc: 'Mortgage amortization and total interest logic.', path: '/calculator/finance' },
+    { id: 'lifestyle', icon: '🍳', title: 'Lifestyle & Health', desc: 'Culinary yield scaling and 1RM kinetic strength.', path: '/calculator/lifestyle' },
+    { id: 'builder', icon: '🧱', title: 'DIY & Vehicle', desc: 'Construction material estimators and max fuel range.', path: '/calculator/builder' },
+    { id: 'tech', icon: '💻', title: 'Tech & Network', desc: 'Bandwidth transfer times and IP subnet calculation.', path: '/calculator/tech' },
     { id: 'basic', icon: '🧮', title: 'Basic Math', desc: 'Standard mathematical operations and Field Equation Library.', path: '/calculator/math' },
   ];
-
-  const handleNav = (calc) => {
-    if (calc.path) {
-      navigate(calc.path);
-    } else {
-      alert(`${calc.title} Module logic coming next!`);
-    }
-  };
 
   return (
     <div className="view-wrapper pb-safe">
@@ -34,7 +30,7 @@ function CalculatorHub() {
         <p className="calc-intro">Select a computation module:</p>
         <div className="calc-list">
           {calculators.map(calc => (
-            <button key={calc.id} className="calc-list-item" onClick={() => handleNav(calc)}>
+            <button key={calc.id} className="calc-list-item" onClick={() => navigate(calc.path)}>
               <span className="calc-icon">{calc.icon}</span>
               <div className="calc-details">
                 <span className="calc-title">{calc.title}</span>
