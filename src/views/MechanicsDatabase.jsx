@@ -17,11 +17,11 @@ function MechanicsDatabase() {
     setLoading(true);
     setSearched(true);
     try {
-      // Scrape Internet Archive specifically for texts/manuals
-      const archiveQuery = `${query} (manual OR repair OR service OR diagram)`;
-      const res = await fetch(`https://archive.org/advancedsearch.php?q=${encodeURIComponent(archiveQuery)}+AND+mediatype:texts&fl[]=identifier,title,creator,year&rows=15&output=json`);
+      // Strict Search: Forces it to look for manuals/repair in the title or subject, not just anywhere in the text.
+      const strictQuery = `(${query}) AND (title:manual OR title:repair OR title:service OR subject:manual OR subject:repair)`;
+      const res = await fetch(`https://archive.org/advancedsearch.php?q=${encodeURIComponent(strictQuery)}+AND+mediatype:texts&fl[]=identifier,title,creator,year&rows=15&output=json`);
       const data = await res.json();
-      setResults(data.response.docs || []);
+      setResults(data.response?.docs || []);
     } catch (error) {
       console.error("Mechanics DB Error:", error);
     }
@@ -31,32 +31,31 @@ function MechanicsDatabase() {
   const ripToVault = async (identifier, rawTitle) => {
     setDownloadingId(identifier);
     try {
-      // Direct raw PDF download URL format for Archive.org
-      const pdfUrl = `https://archive.org/download/${identifier}/${identifier}.pdf`;
+      // 1. Ping the metadata to find the exact filename of the PDF
+      const metaRes = await fetch(`https://archive.org/metadata/${identifier}`);
+      const metaData = await metaRes.json();
+      const pdfFile = metaData.files?.find(f => f.name.endsWith('.pdf'));
       
-      const response = await fetch(pdfUrl);
-      if (!response.ok) throw new Error('File not found or format unsupported');
-      const blob = await response.blob();
+      if (!pdfFile) {
+        throw new Error("No PDF format attached to this specific archive item.");
+      }
       
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = async () => {
-        const base64data = reader.result.split(',')[1];
-        const safeTitle = rawTitle.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 40);
-        const fileName = `${safeTitle}.pdf`;
-        
-        await Filesystem.writeFile({
-          path: fileName,
-          data: base64data,
-          directory: Directory.Data
-        });
-        
-        setDownloadingId(null);
-        navigate(`/vault/view/${fileName}`);
-      };
+      const pdfUrl = `https://archive.org/download/${identifier}/${pdfFile.name}`;
+      const safeTitle = rawTitle.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 40);
+      const fileName = `${safeTitle}.pdf`;
+      
+      // 2. Stream directly to device storage using native filesystem (prevents RAM crashes on large manuals)
+      await Filesystem.downloadFile({
+        url: pdfUrl,
+        path: fileName,
+        directory: Directory.Data
+      });
+      
+      setDownloadingId(null);
+      navigate(`/vault/view/${fileName}`);
     } catch (e) {
       console.error(e);
-      alert("Failed to rip PDF. This specific archive may not have a standard PDF format available.");
+      alert(`Download Failed: ${e.message}`);
       setDownloadingId(null);
     }
   };
@@ -75,7 +74,7 @@ function MechanicsDatabase() {
           <div style={{ display: 'flex', gap: '10px' }}>
             <input 
               type="text" 
-              placeholder="e.g., 'Honda Civic', 'Small Engine', 'Lathe'..." 
+              placeholder="e.g., 'Crown Victoria', 'Small Engine'..." 
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ffaa00', background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '1.1em' }}
@@ -87,7 +86,7 @@ function MechanicsDatabase() {
         </form>
 
         {loading ? (
-          <div style={{ color: '#aaa', textAlign: 'center', marginTop: '20px' }}>Querying unrestricted archives...</div>
+          <div style={{ color: '#aaa', textAlign: 'center', marginTop: '20px' }}>Querying technical archives...</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {results.map((item, idx) => (
@@ -99,14 +98,14 @@ function MechanicsDatabase() {
                 <button 
                   onClick={() => ripToVault(item.identifier, item.title)}
                   disabled={downloadingId === item.identifier}
-                  style={{ width: '100%', padding: '12px', background: 'rgba(255, 170, 0, 0.1)', color: '#ffaa00', border: '1px solid #ffaa00', borderRadius: '5px', fontSize: '1em', fontWeight: 'bold' }}
+                  style={{ width: '100%', padding: '12px', background: 'rgba(255, 170, 0, 0.1)', color: '#ffaa00', border: '1px solid #ffaa00', borderRadius: '5px', fontSize: '1em', fontWeight: 'bold', cursor: 'pointer' }}
                 >
                   {downloadingId === item.identifier ? '⬇ Extracting Manual...' : '⬇ Save to Stealth Vault'}
                 </button>
               </div>
             ))}
             {searched && results.length === 0 && !loading && (
-              <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '20px' }}>No manuals found.</div>
+              <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '20px' }}>No manuals found. Try being more specific with the make and model.</div>
             )}
           </div>
         )}
