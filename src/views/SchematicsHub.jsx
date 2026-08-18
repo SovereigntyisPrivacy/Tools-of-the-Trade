@@ -9,7 +9,7 @@ function SchematicsHub() {
     { id: 'ai-scanner', icon: '👁️', title: 'AI Visual Scanner', desc: 'Use device camera to instantly identify plants, pills, and hardware.', path: '/schematics/scanner' },
     { id: 'electronics', icon: '🔌', title: 'Electronics & Wiring', desc: 'Circuit diagrams, pinouts, and hardware teardowns.', path: '/schematics/electronics' },
     { id: 'mechanics', icon: '⚙️', title: 'Mechanics & Engines', desc: 'Vehicle manuals, engine diagrams, and machining blueprints.', path: '/schematics/mechanics' },
-    { id: 'botany', icon: '🌿', title: 'Botany & Foraging', desc: 'Plant identification, medicinal uses, and toxicity warnings.' },
+    { id: 'botany', icon: '🌿', title: 'Botany & Foraging', desc: 'Plant identification, medicinal uses, and toxicity warnings.', path: '/schematics/botany' },
     { id: 'pharmacology', icon: '💊', title: 'Pharmacology', desc: 'Pill identification, dosages, and chemical contraindications.' },
     { id: 'firearms', icon: '🔫', title: 'Firearms & Armory', desc: 'Weapon schematics, assembly/disassembly, and maintenance.' },
     { id: 'library', icon: '📚', title: 'Survival Library', desc: 'Field manuals, medical guides, and PDF reference books.' },
