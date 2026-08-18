@@ -57,10 +57,10 @@ function VisualScanner() {
             contents: [{
               parts: [
                 { text: "You are a tactical field guide. Identify the primary subject in this image. If it is a plant, state its name, edibility, medicinal uses, and toxicity. If it is a pill or chemical, state its likely identity and warnings. If it is a mechanical or electronic component, explain what it is and its function. Be concise, accurate, and format the output cleanly." },
-                { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                // CRITICAL FIX: Changed to camelCase (inlineData, mimeType)
+                { inlineData: { mimeType: "image/jpeg", data: base64Data } } 
               ]
             }],
-            // OVERRIDE ALL SAFETY FILTERS
             safetySettings: [
               { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
               { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
@@ -78,7 +78,8 @@ function VisualScanner() {
         } else if (data.error) {
           setAnalysis(`❌ API Error: ${data.error.message}`);
         } else {
-          setAnalysis(`Scanner failed. Debug Data: ${JSON.stringify(data).substring(0, 150)}`);
+          // Diagnostic output to see exactly what the server sent back
+          setAnalysis(`Scanner failed. Raw API Response: ${JSON.stringify(data, null, 2)}`);
         }
       } 
       else if (engine === 'openai') {
@@ -106,7 +107,7 @@ function VisualScanner() {
         } else if (data.error) {
           setAnalysis(`❌ API Error: ${data.error.message}`);
         } else {
-          setAnalysis("OpenAI Engine failed to process the image.");
+          setAnalysis(`OpenAI Engine failed. Raw API Response: ${JSON.stringify(data, null, 2)}`);
         }
       }
       else if (engine === 'local') {
@@ -114,7 +115,7 @@ function VisualScanner() {
       }
     } catch (error) {
       console.error("AI API Error:", error);
-      setAnalysis(`Connection to ${engine.toUpperCase()} mainframe failed. Verify your network connection.`);
+      setAnalysis(`Connection to ${engine.toUpperCase()} mainframe failed. Verify your network connection. Error: ${error.message}`);
     }
     setLoading(false);
   };
