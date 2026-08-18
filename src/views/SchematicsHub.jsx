@@ -6,19 +6,27 @@ function SchematicsHub() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const categories = [
-    { id: 'electronics', icon: '🔌', title: 'Electronics & Wiring', desc: 'Circuit diagrams, pinouts, and hardware teardowns.' },
+    { id: 'electronics', icon: '🔌', title: 'Electronics & Wiring', desc: 'Circuit diagrams, pinouts, and hardware teardowns.', path: '/schematics/electronics' },
     { id: 'mechanics', icon: '⚙️', title: 'Mechanics & Engines', desc: 'Vehicle manuals, engine diagrams, and machining blueprints.' },
     { id: 'botany', icon: '🌿', title: 'Botany & Foraging', desc: 'Plant identification, medicinal uses, and toxicity warnings.' },
     { id: 'pharmacology', icon: '💊', title: 'Pharmacology', desc: 'Pill identification, dosages, and chemical contraindications.' },
     { id: 'firearms', icon: '🔫', title: 'Firearms & Armory', desc: 'Weapon schematics, assembly/disassembly, and maintenance.' },
     { id: 'library', icon: '📚', title: 'Survival Library', desc: 'Field manuals, medical guides, and PDF reference books.' },
-    { id: 'local', icon: '📁', title: 'Local SD Card Storage', desc: 'Browse and load your personally downloaded offline archives.' }
+    { id: 'local', icon: '📁', title: 'Local SD Card Storage', desc: 'Browse and load your personally downloaded offline archives.', path: '/vault' }
   ];
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim() !== '') {
       navigate(`/schematics/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleCategoryNav = (cat) => {
+    if (cat.path) {
+      navigate(cat.path);
+    } else {
+      alert(`The ${cat.title} database is currently being architected. Standing by...`);
     }
   };
 
@@ -53,8 +61,8 @@ function SchematicsHub() {
           {categories.map(cat => (
             <button 
               key={cat.id} 
-              style={{ display: 'flex', alignItems: 'center', background: 'rgba(20, 20, 20, 0.8)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '12px', padding: '15px', textAlign: 'left', width: '100%' }}
-              onClick={() => alert(`Entering ${cat.title} database...`)}
+              style={{ display: 'flex', alignItems: 'center', background: 'rgba(20, 20, 20, 0.8)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '12px', padding: '15px', textAlign: 'left', width: '100%', cursor: 'pointer' }}
+              onClick={() => handleCategoryNav(cat)}
             >
               <span style={{ fontSize: '32px', marginRight: '15px', filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.5))' }}>{cat.icon}</span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>

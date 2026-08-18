@@ -23,6 +23,9 @@ const GlobalSearch = lazy(() => import('./views/GlobalSearch'));
 const Vault = lazy(() => import('./views/Vault'));
 const PdfReader = lazy(() => import('./views/PdfReader'));
 
+// New Database Imports
+const ElectronicsDatabase = lazy(() => import('./views/ElectronicsDatabase'));
+
 function GlobalNav() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -45,9 +48,12 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
               
-              {/* Schematics & Vault */}
+              {/* Schematics & Databases */}
               <Route path="/schematics" element={<SchematicsHub />} />
               <Route path="/schematics/search" element={<GlobalSearch />} />
+              <Route path="/schematics/electronics" element={<ElectronicsDatabase />} />
+              
+              {/* Vault */}
               <Route path="/vault" element={<Vault />} />
               <Route path="/vault/view/:fileName" element={<PdfReader />} />
               
