@@ -17,7 +17,9 @@ function SchematicsHub() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    alert(`Search engine logic for "${searchQuery}" coming next!`);
+    if (searchQuery.trim() !== '') {
+      navigate(`/schematics/search?q=${encodeURIComponent(searchQuery)}`);
+    }
   };
 
   return (
@@ -47,7 +49,6 @@ function SchematicsHub() {
 
         <h3 style={{ borderBottom: '2px solid #444', paddingBottom: '10px', color: '#fff', marginBottom: '15px' }}>Database Categories</h3>
 
-        {/* Directory Grid */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {categories.map(cat => (
             <button 
