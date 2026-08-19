@@ -11,7 +11,7 @@ function NuclearCalc() {
 
   // 2. Point Source Dosimetry State
   const [sourceActivity, setSourceActivity] = useState(''); // Curies (Ci)
-  const [gammaConstant, setGammaConstant] = useState('1.32'); // R·m²/hr·Ci (Default Co-60)
+  const [gammaConstant, setGammaConstant] = useState('1.32'); // R·m²/hr·Ci
   const [distance, setDistance] = useState(''); // Meters
 
   // 3. Shielding & Attenuation State
@@ -59,7 +59,6 @@ function NuclearCalc() {
     const b = parseFloat(buildupFactor) || 1.0;
     
     if (h > 0) {
-      // Base attenuation multiplied by buildup factor for scattered photons
       transmittedDose = i0 * b * Math.pow(0.5, x / h); 
       attenuationPercent = ((i0 - transmittedDose) / i0) * 100;
     }
@@ -101,13 +100,27 @@ function NuclearCalc() {
             </div>
           </div>
 
-          <label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Isotope Gamma Constant (R·m²/hr·Ci)</label>
-          <select value={gammaConstant} onChange={e => setGammaConstant(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px', marginBottom: '15px' }}>
-            <option value="1.32">Cobalt-60 (1.32)</option>
-            <option value="0.33">Cesium-137 (0.33)</option>
-            <option value="0.48">Iridium-192 (0.48)</option>
-            <option value="0.22">Iodine-131 (0.22)</option>
-            <option value="0.015">Americium-241 (0.015)</option>
+          <label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Isotope Gamma Constant (Γ)</label>
+          <select value={gammaConstant} onChange={e => setGammaConstant(e.target.value)} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px', marginBottom: '15px', fontSize: '1em' }}>
+            <optgroup label="Industrial & Radiography">
+              <option value="1.32">Cobalt-60 (1.32)</option>
+              <option value="0.33">Cesium-137 (0.33)</option>
+              <option value="0.48">Iridium-192 (0.48)</option>
+              <option value="0.825">Radium-226 (0.825)</option>
+              <option value="0.27">Zinc-65 (0.27)</option>
+              <option value="1.84">Sodium-24 (1.84)</option>
+            </optgroup>
+            <optgroup label="Medical & Diagnostic">
+              <option value="0.22">Iodine-131 (0.22)</option>
+              <option value="0.072">Technetium-99m (0.072)</option>
+              <option value="0.57">Fluorine-18 (0.57)</option>
+              <option value="0.23">Gold-198 (0.23)</option>
+              <option value="0.015">Xenon-133 (0.015)</option>
+              <option value="0.20">Selenium-75 (0.20)</option>
+            </optgroup>
+            <optgroup label="Smoke Detectors & Special">
+              <option value="0.015">Americium-241 (0.015)</option>
+            </optgroup>
           </select>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
@@ -134,7 +147,7 @@ function NuclearCalc() {
           <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Actual Shield Thk.</label>
-              <input type="number" placeholder="Must match HVL unit" value={thickness} onChange={e => setThickness(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+              <input type="number" placeholder="Match HVL unit" value={thickness} onChange={e => setThickness(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', color: '#ffaa00', fontSize: '0.85em', marginBottom: '4px', fontWeight: 'bold' }}>Buildup Factor (B)</label>
