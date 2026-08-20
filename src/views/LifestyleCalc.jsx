@@ -8,12 +8,12 @@ function LifestyleCalc() {
   const [origYield, setOrigYield] = useState('4');
   const [targetYield, setTargetYield] = useState('10');
   
-  // Dynamic Recipe List (Pre-loaded with a honey garlic marinade example)
+  // Dynamic Recipe List with Unit Selectors
   const [recipe, setRecipe] = useState([
-    { id: 1, name: 'Garlic (cloves)', amount: '3' },
-    { id: 2, name: 'Honey (tbsp)', amount: '2' },
-    { id: 3, name: 'Soy Sauce (cup)', amount: '0.25' },
-    { id: 4, name: 'Pork / Chicken (lbs)', amount: '1.5' }
+    { id: 1, name: 'Garlic', amount: '3', unit: 'cloves' },
+    { id: 2, name: 'Honey', amount: '2', unit: 'tbsp' },
+    { id: 3, name: 'Soy Sauce', amount: '0.25', unit: 'cup' },
+    { id: 4, name: 'Pork / Chicken', amount: '1.5', unit: 'lbs' }
   ]);
 
   // Bake Time & Temp State
@@ -60,7 +60,7 @@ function LifestyleCalc() {
   const multiplier = origYNum > 0 && targetYNum > 0 ? (targetYNum / origYNum) : 0;
 
   // Recipe Array Handlers
-  const addIngredient = () => setRecipe([...recipe, { id: Date.now(), name: '', amount: '' }]);
+  const addIngredient = () => setRecipe([...recipe, { id: Date.now(), name: '', amount: '', unit: '' }]);
   const updateIngredient = (id, field, value) => {
     setRecipe(recipe.map(ing => ing.id === id ? { ...ing, [field]: value } : ing));
   };
@@ -185,32 +185,51 @@ function LifestyleCalc() {
           </div>
 
           <div style={{ borderTop: '1px solid #333', paddingTop: '12px' }}>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', color: '#888', fontSize: '0.75rem' }}>
-              <span style={{ flex: 2 }}>Ingredient</span>
-              <span style={{ flex: 1 }}>Amount</span>
-              <span style={{ flex: 1, textAlign: 'center' }}>Scaled</span>
-              <span style={{ width: '30px' }}></span>
-            </div>
             {recipe.map((ing) => (
-              <div key={ing.id} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                <input 
-                  type="text" 
-                  placeholder="Item" 
-                  value={ing.name} 
-                  onChange={(e) => updateIngredient(ing.id, 'name', e.target.value)} 
-                  style={{ flex: 2, background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} 
-                />
-                <input 
-                  type="number" 
-                  placeholder="Amt" 
-                  value={ing.amount} 
-                  onChange={(e) => updateIngredient(ing.id, 'amount', e.target.value)} 
-                  style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} 
-                />
-                <div style={{ flex: 1, background: '#121212', border: '1px solid #222', padding: '8px', borderRadius: '6px', color: '#00e5ff', fontWeight: 'bold', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {ing.amount ? (parseFloat(ing.amount) * multiplier).toFixed(1) : '--'}
+              <div key={ing.id} style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', padding: '10px', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <input 
+                    type="text" 
+                    placeholder="Ingredient Name" 
+                    value={ing.name} 
+                    onChange={(e) => updateIngredient(ing.id, 'name', e.target.value)} 
+                    style={{ flex: 1, background: '#121212', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} 
+                  />
+                  <button onClick={() => removeIngredient(ing.id)} style={{ width: '36px', background: '#d00000', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>X</button>
                 </div>
-                <button onClick={() => removeIngredient(ing.id)} style={{ width: '30px', background: '#d00000', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>X</button>
+                
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input 
+                    type="number" 
+                    placeholder="Amt" 
+                    value={ing.amount} 
+                    onChange={(e) => updateIngredient(ing.id, 'amount', e.target.value)} 
+                    style={{ width: '65px', background: '#121212', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} 
+                  />
+                  <select 
+                    value={ing.unit} 
+                    onChange={(e) => updateIngredient(ing.id, 'unit', e.target.value)}
+                    style={{ flex: 1, background: '#121212', border: '1px solid #333', color: '#ccc', padding: '8px', borderRadius: '6px' }}
+                  >
+                    <option value="">- Unit -</option>
+                    <option value="g">g</option>
+                    <option value="kg">kg</option>
+                    <option value="oz">oz</option>
+                    <option value="lbs">lbs</option>
+                    <option value="tsp">tsp</option>
+                    <option value="tbsp">tbsp</option>
+                    <option value="cup">cup</option>
+                    <option value="ml">ml</option>
+                    <option value="L">L</option>
+                    <option value="cloves">cloves</option>
+                    <option value="pinch">pinch</option>
+                    <option value="pcs">pcs</option>
+                  </select>
+                  <span style={{ color: '#666' }}>→</span>
+                  <div style={{ minWidth: '90px', background: '#00e5ff11', border: '1px solid #00e5ff55', padding: '8px', borderRadius: '6px', color: '#00e5ff', fontWeight: 'bold', textAlign: 'center' }}>
+                    {ing.amount ? `${(parseFloat(ing.amount) * multiplier).toFixed(1)} ${ing.unit}` : '--'}
+                  </div>
+                </div>
               </div>
             ))}
             <button onClick={addIngredient} style={{ width: '100%', padding: '10px', background: '#222', color: '#fff', border: '1px dashed #444', borderRadius: '8px', marginTop: '4px' }}>
