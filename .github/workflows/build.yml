@@ -17,9 +17,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Dependencies and Build Web
+      - name: Install Dependencies, Generate Icons, and Build Web
         run: |
           npm install
+          npm install @capacitor/assets --no-save
+          npx @capacitor/assets generate --iconOnly --android
           npm run build
 
       - name: Setup Java 21
@@ -41,16 +43,9 @@ jobs:
 
       - name: Sign Release APK
         run: |
-          # 1. Decode the Keystore secret into a usable file
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
-          
-          # 2. Find the newest Android Build Tools automatically
           BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
-          
-          # 3. Find the unsigned APK that Gradle just built
           APK_IN=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
-          
-          # 4. Align and Sign the APK
           $BUILD_TOOLS/zipalign -v -p 4 "$APK_IN" android/app/build/outputs/apk/release/aligned.apk
           $BUILD_TOOLS/apksigner sign --ks android/app/release.keystore \
             --ks-key-alias "${{ secrets.KEYSTORE_ALIAS }}" \
