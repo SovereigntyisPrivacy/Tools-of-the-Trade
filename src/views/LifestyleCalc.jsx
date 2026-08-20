@@ -7,8 +7,19 @@ function LifestyleCalc() {
   // --- Recipe & Oven State ---
   const [origYield, setOrigYield] = useState('4');
   const [targetYield, setTargetYield] = useState('10');
-  const [tempF, setTempF] = useState('350');
-  const [sampleIngredient, setSampleIngredient] = useState('');
+  
+  // Dynamic Recipe List (Pre-loaded with a honey garlic marinade example)
+  const [recipe, setRecipe] = useState([
+    { id: 1, name: 'Garlic (cloves)', amount: '3' },
+    { id: 2, name: 'Honey (tbsp)', amount: '2' },
+    { id: 3, name: 'Soy Sauce (cup)', amount: '0.25' },
+    { id: 4, name: 'Pork / Chicken (lbs)', amount: '1.5' }
+  ]);
+
+  // Bake Time & Temp State
+  const [origTime, setOrigTime] = useState('45');
+  const [origBakeTemp, setOrigBakeTemp] = useState('350');
+  const [targetBakeTemp, setTargetBakeTemp] = useState('400');
 
   // --- Brine State ---
   const [meatGrams, setMeatGrams] = useState('1500');
@@ -43,19 +54,29 @@ function LifestyleCalc() {
 
   // --- CALCULATIONS ---
   
-  // Recipe
+  // Recipe Multiplier
   const origYNum = parseFloat(origYield) || 0;
   const targetYNum = parseFloat(targetYield) || 0;
   const multiplier = origYNum > 0 && targetYNum > 0 ? (targetYNum / origYNum) : 0;
-  const tempFNum = parseFloat(tempF) || 0;
-  const tempC = tempF ? ((tempFNum - 32) * (5 / 9)).toFixed(1) : '0.0';
-  const tempFanC = tempF ? (((tempFNum - 32) * (5 / 9)) - 20).toFixed(1) : '0.0';
-  const scaledSample = (parseFloat(sampleIngredient) || 0) * multiplier;
+
+  // Recipe Array Handlers
+  const addIngredient = () => setRecipe([...recipe, { id: Date.now(), name: '', amount: '' }]);
+  const updateIngredient = (id, field, value) => {
+    setRecipe(recipe.map(ing => ing.id === id ? { ...ing, [field]: value } : ing));
+  };
+  const removeIngredient = (id) => setRecipe(recipe.filter(ing => ing.id !== id));
+
+  // Time & Temp Adjuster
+  const oTime = parseFloat(origTime) || 0;
+  const oTemp = parseFloat(origBakeTemp) || 0;
+  const tTemp = parseFloat(targetBakeTemp) || 0;
+  const adjustedTime = (oTemp > 0 && tTemp > 0) ? (oTime * (oTemp / tTemp)).toFixed(1) : 0;
+  const tempC = oTemp ? ((oTemp - 32) * (5 / 9)).toFixed(1) : '0.0';
+  const tempFanC = oTemp ? (((oTemp - 32) * (5 / 9)) - 20).toFixed(1) : '0.0';
 
   // Brine
   const totalMass = (parseFloat(meatGrams) || 0) + (parseFloat(waterGrams) || 0);
   const saltRequired = ((totalMass * (parseFloat(salinity) || 0)) / 100).toFixed(1);
-  const approxSaltTbsp = (parseFloat(saltRequired) / 17).toFixed(1);
   const sugarRequired = includeSugar ? ((totalMass * 0.75) / 100).toFixed(1) : null;
 
   // Baker's Math
@@ -90,17 +111,15 @@ function LifestyleCalc() {
   const wKg = wtLbs / 2.205;
   const hCm = htIn * 2.54;
   
-  // BMI
   const bmi = htIn > 0 ? ((wtLbs * 703) / (htIn * htIn)).toFixed(1) : '0.0';
   let bmiClass = '#aaa';
   if (bmi > 0) {
-    if (bmi < 18.5) bmiClass = '#00e5ff'; // Underweight
-    else if (bmi < 25) bmiClass = '#00cc66'; // Normal
-    else if (bmi < 30) bmiClass = '#ffb703'; // Overweight
-    else bmiClass = '#d00000'; // Obese
+    if (bmi < 18.5) bmiClass = '#00e5ff';
+    else if (bmi < 25) bmiClass = '#00cc66';
+    else if (bmi < 30) bmiClass = '#ffb703';
+    else bmiClass = '#d00000';
   }
 
-  // TDEE & Macros
   let bmr = 0;
   if (wKg && hCm && aYrs) {
     bmr = (10 * wKg) + (6.25 * hCm) - (5 * aYrs);
@@ -113,19 +132,12 @@ function LifestyleCalc() {
   if (dietGoal === 'cut') targetKcal -= 500;
   if (dietGoal === 'bulk') targetKcal += 500;
 
-  // Basic Macro Split: 1g Protein per lb, 25% Fat, Rest Carbs
   const proGrams = Math.round(wtLbs);
   const fatGrams = Math.round((targetKcal * 0.25) / 9);
   const carbGrams = Math.round((targetKcal - (proGrams * 4) - (fatGrams * 9)) / 4);
 
   // Heart Rate
   const maxHR = aYrs > 0 ? 220 - aYrs : 0;
-  const z2Low = Math.round(maxHR * 0.6);
-  const z2High = Math.round(maxHR * 0.7);
-  const z3Low = Math.round(maxHR * 0.7);
-  const z3High = Math.round(maxHR * 0.8);
-  const z5Low = Math.round(maxHR * 0.9);
-  const z5High = maxHR;
 
   // Circadian
   const calculateSleepTimes = (wake) => {
@@ -153,9 +165,9 @@ function LifestyleCalc() {
 
       <div className="calc-content" style={{ padding: '16px', overflowY: 'auto', height: '100%', paddingBottom: '20px' }}>
 
-        {/* --- Card 1: Recipe Scaling & Oven Intel --- */}
+        {/* --- Card 1: Full Recipe Scaler --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #00e5ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>🍳 Recipe Scaler & Temp</h3>
+          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>🍳 Master Recipe Scaler</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             <div>
               <label style={{ color: '#00e5ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Original Yield</label>
@@ -166,33 +178,80 @@ function LifestyleCalc() {
               <input type="number" value={targetYield} onChange={(e) => setTargetYield(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
             </div>
           </div>
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Oven Temp (°F)</label>
-            <input type="number" value={tempF} onChange={(e) => setTempF(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', padding: '8px', background: '#0d0d0d', borderRadius: '8px', border: '1px solid #222' }}>
+            <span style={{ color: '#aaa' }}>Multiplier:</span>
+            <span style={{ color: '#00e5ff', fontWeight: 'bold' }}>{multiplier.toFixed(2)}x</span>
           </div>
-          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '12px', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ color: '#aaa' }}>Multiplier:</span><span style={{ color: '#00e5ff', fontWeight: 'bold' }}>{multiplier.toFixed(2)}x</span>
+
+          <div style={{ borderTop: '1px solid #333', paddingTop: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', color: '#888', fontSize: '0.75rem' }}>
+              <span style={{ flex: 2 }}>Ingredient</span>
+              <span style={{ flex: 1 }}>Amount</span>
+              <span style={{ flex: 1, textAlign: 'center' }}>Scaled</span>
+              <span style={{ width: '30px' }}></span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ color: '#aaa' }}>Celsius (Standard):</span><span style={{ color: '#ffb703', fontWeight: 'bold' }}>{tempC}°C</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#aaa' }}>Celsius (Fan/Convection):</span><span style={{ color: '#fb8500', fontWeight: 'bold' }}>{tempFanC}°C</span>
-            </div>
-          </div>
-          <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: '12px' }}>
-            <label style={{ color: '#888', fontSize: '0.75rem' }}>Quick Ingredient Scaler (Type any amount):</label>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-              <input type="number" placeholder="e.g. 2" value={sampleIngredient} onChange={(e) => setSampleIngredient(e.target.value)} style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} />
-              <div style={{ flex: 1, background: '#121212', border: '1px solid #222', padding: '8px', borderRadius: '6px', color: '#00e5ff', fontWeight: 'bold', textAlign: 'center' }}>
-                {scaledSample ? scaledSample.toFixed(2) : '--'}
+            {recipe.map((ing) => (
+              <div key={ing.id} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Item" 
+                  value={ing.name} 
+                  onChange={(e) => updateIngredient(ing.id, 'name', e.target.value)} 
+                  style={{ flex: 2, background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} 
+                />
+                <input 
+                  type="number" 
+                  placeholder="Amt" 
+                  value={ing.amount} 
+                  onChange={(e) => updateIngredient(ing.id, 'amount', e.target.value)} 
+                  style={{ flex: 1, background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} 
+                />
+                <div style={{ flex: 1, background: '#121212', border: '1px solid #222', padding: '8px', borderRadius: '6px', color: '#00e5ff', fontWeight: 'bold', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {ing.amount ? (parseFloat(ing.amount) * multiplier).toFixed(1) : '--'}
+                </div>
+                <button onClick={() => removeIngredient(ing.id)} style={{ width: '30px', background: '#d00000', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>X</button>
               </div>
+            ))}
+            <button onClick={addIngredient} style={{ width: '100%', padding: '10px', background: '#222', color: '#fff', border: '1px dashed #444', borderRadius: '8px', marginTop: '4px' }}>
+              + Add Ingredient
+            </button>
+          </div>
+        </div>
+
+        {/* --- Card 2: Bake Time & Temp Adjuster --- */}
+        <div style={{ background: '#181818', borderTop: '4px solid #ffb703', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>⏱️ Bake Time Adjuster</h3>
+          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Adjusts cooking time dynamically when you change the oven temperature.</p>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
+            <div>
+              <label style={{ color: '#aaa', fontSize: '0.75rem' }}>Orig Time (m)</label>
+              <input type="number" value={origTime} onChange={(e) => setOrigTime(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+            </div>
+            <div>
+              <label style={{ color: '#aaa', fontSize: '0.75rem' }}>Orig Temp (°F)</label>
+              <input type="number" value={origBakeTemp} onChange={(e) => setOrigBakeTemp(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+            </div>
+            <div>
+              <label style={{ color: '#ffb703', fontSize: '0.75rem', fontWeight: 'bold' }}>New Temp (°F)</label>
+              <input type="number" value={targetBakeTemp} onChange={(e) => setTargetBakeTemp(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+            </div>
+          </div>
+          
+          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ color: '#aaa' }}>Adjusted Bake Time:</span>
+              <span style={{ color: '#ffb703', fontWeight: 'bold', fontSize: '1.1rem' }}>{adjustedTime} min</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '8px' }}>
+              <span style={{ color: '#777', fontSize: '0.8rem' }}>Orig Temp Celsius:</span>
+              <span style={{ color: '#888', fontSize: '0.8rem' }}>{tempC}°C (Fan: {tempFanC}°C)</span>
             </div>
           </div>
         </div>
 
-        {/* --- Card 2: Equilibrium Brine --- */}
+        {/* --- Card 3: Equilibrium Brine --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #fb8500', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🥩 Equilibrium Brine</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
@@ -224,7 +283,7 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 3: Meat Done-ness --- */}
+        {/* --- Card 4: Meat Done-ness --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontSize: '1.1rem' }}>🌡️ Pull Temps (Field Guide)</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.75rem' }}>
@@ -243,7 +302,7 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 4: Baker's Percentages --- */}
+        {/* --- Card 5: Baker's Percentages --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #ffb703', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>🍞 Baker's Percentages</h3>
           <label style={{ color: '#ffb703', fontSize: '0.8rem', fontWeight: 'bold' }}>Total Flour (grams)</label>
@@ -272,7 +331,7 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 5: Master Culinary Converter --- */}
+        {/* --- Card 6: Master Culinary Converter --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #fff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>⚖️ Master Converter</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
@@ -326,7 +385,7 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 6: Kinetic Strength (1RM) --- */}
+        {/* --- Card 7: Kinetic Strength (1RM) --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #d00000', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>🏋️ Kinetic Strength (1RM)</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
@@ -350,7 +409,7 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 7: Metabolic, BMI & Diet Macros --- */}
+        {/* --- Card 8: Metabolic, BMI & Diet Macros --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🔥 Metabolic, BMI & Diet</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
@@ -401,7 +460,7 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 8: Cardio & Target Heart Rate Zones --- */}
+        {/* --- Card 9: Cardio & Target Heart Rate Zones --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #ff0055', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>❤️ Cardio & Heart Rate</h3>
           <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
@@ -411,20 +470,20 @@ function LifestyleCalc() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ color: '#aaa', fontSize: '0.85rem' }}>Zone 2 (Fat Burn / Endurance):</span>
-              <span style={{ color: '#00cc66', fontWeight: 'bold' }}>{z2Low} - {z2High}</span>
+              <span style={{ color: '#00cc66', fontWeight: 'bold' }}>{Math.round(maxHR * 0.6)} - {Math.round(maxHR * 0.7)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ color: '#aaa', fontSize: '0.85rem' }}>Zone 3 (Aerobic Cardio):</span>
-              <span style={{ color: '#ffb703', fontWeight: 'bold' }}>{z3Low} - {z3High}</span>
+              <span style={{ color: '#ffb703', fontWeight: 'bold' }}>{Math.round(maxHR * 0.7)} - {Math.round(maxHR * 0.8)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#aaa', fontSize: '0.85rem' }}>Zone 5 (VO2 Max / Sprints):</span>
-              <span style={{ color: '#d00000', fontWeight: 'bold' }}>{z5Low} - {z5High}</span>
+              <span style={{ color: '#d00000', fontWeight: 'bold' }}>{Math.round(maxHR * 0.9)} - {maxHR}</span>
             </div>
           </div>
         </div>
 
-        {/* --- Card 9: Circadian Shift Optimizer --- */}
+        {/* --- Card 10: Circadian Shift Optimizer --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #a600ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🌙 Circadian Shift</h3>
           <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Calculate exact sleep times based on 90-minute REM cycles.</p>
