@@ -10,10 +10,12 @@ function Dashboard() {
       try {
         await AdMob.initialize();
         await AdMob.showBanner({
-          adId: 'ca-app-pub-3940256099942544/6300978111',
+          // YOUR OFFICIAL ADMOB BANNER ID
+          adId: 'ca-app-pub-2156721625422799/4098150349',
           adSize: BannerAdSize.BANNER,
           position: BannerAdPosition.BOTTOM_CENTER,
           margin: 0,
+          // LEAVE THIS TRUE UNTIL APPROVED AND PUBLISHED ON THE PLAY STORE
           isTesting: true
         });
       } catch (e) {
