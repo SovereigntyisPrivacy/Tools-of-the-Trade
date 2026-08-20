@@ -49,7 +49,7 @@ function LifestyleCalc() {
         <h2>Lifestyle & Field Health</h2>
       </header>
 
-      <div className="calc-content" style={{ padding: '16px', overflowY: 'auto', height: '100%', paddingBottom: '140px' }}>
+      <div className="calc-content" style={{ padding: '16px', overflowY: 'auto', height: '100%', paddingBottom: '20px' }}>
 
         {/* --- Card 1: Recipe Scaling & Oven Intel --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #00e5ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
