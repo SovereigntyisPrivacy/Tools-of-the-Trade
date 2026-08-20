@@ -36,6 +36,10 @@ function LifestyleCalc() {
   // --- Circadian Shift State ---
   const [wakeTime, setWakeTime] = useState('');
 
+  // --- Converter State ---
+  const [convAmt, setConvAmt] = useState('1');
+  const [convUnit, setConvUnit] = useState('cup');
+
   // --- CALCULATIONS ---
   
   // Recipe
@@ -83,7 +87,6 @@ function LifestyleCalc() {
     const [h, m] = wake.split(':').map(Number);
     const wakeDate = new Date();
     wakeDate.setHours(h, m, 0, 0);
-    // 6 cycles (9h), 5 cycles (7.5h), 4 cycles (6h), 3 cycles (4.5h) + 15m fall asleep
     const cycles = [6, 5, 4, 3]; 
     return cycles.map(c => {
       const sleepTime = new Date(wakeDate.getTime() - (c * 90 * 60000) - (15 * 60000));
@@ -95,6 +98,23 @@ function LifestyleCalc() {
   };
   const sleepTimes = calculateSleepTimes(wakeTime);
 
+  // Converter Engine
+  const volRates = { ml: 1, L: 1000, tsp: 4.9289, tbsp: 14.7868, floz: 29.5735, cup: 236.588, pint: 473.176, quart: 946.353, gal: 3785.41 };
+  const wtRates = { g: 1, kg: 1000, oz: 28.3495, lb: 453.592 };
+  
+  const amtNum = parseFloat(convAmt) || 0;
+  const isVol = Object.keys(volRates).includes(convUnit);
+  
+  // Convert to base unit (ml or g) then divide to get targets
+  const baseValue = isVol ? amtNum * volRates[convUnit] : amtNum * wtRates[convUnit];
+
+  const formatConv = (val) => {
+    if (val < 0.1) return val.toFixed(3);
+    if (val < 10) return val.toFixed(2);
+    if (val < 100) return val.toFixed(1);
+    return Math.round(val);
+  };
+
   return (
     <div className="view-wrapper pb-safe">
       <header className="header">
@@ -102,7 +122,6 @@ function LifestyleCalc() {
         <h2>Lifestyle & Health</h2>
       </header>
 
-      {/* Reduced paddingBottom to 20px so the AdMob banner overlaps intentionally */}
       <div className="calc-content" style={{ padding: '16px', overflowY: 'auto', height: '100%', paddingBottom: '20px' }}>
 
         {/* --- Card 1: Recipe Scaling & Oven Intel --- */}
@@ -147,7 +166,7 @@ function LifestyleCalc() {
         {/* --- Card 2: Equilibrium Brine --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #fb8500', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🥩 Equilibrium Brine</h3>
-          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Zero-mistake salting. Meat will stop absorbing exactly at the target percentage.</p>
+          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Zero-mistake salting. Meat stops absorbing exactly at target percentage.</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             <div>
               <label style={{ color: '#fb8500', fontSize: '0.8rem', fontWeight: 'bold' }}>Meat (grams)</label>
@@ -183,7 +202,7 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 3: Meat Done-ness (Cheat Sheet) --- */}
+        {/* --- Card 3: Meat Done-ness --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontSize: '1.1rem' }}>🌡️ Pull Temps (Field Guide)</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.75rem' }}>
@@ -205,7 +224,7 @@ function LifestyleCalc() {
         {/* --- Card 4: Baker's Percentages --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #ffb703', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>🍞 Baker's Percentages</h3>
-          <label style={{ color: '#ffb703', fontSize: '0.8rem', fontWeight: 'bold' }}>Total Flour Weight (grams)</label>
+          <label style={{ color: '#ffb703', fontSize: '0.8rem', fontWeight: 'bold' }}>Total Flour (grams)</label>
           <input type="number" value={flourGrams} onChange={(e) => setFlourGrams(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginBottom: '14px' }} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
             <div>
@@ -231,7 +250,67 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 5: Kinetic Strength (1RM) --- */}
+        {/* --- Card 5: Master Culinary Converter --- */}
+        <div style={{ background: '#181818', borderTop: '4px solid #fff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>⚖️ Master Converter</h3>
+          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Enter a value, pick a unit, and get all equivalents instantly.</p>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+            <div>
+              <label style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>Amount</label>
+              <input type="number" value={convAmt} onChange={(e) => setConvAmt(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+            </div>
+            <div>
+              <label style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>Unit</label>
+              <select value={convUnit} onChange={(e) => setConvUnit(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }}>
+                <optgroup label="Volume">
+                  <option value="tsp">Teaspoons</option>
+                  <option value="tbsp">Tablespoons</option>
+                  <option value="floz">Fluid Ounces</option>
+                  <option value="cup">Cups (US)</option>
+                  <option value="pint">Pints (US)</option>
+                  <option value="quart">Quarts (US)</option>
+                  <option value="gal">Gallons (US)</option>
+                  <option value="ml">Milliliters</option>
+                  <option value="L">Liters</option>
+                </optgroup>
+                <optgroup label="Weight">
+                  <option value="g">Grams</option>
+                  <option value="kg">Kilograms</option>
+                  <option value="oz">Ounces (oz)</option>
+                  <option value="lb">Pounds (lb)</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          {/* Dynamic Converter Output */}
+          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
+            {isVol ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>tsp:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.tsp)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>tbsp:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.tbsp)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>fl oz:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.floz)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>cups:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.cup)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>pints:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.pint)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>quarts:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.quart)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>gallons:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.gal)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '4px', gridColumn: 'span 2' }}>
+                  <span style={{ color: '#aaa' }}>ml / Liters:</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{Math.round(baseValue)} ml / {(baseValue/1000).toFixed(3)} L</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', fontSize: '0.9rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Ounces (oz):</span><span style={{ color: '#ffb703' }}>{formatConv(baseValue / wtRates.oz)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Pounds (lbs):</span><span style={{ color: '#ffb703' }}>{formatConv(baseValue / wtRates.lb)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Grams (g):</span><span style={{ color: '#00cc66' }}>{Math.round(baseValue)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Kilograms (kg):</span><span style={{ color: '#00cc66' }}>{formatConv(baseValue / wtRates.kg)}</span></div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* --- Card 6: Kinetic Strength (1RM) --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #d00000', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>🏋️ Kinetic Strength (1RM)</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
@@ -255,10 +334,10 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 6: Metabolic & Hydration --- */}
+        {/* --- Card 7: Metabolic & Hydration --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🔥 Metabolic & Hydration</h3>
-          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Calculates exact Basal Metabolic Rate and harsh-environment hydration baselines.</p>
+          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Exact Basal Metabolic Rate and field hydration baselines.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
             <div>
               <label style={{ color: '#00e5ff', fontSize: '0.8rem' }}>Weight (lbs)</label>
@@ -293,10 +372,10 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 7: Circadian Shift Optimizer --- */}
+        {/* --- Card 8: Circadian Shift Optimizer --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #a600ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🌙 Circadian Shift Optimizer</h3>
-          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Calculates exact sleep initiation times based on 90-minute REM cycles to prevent grogginess. Critical for managing day-sleeping between overnight shifts.</p>
+          <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🌙 Circadian Shift</h3>
+          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Calculate exact sleep times based on 90-minute REM cycles.</p>
           <label style={{ color: '#a600ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Target Wake Up Time</label>
           <input type="time" value={wakeTime} onChange={(e) => setWakeTime(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '6px', marginBottom: '14px' }} />
           
