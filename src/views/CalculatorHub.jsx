@@ -16,6 +16,7 @@ function CalculatorHub() {
     { id: 'builder', icon: '🛠️', title: 'DIY & Builder', desc: 'Construction material estimators and tool logic.', path: '/calculator/builder' },
     { id: 'tech', icon: '💻', title: 'Tech & Network', desc: 'Bandwidth transfer times and IP subnet calculation.', path: '/calculator/tech' },
     { id: 'agronomy', icon: '🌿', title: 'Agronomy & Extract', desc: 'Botanical lighting, extraction yields, and volumetric dosing.', path: '/calculator/agronomy' },
+    { id: 'vehicle', icon: '🛻', title: 'Vehicle & Fleet', desc: 'Towing limits, tongue weight, trip cost, and winch recovery.', path: '/vehicle' },
     { id: 'math', icon: '🧮', title: 'Basic Math', desc: 'Standard mathematical operations and Field Equation Library.', path: '/calculator/math' }
   ];
 

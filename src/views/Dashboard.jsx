@@ -23,9 +23,7 @@ function Dashboard() {
     showBanner();
   }, []);
 
-  // Settings is removed from the grid and moved to the corner
   const tools = [
-    { id: "vehicle", name: "Vehicle & Fleet", path: "/vehicle", icon: "🛻" },
     { id: "schematics", name: "Schematics", path: "/schematics", icon: "📐" },
     { id: "cacher", name: "Zero-Signal Cacher", path: "/cacher", icon: "📡" },
     { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮" }
@@ -33,7 +31,6 @@ function Dashboard() {
 
   return (
     <div className="view-wrapper pb-safe">
-      {/* Floating Top-Right Settings Button */}
       <button className="corner-settings-btn" onClick={() => navigate('/settings')}>
         ⚙️
       </button>
