@@ -26,12 +26,13 @@ function LifestyleCalc() {
   const [liftWeight, setLiftWeight] = useState('225');
   const [liftReps, setLiftReps] = useState('5');
 
-  // --- Metabolic & Hydration State ---
+  // --- Health, Diet & Metabolic State ---
   const [bodyWeight, setBodyWeight] = useState('185');
   const [heightInches, setHeightInches] = useState('71');
   const [ageYears, setAgeYears] = useState('30');
   const [gender, setGender] = useState('M');
   const [activityLevel, setActivityLevel] = useState('1.55');
+  const [dietGoal, setDietGoal] = useState('maintain');
 
   // --- Circadian Shift State ---
   const [wakeTime, setWakeTime] = useState('');
@@ -64,22 +65,67 @@ function LifestyleCalc() {
   const yGrams = (fGrams * (parseFloat(yeastPct) || 0) / 100).toFixed(1);
   const totalDough = (fGrams + parseFloat(wGrams) + parseFloat(sGrams) + parseFloat(yGrams)).toFixed(1);
 
+  // Converter Engine
+  const volRates = { ml: 1, L: 1000, tsp: 4.9289, tbsp: 14.7868, floz: 29.5735, cup: 236.588, pint: 473.176, quart: 946.353, gal: 3785.41 };
+  const wtRates = { g: 1, kg: 1000, oz: 28.3495, lb: 453.592 };
+  const amtNum = parseFloat(convAmt) || 0;
+  const isVol = Object.keys(volRates).includes(convUnit);
+  const baseValue = isVol ? amtNum * volRates[convUnit] : amtNum * wtRates[convUnit];
+  const formatConv = (val) => {
+    if (val < 0.1) return val.toFixed(3);
+    if (val < 10) return val.toFixed(2);
+    if (val < 100) return val.toFixed(1);
+    return Math.round(val);
+  };
+
   // Strength
   const weightNum = parseFloat(liftWeight) || 0;
   const repsNum = parseFloat(liftReps) || 0;
   const oneRepMax = repsNum > 0 && weightNum > 0 ? Math.round(weightNum * (1 + repsNum / 30)) : 0;
 
-  // Metabolic
-  const wKg = (parseFloat(bodyWeight) || 0) / 2.205;
-  const hCm = (parseFloat(heightInches) || 0) * 2.54;
+  // Metabolic & Health
+  const wtLbs = parseFloat(bodyWeight) || 0;
+  const htIn = parseFloat(heightInches) || 0;
   const aYrs = parseFloat(ageYears) || 0;
+  const wKg = wtLbs / 2.205;
+  const hCm = htIn * 2.54;
+  
+  // BMI
+  const bmi = htIn > 0 ? ((wtLbs * 703) / (htIn * htIn)).toFixed(1) : '0.0';
+  let bmiClass = '#aaa';
+  if (bmi > 0) {
+    if (bmi < 18.5) bmiClass = '#00e5ff'; // Underweight
+    else if (bmi < 25) bmiClass = '#00cc66'; // Normal
+    else if (bmi < 30) bmiClass = '#ffb703'; // Overweight
+    else bmiClass = '#d00000'; // Obese
+  }
+
+  // TDEE & Macros
   let bmr = 0;
   if (wKg && hCm && aYrs) {
     bmr = (10 * wKg) + (6.25 * hCm) - (5 * aYrs);
     bmr += gender === 'M' ? 5 : -161;
   }
   const tdee = Math.round(bmr * parseFloat(activityLevel || 1.2));
-  const waterOz = Math.round((parseFloat(bodyWeight) || 0) * 0.5);
+  const waterOz = Math.round(wtLbs * 0.5);
+
+  let targetKcal = tdee;
+  if (dietGoal === 'cut') targetKcal -= 500;
+  if (dietGoal === 'bulk') targetKcal += 500;
+
+  // Basic Macro Split: 1g Protein per lb, 25% Fat, Rest Carbs
+  const proGrams = Math.round(wtLbs);
+  const fatGrams = Math.round((targetKcal * 0.25) / 9);
+  const carbGrams = Math.round((targetKcal - (proGrams * 4) - (fatGrams * 9)) / 4);
+
+  // Heart Rate
+  const maxHR = aYrs > 0 ? 220 - aYrs : 0;
+  const z2Low = Math.round(maxHR * 0.6);
+  const z2High = Math.round(maxHR * 0.7);
+  const z3Low = Math.round(maxHR * 0.7);
+  const z3High = Math.round(maxHR * 0.8);
+  const z5Low = Math.round(maxHR * 0.9);
+  const z5High = maxHR;
 
   // Circadian
   const calculateSleepTimes = (wake) => {
@@ -97,23 +143,6 @@ function LifestyleCalc() {
     });
   };
   const sleepTimes = calculateSleepTimes(wakeTime);
-
-  // Converter Engine
-  const volRates = { ml: 1, L: 1000, tsp: 4.9289, tbsp: 14.7868, floz: 29.5735, cup: 236.588, pint: 473.176, quart: 946.353, gal: 3785.41 };
-  const wtRates = { g: 1, kg: 1000, oz: 28.3495, lb: 453.592 };
-  
-  const amtNum = parseFloat(convAmt) || 0;
-  const isVol = Object.keys(volRates).includes(convUnit);
-  
-  // Convert to base unit (ml or g) then divide to get targets
-  const baseValue = isVol ? amtNum * volRates[convUnit] : amtNum * wtRates[convUnit];
-
-  const formatConv = (val) => {
-    if (val < 0.1) return val.toFixed(3);
-    if (val < 10) return val.toFixed(2);
-    if (val < 100) return val.toFixed(1);
-    return Math.round(val);
-  };
 
   return (
     <div className="view-wrapper pb-safe">
@@ -166,7 +195,6 @@ function LifestyleCalc() {
         {/* --- Card 2: Equilibrium Brine --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #fb8500', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🥩 Equilibrium Brine</h3>
-          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Zero-mistake salting. Meat stops absorbing exactly at target percentage.</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             <div>
               <label style={{ color: '#fb8500', fontSize: '0.8rem', fontWeight: 'bold' }}>Meat (grams)</label>
@@ -193,12 +221,6 @@ function LifestyleCalc() {
               <span style={{ color: '#aaa', fontWeight: 'bold' }}>Required Salt:</span>
               <span style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '1.2rem' }}>{saltRequired} grams</span>
             </div>
-            {includeSugar && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', borderTop: '1px solid #222', paddingTop: '8px' }}>
-                <span style={{ color: '#aaa', fontWeight: 'bold' }}>Required Sugar:</span>
-                <span style={{ color: '#ffb703', fontWeight: 'bold' }}>{sugarRequired} grams</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -253,8 +275,6 @@ function LifestyleCalc() {
         {/* --- Card 5: Master Culinary Converter --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #fff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>⚖️ Master Converter</h3>
-          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Enter a value, pick a unit, and get all equivalents instantly.</p>
-          
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             <div>
               <label style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>Amount</label>
@@ -283,8 +303,6 @@ function LifestyleCalc() {
               </select>
             </div>
           </div>
-
-          {/* Dynamic Converter Output */}
           <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
             {isVol ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.85rem' }}>
@@ -292,8 +310,6 @@ function LifestyleCalc() {
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>tbsp:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.tbsp)}</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>fl oz:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.floz)}</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>cups:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.cup)}</span></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>pints:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.pint)}</span></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>quarts:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.quart)}</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>gallons:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.gal)}</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '4px', gridColumn: 'span 2' }}>
                   <span style={{ color: '#aaa' }}>ml / Liters:</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{Math.round(baseValue)} ml / {(baseValue/1000).toFixed(3)} L</span>
@@ -315,7 +331,7 @@ function LifestyleCalc() {
           <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>🏋️ Kinetic Strength (1RM)</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             <div>
-              <label style={{ color: '#00e5ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Weight Lifted</label>
+              <label style={{ color: '#00e5ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Weight Lifted (lbs)</label>
               <input type="number" value={liftWeight} onChange={(e) => setLiftWeight(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
             </div>
             <div>
@@ -334,10 +350,9 @@ function LifestyleCalc() {
           </div>
         </div>
 
-        {/* --- Card 7: Metabolic & Hydration --- */}
+        {/* --- Card 7: Metabolic, BMI & Diet Macros --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🔥 Metabolic & Hydration</h3>
-          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Exact Basal Metabolic Rate and field hydration baselines.</p>
+          <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🔥 Metabolic, BMI & Diet</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
             <div>
               <label style={{ color: '#00e5ff', fontSize: '0.8rem' }}>Weight (lbs)</label>
@@ -363,16 +378,53 @@ function LifestyleCalc() {
               <option value="1.725">Heavy (6-7 days)</option>
             </select>
           </div>
+          
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ color: '#ffb703', fontSize: '0.8rem', fontWeight: 'bold' }}>Diet Goal</label>
+            <select value={dietGoal} onChange={(e) => setDietGoal(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '4px' }}>
+              <option value="cut">Cut (Caloric Deficit -500)</option>
+              <option value="maintain">Maintain Current Weight</option>
+              <option value="bulk">Bulk (Caloric Surplus +500)</option>
+            </select>
+          </div>
+
           <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Resting BMR:</span><span style={{ color: '#00e5ff', fontWeight: 'bold' }}>{Math.round(bmr)} kcal</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}><span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>Daily TDEE:</span><span style={{ color: '#ffb703', fontWeight: 'bold', fontSize: '1.1rem' }}>{tdee} kcal</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '10px' }}>
-              <span style={{ color: '#aaa' }}>Min Hydration:</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{waterOz} oz / day</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>BMI Score:</span><span style={{ color: bmiClass, fontWeight: 'bold' }}>{bmi}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Resting BMR:</span><span style={{ color: '#00e5ff' }}>{Math.round(bmr)} kcal</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}><span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>Target Intake:</span><span style={{ color: '#ffb703', fontWeight: 'bold', fontSize: '1.1rem' }}>{targetKcal} kcal</span></div>
+            
+            <div style={{ borderTop: '1px solid #333', paddingTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', textAlign: 'center' }}>
+              <div><div style={{ color: '#aaa', fontSize: '0.7rem' }}>Protein</div><div style={{ color: '#00cc66', fontWeight: 'bold' }}>{proGrams}g</div></div>
+              <div><div style={{ color: '#aaa', fontSize: '0.7rem' }}>Carbs</div><div style={{ color: '#00e5ff', fontWeight: 'bold' }}>{carbGrams}g</div></div>
+              <div><div style={{ color: '#aaa', fontSize: '0.7rem' }}>Fat</div><div style={{ color: '#ffb703', fontWeight: 'bold' }}>{fatGrams}g</div></div>
             </div>
           </div>
         </div>
 
-        {/* --- Card 8: Circadian Shift Optimizer --- */}
+        {/* --- Card 8: Cardio & Target Heart Rate Zones --- */}
+        <div style={{ background: '#181818', borderTop: '4px solid #ff0055', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>❤️ Cardio & Heart Rate</h3>
+          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '10px' }}>
+              <span style={{ color: '#aaa' }}>Absolute Max HR:</span>
+              <span style={{ color: '#ff0055', fontWeight: 'bold' }}>{maxHR} BPM</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <span style={{ color: '#aaa', fontSize: '0.85rem' }}>Zone 2 (Fat Burn / Endurance):</span>
+              <span style={{ color: '#00cc66', fontWeight: 'bold' }}>{z2Low} - {z2High}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <span style={{ color: '#aaa', fontSize: '0.85rem' }}>Zone 3 (Aerobic Cardio):</span>
+              <span style={{ color: '#ffb703', fontWeight: 'bold' }}>{z3Low} - {z3High}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: '#aaa', fontSize: '0.85rem' }}>Zone 5 (VO2 Max / Sprints):</span>
+              <span style={{ color: '#d00000', fontWeight: 'bold' }}>{z5Low} - {z5High}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* --- Card 9: Circadian Shift Optimizer --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #a600ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🌙 Circadian Shift</h3>
           <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Calculate exact sleep times based on 90-minute REM cycles.</p>
