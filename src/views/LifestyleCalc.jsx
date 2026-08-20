@@ -11,7 +11,7 @@ function LifestyleCalc() {
   const [recipe, setRecipe] = useState([
     { id: 1, name: 'Garlic', amount: '3', unit: 'cloves' },
     { id: 2, name: 'Honey', amount: '2', unit: 'tbsp' },
-    { id: 3, name: 'Soy Sauce', amount: '0.25', unit: 'cup' },
+    { id: 3, name: 'Soy Sauce', amount: '1/4', unit: 'cup' },
     { id: 4, name: 'Pork / Chicken', amount: '1.5', unit: 'lbs' }
   ]);
 
@@ -47,8 +47,26 @@ function LifestyleCalc() {
   const [wakeTime, setWakeTime] = useState('');
 
   // --- Converter State ---
-  const [convAmt, setConvAmt] = useState('12');
-  const [convUnit, setConvUnit] = useState('oz');
+  const [convAmt, setConvAmt] = useState('1 1/2');
+  const [convUnit, setConvUnit] = useState('cup');
+
+  // --- HELPER: Fraction Parser ---
+  const parseFraction = (val) => {
+    if (!val) return 0;
+    let str = val.toString().trim();
+    if (str.includes('/')) {
+      const parts = str.split(' ');
+      if (parts.length === 2) {
+        const [whole, frac] = parts;
+        const [num, den] = frac.split('/');
+        return parseFloat(whole) + (parseFloat(num) / parseFloat(den));
+      } else {
+        const [num, den] = str.split('/');
+        return parseFloat(num) / parseFloat(den);
+      }
+    }
+    return parseFloat(str) || 0;
+  };
 
   // --- CALCULATIONS ---
   
@@ -80,15 +98,35 @@ function LifestyleCalc() {
   // Converter Engine
   const volRates = { ml: 1, L: 1000, tsp: 4.9289, tbsp: 14.7868, floz: 29.5735, cup: 236.588, pint: 473.176, quart: 946.353, gal: 3785.41 };
   const wtRates = { g: 1, kg: 1000, oz: 28.3495, lb: 453.592 };
-  const amtNum = parseFloat(convAmt) || 0;
+  
+  const amtNum = parseFraction(convAmt);
   const isVol = Object.keys(volRates).includes(convUnit);
   const baseValue = isVol ? amtNum * volRates[convUnit] : amtNum * wtRates[convUnit];
+  
   const formatConv = (val) => {
+    if (val === 0) return "0";
     if (val < 0.1) return val.toFixed(3);
     if (val < 10) return val.toFixed(2);
     if (val < 100) return val.toFixed(1);
     return Math.round(val);
   };
+
+  // Extensive Ingredient Density Database (Grams per 1 Cup / 236.59ml)
+  const culinaryDensities = [
+    { label: 'Water/Liquids', gpc: 237, color: '#00e5ff' },
+    { label: 'Flour (AP)', gpc: 120, color: '#ccc' },
+    { label: 'White Sugar', gpc: 200, color: '#ccc' },
+    { label: 'Brown Sugar (Packed)', gpc: 220, color: '#ffb703' },
+    { label: 'Butter', gpc: 227, color: '#ffb703' },
+    { label: 'Oil (Olive/Veg)', gpc: 216, color: '#ffb703' },
+    { label: 'Honey / Syrup', gpc: 340, color: '#ffb703' },
+    { label: 'Dry Noodles', gpc: 90, color: '#ccc' },
+    { label: 'Rice (Uncooked)', gpc: 185, color: '#ccc' },
+    { label: 'Oats (Rolled)', gpc: 90, color: '#ccc' },
+    { label: 'Table Salt', gpc: 290, color: '#d00000' },
+    { label: 'Morton Kosher', gpc: 250, color: '#d00000' },
+    { label: 'Diamond Crystal', gpc: 135, color: '#00cc66' }
+  ];
 
   const weightNum = parseFloat(liftWeight) || 0;
   const repsNum = parseFloat(liftReps) || 0;
@@ -167,13 +205,13 @@ function LifestyleCalc() {
                   <button onClick={() => removeIngredient(ing.id)} style={{ width: '36px', background: '#d00000', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>X</button>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input type="number" placeholder="Amt" value={ing.amount} onChange={(e) => updateIngredient(ing.id, 'amount', e.target.value)} style={{ width: '65px', background: '#121212', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} />
+                  <input type="text" placeholder="Amt" value={ing.amount} onChange={(e) => updateIngredient(ing.id, 'amount', e.target.value)} style={{ width: '65px', background: '#121212', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} />
                   <select value={ing.unit} onChange={(e) => updateIngredient(ing.id, 'unit', e.target.value)} style={{ flex: 1, background: '#121212', border: '1px solid #333', color: '#ccc', padding: '8px', borderRadius: '6px' }}>
                     <option value="">- Unit -</option><option value="g">g</option><option value="kg">kg</option><option value="oz">oz</option><option value="lbs">lbs</option><option value="tsp">tsp</option><option value="tbsp">tbsp</option><option value="cup">cup</option><option value="ml">ml</option><option value="L">L</option><option value="cloves">cloves</option><option value="pinch">pinch</option><option value="pcs">pcs</option>
                   </select>
                   <span style={{ color: '#666' }}>→</span>
                   <div style={{ minWidth: '90px', background: '#00e5ff11', border: '1px solid #00e5ff55', padding: '8px', borderRadius: '6px', color: '#00e5ff', fontWeight: 'bold', textAlign: 'center' }}>
-                    {ing.amount ? `${(parseFloat(ing.amount) * multiplier).toFixed(1)} ${ing.unit}` : '--'}
+                    {ing.amount ? `${(parseFraction(ing.amount) * multiplier).toFixed(1)} ${ing.unit}` : '--'}
                   </div>
                 </div>
               </div>
@@ -207,6 +245,10 @@ function LifestyleCalc() {
             <select value={salinity} onChange={(e) => setSalinity(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }}>
               <option value="1.25">1.25% (Mild - Fish, Poultry Breast)</option><option value="1.50">1.5% (Standard Pork / Chicken)</option><option value="1.80">1.8% (Bold - Thick Beef Roasts)</option>
             </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+            <input type="checkbox" id="sugarCheck" checked={includeSugar} onChange={(e) => setIncludeSugar(e.target.checked)} />
+            <label htmlFor="sugarCheck" style={{ color: '#ccc', fontSize: '0.8rem' }}>Add balancing sweetener (+0.75%)</label>
           </div>
           <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span style={{ color: '#aaa', fontWeight: 'bold' }}>Required Salt:</span><span style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '1.2rem' }}>{saltRequired} grams</span></div>
@@ -245,10 +287,11 @@ function LifestyleCalc() {
         {/* --- Card 6: Master Culinary Converter --- */}
         <div style={{ background: '#181818', borderTop: '4px solid #fff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>⚖️ Master Converter</h3>
+          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Supports fractions (e.g., 1 1/2). Instantly bridges volume to weight.</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             <div>
               <label style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>Amount</label>
-              <input type="number" value={convAmt} onChange={(e) => setConvAmt(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+              <input type="text" placeholder="1 1/2" value={convAmt} onChange={(e) => setConvAmt(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
             </div>
             <div>
               <label style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>Unit</label>
@@ -269,14 +312,16 @@ function LifestyleCalc() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '4px', gridColumn: 'span 2' }}><span style={{ color: '#aaa' }}>ml / Liters:</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{Math.round(baseValue)} ml / {(baseValue/1000).toFixed(3)} L</span></div>
                 </div>
                 
-                {/* Volume to Weight Bridge */}
+                {/* Master Volume to Weight Bridge */}
                 <div style={{ borderTop: '1px solid #333', marginTop: '10px', paddingTop: '10px' }}>
-                  <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px' }}>Estimated Weight (grams):</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.8rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Water/Liquid:</span><span style={{ color: '#00cc66' }}>{Math.round(baseValue)}g</span></div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Flour (AP):</span><span style={{ color: '#00cc66' }}>{Math.round(baseValue * (120/236.6))}g</span></div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>White Sugar:</span><span style={{ color: '#00cc66' }}>{Math.round(baseValue * (200/236.6))}g</span></div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Dry Noodles:</span><span style={{ color: '#00cc66' }}>{Math.round(baseValue * (90/236.6))}g</span></div>
+                  <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px' }}>Estimated Weights:</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.75rem' }}>
+                    {culinaryDensities.map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', background: '#121212', padding: '4px 6px', borderRadius: '4px', border: '1px solid #222' }}>
+                        <span style={{ color: '#aaa' }}>{item.label}:</span>
+                        <span style={{ color: item.color, fontWeight: 'bold' }}>{Math.round((baseValue / volRates.cup) * item.gpc)}g</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </>
@@ -289,14 +334,16 @@ function LifestyleCalc() {
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Kilograms (kg):</span><span style={{ color: '#00cc66' }}>{formatConv(baseValue / wtRates.kg)}</span></div>
                 </div>
                 
-                {/* Weight to Volume Bridge */}
+                {/* Master Weight to Volume Bridge */}
                 <div style={{ borderTop: '1px solid #333', marginTop: '10px', paddingTop: '10px' }}>
-                  <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px' }}>Estimated Volume (Cups):</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.8rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Water/Liquid:</span><span style={{ color: '#00e5ff' }}>{(baseValue / 236.6).toFixed(2)}c</span></div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Flour (AP):</span><span style={{ color: '#00e5ff' }}>{(baseValue / 120).toFixed(2)}c</span></div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>White Sugar:</span><span style={{ color: '#00e5ff' }}>{(baseValue / 200).toFixed(2)}c</span></div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Dry Noodles:</span><span style={{ color: '#00e5ff' }}>{(baseValue / 90).toFixed(2)}c</span></div>
+                  <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px' }}>Estimated Volume (Cups):</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.75rem' }}>
+                    {culinaryDensities.map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', background: '#121212', padding: '4px 6px', borderRadius: '4px', border: '1px solid #222' }}>
+                        <span style={{ color: '#aaa' }}>{item.label}:</span>
+                        <span style={{ color: item.color, fontWeight: 'bold' }}>{((baseValue / item.gpc)).toFixed(2)}c</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </>
