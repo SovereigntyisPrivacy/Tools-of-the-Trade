@@ -9,7 +9,6 @@ const CalculatorHub = lazy(() => import('./views/CalculatorHub'));
 const TimesheetCalc = lazy(() => import('./views/TimesheetCalc'));
 const TaxCalc = lazy(() => import('./views/TaxCalc'));
 const SolarCalc = lazy(() => import('./views/SolarCalc'));
-const ElectricCalc = lazy(() => import('./views/ElectricCalc'));
 const ShootingCalc = lazy(() => import('./views/ShootingCalc'));
 const EngineeringCalc = lazy(() => import('./views/EngineeringCalc'));
 const NuclearCalc = lazy(() => import('./views/NuclearCalc'));
@@ -18,19 +17,21 @@ const LifestyleCalc = lazy(() => import('./views/LifestyleCalc'));
 const TechCalc = lazy(() => import('./views/TechCalc'));
 const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
 const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
-const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
-const GlobalSearch = lazy(() => import('./views/GlobalSearch'));
-const Vault = lazy(() => import('./views/Vault'));
-const PdfReader = lazy(() => import('./views/PdfReader'));
 
-// Databases
+// --- New Imports ---
+const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
+const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
+
+// Schematics Hubs
+const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
+const LabelSearch = lazy(() => import('./views/LabelSearch'));
 const ElectronicsDatabase = lazy(() => import('./views/ElectronicsDatabase'));
 const MechanicsDatabase = lazy(() => import('./views/MechanicsDatabase'));
-const VisualScanner = lazy(() => import('./views/VisualScanner'));
 const BotanyDatabase = lazy(() => import('./views/BotanyDatabase'));
 const PharmacologyDatabase = lazy(() => import('./views/PharmacologyDatabase'));
 const FirearmsDatabase = lazy(() => import('./views/FirearmsDatabase'));
 const SurvivalLibrary = lazy(() => import('./views/SurvivalLibrary'));
+const PdfReader = lazy(() => import('./views/PdfReader'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -38,7 +39,7 @@ function GlobalNav() {
   if (location.pathname === '/') return null;
   return (
     <button className="global-home-btn" onClick={() => navigate('/')}>
-      🏠 Home
+      🏠
     </button>
   );
 }
@@ -56,25 +57,20 @@ function App() {
               
               {/* Schematics & Databases */}
               <Route path="/schematics" element={<SchematicsHub />} />
-              <Route path="/schematics/search" element={<GlobalSearch />} />
+              <Route path="/schematics/search" element={<LabelSearch />} />
               <Route path="/schematics/electronics" element={<ElectronicsDatabase />} />
               <Route path="/schematics/mechanics" element={<MechanicsDatabase />} />
-              <Route path="/schematics/scanner" element={<VisualScanner />} />
               <Route path="/schematics/botany" element={<BotanyDatabase />} />
               <Route path="/schematics/pharmacology" element={<PharmacologyDatabase />} />
               <Route path="/schematics/firearms" element={<FirearmsDatabase />} />
               <Route path="/schematics/library" element={<SurvivalLibrary />} />
-              
-              {/* Vault */}
-              <Route path="/vault" element={<Vault />} />
-              <Route path="/vault/view/:fileName" element={<PdfReader />} />
-              
+              <Route path="/schematics/view/:fileName" element={<PdfReader />} />
+
               {/* Calculators */}
               <Route path="/calculator" element={<CalculatorHub />} />
               <Route path="/calculator/timesheet" element={<TimesheetCalc />} />
               <Route path="/calculator/tax" element={<TaxCalc />} />
               <Route path="/calculator/solar" element={<SolarCalc />} />
-              <Route path="/calculator/electric" element={<ElectricCalc />} />
               <Route path="/calculator/shooting" element={<ShootingCalc />} />
               <Route path="/calculator/engineering" element={<EngineeringCalc />} />
               <Route path="/calculator/nuclear" element={<NuclearCalc />} />
@@ -83,6 +79,11 @@ function App() {
               <Route path="/calculator/tech" element={<TechCalc />} />
               <Route path="/calculator/builder" element={<BuilderCalc />} />
               <Route path="/calculator/finance" element={<FinanceCalc />} />
+              
+              {/* New Standalone Modules */}
+              <Route path="/vehicle" element={<VehicleCalc />} />
+              <Route path="/calculator/agronomy" element={<AgronomyCalc />} />
+              
             </Routes>
           </Suspense>
         </Router>
