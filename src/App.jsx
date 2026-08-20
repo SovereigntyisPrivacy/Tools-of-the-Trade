@@ -18,13 +18,12 @@ const TechCalc = lazy(() => import('./views/TechCalc'));
 const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
 const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 
-// --- New Imports ---
+// --- New Standalone Modules ---
 const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
 const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
 
 // Schematics Hubs
 const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
-const LabelSearch = lazy(() => import('./views/LabelSearch'));
 const ElectronicsDatabase = lazy(() => import('./views/ElectronicsDatabase'));
 const MechanicsDatabase = lazy(() => import('./views/MechanicsDatabase'));
 const BotanyDatabase = lazy(() => import('./views/BotanyDatabase'));
@@ -57,7 +56,6 @@ function App() {
               
               {/* Schematics & Databases */}
               <Route path="/schematics" element={<SchematicsHub />} />
-              <Route path="/schematics/search" element={<LabelSearch />} />
               <Route path="/schematics/electronics" element={<ElectronicsDatabase />} />
               <Route path="/schematics/mechanics" element={<MechanicsDatabase />} />
               <Route path="/schematics/botany" element={<BotanyDatabase />} />
