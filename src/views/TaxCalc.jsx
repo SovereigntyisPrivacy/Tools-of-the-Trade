@@ -333,9 +333,24 @@ function TaxCalc() {
             <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>The IRS gives everyone a "free pass" on a chunk of their income where you pay $0 in federal tax. For 2026, a single filer gets their first $16,100 completely tax-free. You only pay taxes on the <em>Taxable Base (AGI)</em> left over.</p>
           </div>
 
-          <div>
+          <div style={{ marginBottom: '12px' }}>
             <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>Short vs. Long Term Capital Gains</strong>
             <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>If you sell a stock or crypto within 1 year of buying it, the profit is taxed at your high ordinary income rate (Short Term). If you hold it for over 1 year (Long Term), the IRS rewards you with a massive discount, dropping the tax rate down to 15% or even 0% depending on your total income!</p>
+          </div>
+
+          <div style={{ marginBottom: '12px' }}>
+            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>Tax Credits vs. Deductions</strong>
+            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>They are NOT the same. A <strong>Deduction</strong> just shrinks the pile of money you are taxed on (e.g., a $1,000 deduction might save you $220 in actual taxes). A <strong>Tax Credit</strong> is a dollar-for-dollar coupon. A $1,000 credit takes exactly $1,000 off your final tax bill. Always hunt for credits.</p>
+          </div>
+
+          <div style={{ marginBottom: '12px' }}>
+            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>The "Safe Harbor" Rule (Quarterly Taxes)</strong>
+            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>If you are a 1099 contractor or making big crypto gains, the IRS will fine you if you wait until April to pay your taxes. You must pay 4 times a year. To avoid the penalty, use the Safe Harbor rule: simply pay 100% of whatever your total tax bill was <em>last year</em> spread across four quarters, and you cannot be penalized, even if you make millions this year.</p>
+          </div>
+
+          <div>
+            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>The Wash Sale Trap</strong>
+            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>You cannot sell a stock or crypto for a massive loss to lower your taxes, and then buy that exact same asset back the very next day. The IRS calls this a "Wash Sale" and will completely delete your tax write-off. You must wait 30 days before buying it back.</p>
           </div>
         </div>
 
