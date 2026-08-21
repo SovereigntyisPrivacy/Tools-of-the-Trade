@@ -10,12 +10,10 @@ function Dashboard() {
       try {
         await AdMob.initialize();
         await AdMob.showBanner({
-          // YOUR OFFICIAL ADMOB BANNER ID
           adId: 'ca-app-pub-2156721625422799/4098150349',
           adSize: BannerAdSize.BANNER,
           position: BannerAdPosition.BOTTOM_CENTER,
           margin: 0,
-          // LEAVE THIS TRUE UNTIL APPROVED AND PUBLISHED ON THE PLAY STORE
           isTesting: true
         });
       } catch (e) {
@@ -38,7 +36,7 @@ function Dashboard() {
       </button>
       
       <header className="header" style={{ paddingTop: '40px' }}>
-        <h1 className="friendly-title" style={{ lineHeight: '1.2', paddingBottom: '10px' }}>Tools of the Trade</h1>
+        <h1 className="friendly-title" style={{ lineHeight: '1.2', paddingBottom: '10px' }}>T⚙️⚙️ls of the Trade</h1>
       </header>
 
       <div className="grid-container" style={{ marginTop: '40px' }}>
