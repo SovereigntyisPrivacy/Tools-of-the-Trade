@@ -1,236 +1,350 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function TaxCalc() {
   const navigate = useNavigate();
 
-  // 1. Sales Tax
-  const [price, setPrice] = useState('');
-  const [salesTaxRate, setSalesTaxRate] = useState('8.7');
+  // --- IRS Tax Engine State ---
+  const [gross, setGross] = useState('');
+  const [statePct, setStatePct] = useState('2.5');
+  const [status, setStatus] = useState('Single');
+  const [empType, setEmpType] = useState('W-2');
 
-  // 2. Marginal Income & IRS Schedule C Engine
-  const [grossIncome, setGrossIncome] = useState('');
-  const [stateTaxRate, setStateTaxRate] = useState('2.5'); // Default AZ Flat Rate
-  const [workerType, setWorkerType] = useState('W2'); 
-  const [filingStatus, setFilingStatus] = useState('Single');
-  const [milesDriven, setMilesDriven] = useState('');
-  const [bizExpenses, setBizExpenses] = useState('');
+  // --- Crypto & Cap Gains State ---
+  const [coinsMined, setCoinsMined] = useState('');
+  const [fmv, setFmv] = useState('');
+  const [costBasis, setCostBasis] = useState('');
+  const [soldFor, setSoldFor] = useState('');
+  const [capTerm, setCapTerm] = useState('Short');
 
-  // 3. Crypto Mining & Capital Gains
-  const [buyPrice, setBuyPrice] = useState('');
-  const [sellPrice, setSellPrice] = useState('');
-  const [holdingPeriod, setHoldingPeriod] = useState('Short'); 
-  const [minedCoins, setMinedCoins] = useState('');
-  const [coinFmv, setCoinFmv] = useState(''); // Fair Market Value at time of mining
-
-  // 4. Compound Interest
+  // --- Compound Wealth State ---
   const [principal, setPrincipal] = useState('1000');
-  const [monthlyContribution, setMonthlyContribution] = useState('100');
+  const [monthly, setMonthly] = useState('100');
   const [years, setYears] = useState('10');
   const [apy, setApy] = useState('7.0');
 
-  // --- Calculations ---
+  // --- Output State ---
+  const [solution, setSolution] = useState({
+    taxableBase: 0,
+    federalTax: 0,
+    stateTax: 0,
+    ficaTax: 0,
+    netTakeHome: 0,
+    effectiveRate: '0.0',
+    capGainsTax: 0,
+    grossProfit: 0,
+    netCleared: 0,
+    totalInvested: 0,
+    interestEarned: 0,
+    futureValue: 0
+  });
 
-  // 1. Sales Tax
-  let taxAdded = 0, totalCost = 0;
-  if (price && salesTaxRate) {
-    taxAdded = parseFloat(price) * (parseFloat(salesTaxRate) / 100);
-    totalCost = parseFloat(price) + taxAdded;
-  }
+  // --- Formatting Helper ---
+  const formatCur = (val) => '$' + Math.round(val).toLocaleString('en-US');
 
-  // 2. Schedule C & IRS Mileage Deductions (2024 Rate: $0.67/mile)
-  let scheduleCDeductions = 0;
-  if (workerType === '1099') {
-    const miles = parseFloat(milesDriven) || 0;
-    const expenses = parseFloat(bizExpenses) || 0;
-    scheduleCDeductions = (miles * 0.67) + expenses;
-  }
+  // --- MASTER CALCULATION ENGINE ---
+  useEffect(() => {
+    const gIncome = parseFloat(gross) || 0;
+    const sPct = parseFloat(statePct) || 0;
+    const cMined = parseFloat(coinsMined) || 0;
+    const cFmv = parseFloat(fmv) || 0;
+    const cBasis = parseFloat(costBasis) || 0;
+    const cSold = parseFloat(soldFor) || 0;
+    const p = parseFloat(principal) || 0;
+    const m = parseFloat(monthly) || 0;
+    const y = parseFloat(years) || 0;
+    const a = parseFloat(apy) || 0;
 
-  // 3. Mined Crypto (Ordinary Income)
-  let minedIncome = 0;
-  if (minedCoins && coinFmv) {
-    minedIncome = parseFloat(minedCoins) * parseFloat(coinFmv);
-  }
+    // 1. Ordinary Income Calculation
+    const miningIncome = cMined * cFmv;
+    const totalOrdinaryGross = gIncome + miningIncome;
 
-  // 4. Marginal Income Tax Engine
-  let federalTax = 0, stateTax = 0, ficaTax = 0, netIncome = 0, effectiveRate = 0, taxableIncome = 0;
-  let adjustedGross = (parseFloat(grossIncome) || 0) + minedIncome - scheduleCDeductions;
-  adjustedGross = Math.max(0, adjustedGross);
+    // 2. FICA / Self-Employment Tax (2025/2026 SS Wage Base: ~$176,100)
+    const SS_WAGE_BASE = 176100;
+    let ficaTax = 0;
+    let halfSeDeduction = 0;
 
-  if (adjustedGross > 0) {
-    const stdDeduction = filingStatus === 'Single' ? 14600 : 29200;
-    
-    // FICA / SE Tax
-    if (workerType === 'W2') {
-      ficaTax = adjustedGross * 0.0765;
-      taxableIncome = Math.max(0, adjustedGross - stdDeduction);
+    if (empType === 'W-2') {
+      const ssTax = Math.min(totalOrdinaryGross, SS_WAGE_BASE) * 0.062;
+      const medTax = totalOrdinaryGross * 0.0145;
+      ficaTax = ssTax + medTax;
     } else {
-      // 1099 SE Tax is calculated on 92.35% of net business income
-      ficaTax = (adjustedGross * 0.9235) * 0.153;
-      // IRS Loophole: Deduct 50% of SE tax from taxable income
-      taxableIncome = Math.max(0, adjustedGross - stdDeduction - (ficaTax / 2));
+      const seIncome = totalOrdinaryGross * 0.9235;
+      const ssTax = Math.min(seIncome, SS_WAGE_BASE) * 0.124;
+      const medTax = seIncome * 0.029;
+      ficaTax = ssTax + medTax;
+      halfSeDeduction = ficaTax / 2; // Above-the-line deduction
     }
 
-    stateTax = taxableIncome * (parseFloat(stateTaxRate) / 100);
+    // 3. Federal Income Tax (2026 Brackets)
+    let stdDeduction = 16100; // Single
+    if (status === 'MFJ') stdDeduction = 32200;
+    if (status === 'HOH') stdDeduction = 24150;
 
-    // IRS Progressive Brackets (Single)
-    let remaining = taxableIncome;
-    if (remaining > 0) { const b1 = Math.min(remaining, 11600); federalTax += b1 * 0.10; remaining -= b1; }
-    if (remaining > 0) { const b2 = Math.min(remaining, 47150 - 11600); federalTax += b2 * 0.12; remaining -= b2; }
-    if (remaining > 0) { const b3 = Math.min(remaining, 100525 - 47150); federalTax += b3 * 0.22; remaining -= b3; }
-    if (remaining > 0) { const b4 = Math.min(remaining, 191950 - 100525); federalTax += b4 * 0.24; remaining -= b4; }
-    if (remaining > 0) { federalTax += remaining * 0.32; }
+    const taxableOrdinary = Math.max(0, totalOrdinaryGross - stdDeduction - halfSeDeduction);
 
-    if (filingStatus === 'Joint') federalTax *= 0.85; // Simplified joint adjustment
+    const brackets = {
+      Single: [
+        { limit: 12400, rate: 0.10 }, { limit: 50400, rate: 0.12 }, { limit: 105700, rate: 0.22 },
+        { limit: 201775, rate: 0.24 }, { limit: 256225, rate: 0.32 }, { limit: 640600, rate: 0.35 }, { limit: Infinity, rate: 0.37 }
+      ],
+      MFJ: [
+        { limit: 24800, rate: 0.10 }, { limit: 100800, rate: 0.12 }, { limit: 211400, rate: 0.22 },
+        { limit: 403550, rate: 0.24 }, { limit: 512450, rate: 0.32 }, { limit: 768700, rate: 0.35 }, { limit: Infinity, rate: 0.37 }
+      ],
+      HOH: [
+        { limit: 17700, rate: 0.10 }, { limit: 67450, rate: 0.12 }, { limit: 105700, rate: 0.22 },
+        { limit: 201750, rate: 0.24 }, { limit: 256200, rate: 0.32 }, { limit: 640600, rate: 0.35 }, { limit: Infinity, rate: 0.37 }
+      ]
+    };
 
-    const totalTaxes = federalTax + stateTax + ficaTax;
-    netIncome = adjustedGross - totalTaxes;
-    effectiveRate = (totalTaxes / adjustedGross) * 100;
-  }
+    let fedTaxOrdinary = 0;
+    let remainingIncome = taxableOrdinary;
+    let prevLimit = 0;
 
-  // 5. Capital Gains
-  let grossProfit = 0, capGainsTax = 0, netProfit = 0;
-  if (buyPrice && sellPrice) {
-    grossProfit = parseFloat(sellPrice) - parseFloat(buyPrice);
+    for (const b of brackets[status]) {
+      const chunk = Math.min(Math.max(0, remainingIncome), b.limit - prevLimit);
+      fedTaxOrdinary += chunk * b.rate;
+      remainingIncome -= chunk;
+      prevLimit = b.limit;
+      if (remainingIncome <= 0) break;
+    }
+
+    // 4. Capital Gains Tax
+    const grossProfit = Math.max(0, cSold - cBasis);
+    let capGainsTax = 0;
+
     if (grossProfit > 0) {
-      const rate = holdingPeriod === 'Short' ? 0.22 : 0.15;
-      capGainsTax = grossProfit * rate;
-      netProfit = grossProfit - capGainsTax;
-    } else {
-      netProfit = grossProfit;
-    }
-  }
+      if (capTerm === 'Short') {
+        let shortTermRemaining = grossProfit;
+        let currentTaxable = taxableOrdinary;
+        let stPrevLimit = 0;
+        
+        for (const b of brackets[status]) {
+          if (currentTaxable > b.limit) {
+            stPrevLimit = b.limit;
+            continue;
+          }
+          const availableInBracket = b.limit - currentTaxable;
+          const chunk = Math.min(shortTermRemaining, availableInBracket);
+          capGainsTax += chunk * b.rate;
+          shortTermRemaining -= chunk;
+          currentTaxable += chunk;
+          if (shortTermRemaining <= 0) break;
+        }
+      } else {
+        // Long Term (0%, 15%, 20%) Stacking logic
+        const ltcgLimits = {
+          Single: [ { limit: 49450, rate: 0 }, { limit: 545500, rate: 0.15 }, { limit: Infinity, rate: 0.20 } ],
+          MFJ: [ { limit: 98900, rate: 0 }, { limit: 613700, rate: 0.15 }, { limit: Infinity, rate: 0.20 } ],
+          HOH: [ { limit: 66200, rate: 0 }, { limit: 579600, rate: 0.15 }, { limit: Infinity, rate: 0.20 } ]
+        };
 
-  // 6. Compound Interest
-  let futureValue = 0, totalInvested = 0, totalInterest = 0;
-  if (principal && years && apy) {
-    const P = parseFloat(principal), PMT = parseFloat(monthlyContribution) || 0;
-    const t = parseFloat(years), r = parseFloat(apy) / 100, n = 12;
-    const compoundPrincipal = P * Math.pow(1 + (r / n), n * t);
-    const compoundContributions = PMT * ((Math.pow(1 + (r / n), n * t) - 1) / (r / n));
-    
-    futureValue = compoundPrincipal + compoundContributions;
-    totalInvested = P + (PMT * 12 * t);
-    totalInterest = futureValue - totalInvested;
-  }
+        let ltRemaining = grossProfit;
+        let currentOrdinary = taxableOrdinary;
+
+        for (const b of ltcgLimits[status]) {
+          if (currentOrdinary >= b.limit) continue;
+          const availableInBracket = b.limit - currentOrdinary;
+          const chunk = Math.min(ltRemaining, availableInBracket);
+          capGainsTax += chunk * b.rate;
+          ltRemaining -= chunk;
+          currentOrdinary += chunk;
+          if (ltRemaining <= 0) break;
+        }
+      }
+    }
+
+    // 5. State Tax
+    const stateTax = totalOrdinaryGross * (sPct / 100);
+
+    // 6. Net Cleared & Take Home
+    const netCleared = grossProfit - capGainsTax;
+    const netTakeHome = totalOrdinaryGross - fedTaxOrdinary - stateTax - ficaTax + netCleared;
+
+    // 7. Effective Rate
+    const totalTaxPaid = fedTaxOrdinary + stateTax + ficaTax + capGainsTax;
+    const totalGrossAll = totalOrdinaryGross + grossProfit;
+    const effectiveRate = totalGrossAll > 0 ? ((totalTaxPaid / totalGrossAll) * 100).toFixed(1) : '0.0';
+
+    // 8. Compound Wealth
+    const rate = a / 100 / 12;
+    const periods = y * 12;
+    let fv = p;
+    if (rate > 0) {
+      fv = p * Math.pow(1 + rate, periods) + m * ((Math.pow(1 + rate, periods) - 1) / rate);
+    } else {
+      fv = p + (m * periods);
+    }
+    const totalInvested = p + (m * periods);
+    const interestEarned = Math.max(0, fv - totalInvested);
+
+    setSolution({
+      taxableBase: taxableOrdinary,
+      federalTax: fedTaxOrdinary,
+      stateTax: stateTax,
+      ficaTax: ficaTax,
+      netTakeHome: netTakeHome,
+      effectiveRate: effectiveRate,
+      capGainsTax: capGainsTax,
+      grossProfit: grossProfit,
+      netCleared: netCleared,
+      totalInvested: totalInvested,
+      interestEarned: interestEarned,
+      futureValue: fv
+    });
+
+  }, [gross, statePct, status, empType, coinsMined, fmv, costBasis, soldFor, capTerm, principal, monthly, years, apy]);
 
   return (
     <div className="view-wrapper pb-safe">
       <header className="header">
         <button className="back-btn" onClick={() => navigate('/calculator')}>← Hub</button>
-        <h2>Finance & Wealth</h2>
+        <h2>Certified IRS Tax Engine</h2>
       </header>
 
-      <div className="calc-content" style={{ padding: '20px', overflowY: 'auto', height: '100%', paddingBottom: '120px' }}>
-        
-        {/* 1. Master IRS Income Engine */}
-        <div style={{ background: 'rgba(20,20,20,0.8)', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-          <h3 style={{ color: '#fff', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>💼 Certified IRS Tax Engine</h3>
-          
-          <label style={{ display: 'block', color: '#00cc66', fontWeight: 'bold', fontSize: '0.85em', marginBottom: '4px' }}>Gross Annual Income ($)</label>
-          <input type="number" placeholder="e.g. 65000" value={grossIncome} onChange={e => setGrossIncome(e.target.value)} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px', marginBottom: '15px', fontSize: '1.1em' }} />
+      <div className="calc-content" style={{ padding: '16px', overflowY: 'auto', height: '100%', paddingBottom: '20px' }}>
 
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>State Tax (%)</label>
-              <input type="number" value={stateTaxRate} onChange={e => setStateTaxRate(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+        {/* --- Card 1: Main Tax Engine --- */}
+        <div style={{ background: '#181818', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem', textAlign: 'center' }}>💼 Certified IRS Tax Engine</h3>
+          
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ color: '#00cc66', fontSize: '0.8rem', fontWeight: 'bold' }}>Gross Annual Income ($)</label>
+            <input type="number" placeholder="e.g. 65000" value={gross} onChange={(e) => setGross(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '6px' }} />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+            <div>
+              <label style={{ color: '#aaa', fontSize: '0.8rem' }}>State Tax (%)</label>
+              <input type="number" step="0.1" value={statePct} onChange={(e) => setStatePct(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '6px' }} />
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Filing Status</label>
-              <select value={filingStatus} onChange={e => setFilingStatus(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }}>
+            <div>
+              <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Filing Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '6px' }}>
                 <option value="Single">Single</option>
-                <option value="Joint">Married / Joint</option>
+                <option value="MFJ">Married Jointly</option>
+                <option value="HOH">Head of Household</option>
               </select>
             </div>
           </div>
 
-          <label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Employment Type (FICA Matrix)</label>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <button onClick={() => setWorkerType('W2')} style={{ flex: 1, padding: '10px', background: workerType === 'W2' ? '#00cc66' : '#222', color: workerType === 'W2' ? '#000' : '#aaa', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>W-2 Employee</button>
-            <button onClick={() => setWorkerType('1099')} style={{ flex: 1, padding: '10px', background: workerType === '1099' ? '#ffaa00' : '#222', color: workerType === '1099' ? '#000' : '#aaa', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>1099 Contractor</button>
+          <div style={{ textAlign: 'center', marginBottom: '6px', color: '#aaa', fontSize: '0.8rem' }}>Employment Type (FICA Matrix)</div>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+            <button onClick={() => setEmpType('W-2')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: empType === 'W-2' ? '#00cc66' : '#222', color: empType === 'W-2' ? '#000' : '#888', fontWeight: 'bold' }}>W-2 Employee</button>
+            <button onClick={() => setEmpType('1099')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: empType === '1099' ? '#ffb703' : '#222', color: empType === '1099' ? '#000' : '#888', fontWeight: 'bold' }}>1099 Contractor</button>
           </div>
 
-          {workerType === '1099' && (
-            <div style={{ background: 'rgba(255, 170, 0, 0.1)', border: '1px solid #ffaa00', borderRadius: '8px', padding: '15px', marginBottom: '15px' }}>
-              <label style={{ display: 'block', color: '#ffaa00', fontWeight: 'bold', fontSize: '0.85em', marginBottom: '8px' }}>Schedule C Write-Offs (Pre-Tax)</label>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', color: '#aaa', fontSize: '0.8em', marginBottom: '4px' }}>Miles Driven</label>
-                  <input type="number" placeholder="e.g. 12000" value={milesDriven} onChange={e => setMilesDriven(e.target.value)} style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '5px' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', color: '#aaa', fontSize: '0.8em', marginBottom: '4px' }}>Biz Expenses ($)</label>
-                  <input type="number" placeholder="e.g. 4500" value={bizExpenses} onChange={e => setBizExpenses(e.target.value)} style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '5px' }} />
-                </div>
-              </div>
-              <div style={{ color: '#00cc66', fontSize: '0.85em', marginTop: '10px', fontWeight: 'bold' }}>Total Deductions: ${scheduleCDeductions.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1em' }}><span style={{ color: '#aaa' }}>Taxable Base (AGI):</span><span style={{ color: '#fff' }}>${taxableIncome.toLocaleString(undefined, {maximumFractionDigits: 0})}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1em' }}><span style={{ color: '#aaa' }}>Federal Tax:</span><span style={{ color: '#ff4444' }}>-${federalTax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1em' }}><span style={{ color: '#aaa' }}>State Tax:</span><span style={{ color: '#ff4444' }}>-${stateTax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1em' }}><span style={{ color: '#aaa' }}>FICA / SE Tax:</span><span style={{ color: '#ff4444' }}>-${ficaTax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span></div>
+          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px', fontFamily: 'monospace' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Taxable Base (AGI):</span><span style={{ color: '#fff' }}>{formatCur(solution.taxableBase)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Federal Tax:</span><span style={{ color: '#d00000' }}>-{formatCur(solution.federalTax)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>State Tax:</span><span style={{ color: '#d00000' }}>-{formatCur(solution.stateTax)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}><span style={{ color: '#aaa' }}>FICA / SE Tax:</span><span style={{ color: '#d00000' }}>-{formatCur(solution.ficaTax)}</span></div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', paddingTop: '10px', marginTop: '5px', borderTop: '1px solid #333' }}>
-              <span style={{ color: '#fff', fontWeight: 'bold' }}>Net Take-Home:</span>
-              <span style={{ color: '#00cc66', fontWeight: 'bold' }}>${netIncome > 0 ? netIncome.toLocaleString(undefined, {maximumFractionDigits: 0}) : 0}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '12px', alignItems: 'center' }}>
+              <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>Net Take-Home:</span>
+              <span style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '1.2rem' }}>{formatCur(solution.netTakeHome)}</span>
             </div>
-            <div style={{ color: '#888', fontSize: '0.8em', textAlign: 'center', marginTop: '5px' }}>True Effective Tax Rate: {(effectiveRate || 0).toFixed(1)}%</div>
-            {workerType === '1099' && <div style={{ color: '#888', fontSize: '0.7em', textAlign: 'center' }}>*Includes 50% SE Tax IRS Deduction</div>}
+            <div style={{ textAlign: 'center', marginTop: '10px', color: '#666', fontSize: '0.75rem' }}>True Effective Tax Rate: {solution.effectiveRate}%</div>
           </div>
         </div>
 
-        {/* 2. Crypto Mining & Capital Gains */}
-        <div style={{ background: 'rgba(20,20,20,0.8)', borderTop: '4px solid #a55eea', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-          <h3 style={{ color: '#fff', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>📈 Crypto Hash & Cap Gains</h3>
+        {/* --- Card 2: Crypto & Capital Gains --- */}
+        <div style={{ background: '#181818', borderTop: '4px solid #a600ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem', textAlign: 'center' }}>📈 Crypto Hash & Cap Gains</h3>
           
-          <div style={{ background: 'rgba(165, 94, 234, 0.1)', border: '1px dashed #a55eea', borderRadius: '8px', padding: '15px', marginBottom: '15px' }}>
-            <label style={{ display: 'block', color: '#a55eea', fontWeight: 'bold', fontSize: '0.85em', marginBottom: '8px' }}>Mined / Staked Coins (Ordinary Income)</label>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1 }}><input type="number" placeholder="Coins Mined" value={minedCoins} onChange={e => setMinedCoins(e.target.value)} style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '5px' }} /></div>
-              <div style={{ flex: 1 }}><input type="number" placeholder="FMV at receipt ($)" value={coinFmv} onChange={e => setCoinFmv(e.target.value)} style={{ width: '100%', padding: '8px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '5px' }} /></div>
+          <div style={{ border: '1px dashed #a600ff55', borderRadius: '8px', padding: '12px', marginBottom: '16px' }}>
+            <div style={{ color: '#a600ff', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '8px' }}>Mined / Staked Coins (Ordinary Income)</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <input type="number" placeholder="Coins Mined" value={coinsMined} onChange={(e) => setCoinsMined(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+              <input type="number" placeholder="FMV at receipt ($)" value={fmv} onChange={(e) => setFmv(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
             </div>
-            <div style={{ color: '#888', fontSize: '0.75em', marginTop: '8px' }}>*Mining value automatically added to Gross Taxable Income above.</div>
+            <div style={{ textAlign: 'center', marginTop: '8px', color: '#888', fontSize: '0.7rem' }}>*Mining value automatically added to Gross Taxable Income above.</div>
           </div>
 
-          <label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Asset Sale (Capital Gains)</label>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <input type="number" placeholder="Cost Basis ($)" value={buyPrice} onChange={e => setBuyPrice(e.target.value)} style={{ flex: 1, padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
-            <input type="number" placeholder="Sold For ($)" value={sellPrice} onChange={e => setSellPrice(e.target.value)} style={{ flex: 1, padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+          <div style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: '8px', textAlign: 'center' }}>Asset Sale (Capital Gains)</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+            <input type="number" placeholder="Cost Basis ($)" value={costBasis} onChange={(e) => setCostBasis(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+            <input type="number" placeholder="Sold For ($)" value={soldFor} onChange={(e) => setSoldFor(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <button onClick={() => setHoldingPeriod('Short')} style={{ flex: 1, padding: '10px', background: holdingPeriod === 'Short' ? '#ff4444' : '#222', color: holdingPeriod === 'Short' ? '#fff' : '#aaa', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>&lt; 1 Yr (Short)</button>
-            <button onClick={() => setHoldingPeriod('Long')} style={{ flex: 1, padding: '10px', background: holdingPeriod === 'Long' ? '#a55eea' : '#222', color: holdingPeriod === 'Long' ? '#fff' : '#aaa', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>&gt; 1 Yr (Long)</button>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+            <button onClick={() => setCapTerm('Short')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: capTerm === 'Short' ? '#ff4444' : '#222', color: capTerm === 'Short' ? '#fff' : '#888', fontWeight: 'bold' }}>&lt; 1 Yr (Short)</button>
+            <button onClick={() => setCapTerm('Long')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: capTerm === 'Long' ? '#444' : '#222', color: capTerm === 'Long' ? '#fff' : '#888', fontWeight: 'bold' }}>&gt; 1 Yr (Long)</button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1em' }}><span style={{ color: '#aaa' }}>Gross Profit:</span><span style={{ color: grossProfit >= 0 ? '#00cc66' : '#ff4444', fontWeight: 'bold' }}>${grossProfit.toLocaleString(undefined, {maximumFractionDigits: 2})}</span></div>
-            {grossProfit > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1em' }}><span style={{ color: '#aaa' }}>Cap Gains Tax:</span><span style={{ color: '#ff4444', fontWeight: 'bold' }}>-${capGainsTax.toLocaleString(undefined, {maximumFractionDigits: 2})}</span></div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', paddingTop: '8px', borderTop: '1px dashed #333' }}><span style={{ color: '#fff', fontWeight: 'bold' }}>Net Cleared:</span><span style={{ color: netProfit >= 0 ? '#00cc66' : '#ff4444', fontWeight: 'bold' }}>${netProfit.toLocaleString(undefined, {maximumFractionDigits: 2})}</span></div>
+          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px', fontFamily: 'monospace' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Gross Profit:</span><span style={{ color: '#00cc66' }}>{formatCur(solution.grossProfit)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#fff', fontWeight: 'bold' }}>Net Cleared:</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{formatCur(solution.netCleared)}</span></div>
           </div>
         </div>
 
-        {/* 3. Compound Interest */}
-        <div style={{ background: 'rgba(20,20,20,0.8)', borderTop: '4px solid #ffaa00', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-          <h3 style={{ color: '#fff', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>📈 Compound Wealth</h3>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#ffaa00', fontSize: '0.85em', marginBottom: '4px', fontWeight: 'bold' }}>Principal ($)</label><input type="number" value={principal} onChange={e => setPrincipal(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#00ffff', fontSize: '0.85em', marginBottom: '4px', fontWeight: 'bold' }}>Monthly Add ($)</label><input type="number" value={monthlyContribution} onChange={e => setMonthlyContribution(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
+        {/* --- Card 3: Compound Wealth --- */}
+        <div style={{ background: '#181818', borderTop: '4px solid #ffb703', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem', textAlign: 'center' }}>📈 Compound Wealth</h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+            <div>
+              <label style={{ color: '#ffb703', fontSize: '0.8rem', fontWeight: 'bold' }}>Principal ($)</label>
+              <input type="number" value={principal} onChange={(e) => setPrincipal(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '6px' }} />
+            </div>
+            <div>
+              <label style={{ color: '#00e5ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Monthly Add ($)</label>
+              <input type="number" value={monthly} onChange={(e) => setMonthly(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '6px' }} />
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Years to Grow</label><input type="number" value={years} onChange={e => setYears(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Est. APY (%)</label><input type="number" value={apy} onChange={e => setApy(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+            <div>
+              <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Years to Grow</label>
+              <input type="number" value={years} onChange={(e) => setYears(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '6px' }} />
+            </div>
+            <div>
+              <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Est. APY (%)</label>
+              <input type="number" step="0.1" value={apy} onChange={(e) => setApy(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '6px' }} />
+            </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1em' }}><span style={{ color: '#aaa' }}>Total Invested:</span><span style={{ color: '#fff', fontWeight: 'bold' }}>${totalInvested.toLocaleString(undefined, {maximumFractionDigits: 0})}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1em' }}><span style={{ color: '#aaa' }}>Interest Earned:</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>+${totalInterest > 0 ? totalInterest.toLocaleString(undefined, {maximumFractionDigits: 0}) : 0}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.3em', paddingTop: '10px', borderTop: '1px solid #333' }}><span style={{ color: '#fff', fontWeight: 'bold' }}>Future Value:</span><span style={{ color: '#ffaa00', fontWeight: 'bold' }}>${futureValue > 0 ? futureValue.toLocaleString(undefined, {maximumFractionDigits: 0}) : 0}</span></div>
+
+          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Total Invested:</span><span style={{ color: '#fff' }}>{formatCur(solution.totalInvested)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}><span style={{ color: '#aaa' }}>Interest Earned:</span><span style={{ color: '#00cc66' }}>+{formatCur(solution.interestEarned)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '10px', alignItems: 'center' }}>
+              <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>Future Value:</span>
+              <span style={{ color: '#ffb703', fontWeight: 'bold', fontSize: '1.2rem' }}>{formatCur(solution.futureValue)}</span>
+            </div>
           </div>
+        </div>
+
+        {/* --- Card 4: Layman's Educational Guide --- */}
+        <div style={{ background: '#181818', borderLeft: '4px solid #a600ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>📖 Layman's Tax Guide</h3>
+          
+          <div style={{ marginBottom: '12px' }}>
+            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>Marginal vs. Effective Rate</strong>
+            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>Taxes work like filling up buckets. If you enter the "22% bracket", ONLY the money that spills into that specific bucket is taxed at 22%. Your <strong>Effective Rate</strong> is the true average percentage of your total income that went to the government.</p>
+          </div>
+
+          <div style={{ marginBottom: '12px' }}>
+            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>W-2 vs. 1099 (Self-Employed)</strong>
+            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>As a W-2 employee, your boss secretly pays half of your Social Security & Medicare taxes. If you are a 1099 contractor, you must pay the full 15.3% yourself (known as SE Tax), but the IRS allows you to deduct half of it from your taxable base.</p>
+          </div>
+
+          <div style={{ marginBottom: '12px' }}>
+            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>The Standard Deduction</strong>
+            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>The IRS gives everyone a "free pass" on a chunk of their income where you pay $0 in federal tax. For 2026, a single filer gets their first $16,100 completely tax-free. You only pay taxes on the <em>Taxable Base (AGI)</em> left over.</p>
+          </div>
+
+          <div>
+            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>Short vs. Long Term Capital Gains</strong>
+            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>If you sell a stock or crypto within 1 year of buying it, the profit is taxed at your high ordinary income rate (Short Term). If you hold it for over 1 year (Long Term), the IRS rewards you with a massive discount, dropping the tax rate down to 15% or even 0% depending on your total income!</p>
+          </div>
+        </div>
+
+        {/* --- Card 5: Safety Disclaimer --- */}
+        <div style={{ background: '#220000', border: '1px solid #d00000', borderRadius: '8px', padding: '16px' }}>
+          <div style={{ color: '#ff4444', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '6px', textAlign: 'center' }}>⚠️ CRITICAL DISCLAIMER</div>
+          <p style={{ color: '#ffaaaa', fontSize: '0.75rem', margin: '0', lineHeight: '1.5', textAlign: 'justify' }}>
+            This engine utilizes standard 2026 IRS federal tax brackets and FICA guidelines. It is designed for educational and high-level estimation purposes only. State tax systems vary wildly, and this tool uses a flat percentage estimation. Real-world tax returns are deeply affected by pre-tax deductions (like 401ks), itemized deductions, AMT, and shifting tax credits. <strong>NEVER</strong> rely solely on a digital calculator for your official IRS filings. ALWAYS consult a Certified Public Accountant (CPA).
+          </p>
         </div>
 
       </div>
