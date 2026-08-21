@@ -33,6 +33,7 @@ const FirearmsDatabase = lazy(() => import('./views/FirearmsDatabase'));
 const SurvivalLibrary = lazy(() => import('./views/SurvivalLibrary'));
 const PdfReader = lazy(() => import('./views/PdfReader'));
 const SchoolHub = lazy(() => import('./views/SchoolHub'));
+const Vault = lazy(() => import('./views/Vault'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -67,6 +68,7 @@ function App() {
               <Route path="/schematics/library" element={<SurvivalLibrary />} />
               <Route path="/schematics/view/:fileName" element={<PdfReader />} />
               <Route path="/school" element={<SchoolHub />} />
+              <Route path="/vault" element={<Vault />} />
 
               {/* Calculators */}
               <Route path="/calculator" element={<CalculatorHub />} />

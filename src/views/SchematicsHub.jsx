@@ -14,6 +14,7 @@ function SchematicsHub() {
     { id: 'firearms', icon: '🔫', title: 'Firearms & Armory', desc: 'Weapon schematics, assembly/disassembly, and maintenance.', path: '/schematics/firearms' },
     { id: 'library', icon: '📚', title: 'Survival Library', desc: 'Field manuals, medical guides, and PDF reference books.', path: '/schematics/library' },
     { id: 'local', icon: '📁', title: 'Local SD Card Storage', desc: 'Browse and load your personally downloaded offline archives.', path: '/vault' }
+    { id: 'school', icon: '🏫', title: 'Open Education Archive', desc: 'Free K-12, College, and Public Domain textbooks.', path: '/school' },
   ];
 
   const handleSearch = (e) => {
