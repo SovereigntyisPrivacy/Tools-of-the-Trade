@@ -5,7 +5,7 @@ import './App.css';
 
 const Dashboard = lazy(() => import('./views/Dashboard'));
 const Settings = lazy(() => import('./views/Settings'));
-const CalculatorHub = lazy(() => import('./views/CalculatorHub'));
+const Calculatorhub = lazy(() => import('./views/Calculatorhub'));
 const TimesheetCalc = lazy(() => import('./views/TimesheetCalc'));
 const TaxCalc = lazy(() => import('./views/TaxCalc'));
 const SolarCalc = lazy(() => import('./views/SolarCalc'));
@@ -22,16 +22,17 @@ const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
 const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
 
-// Schematics Hubs
-const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
+// Schematics hubs
+const Schematicshub = lazy(() => import('./views/Schematicshub'));
 const VisualScanner = lazy(() => import('./views/VisualScanner'));
 const ElectronicsDatabase = lazy(() => import('./views/ElectronicsDatabase'));
 const MechanicsDatabase = lazy(() => import('./views/MechanicsDatabase'));
 const BotanyDatabase = lazy(() => import('./views/BotanyDatabase'));
+const PharmacologyDatabase = lazy(() => import('./views/PharmacologyDatabase'));
+const FirearmsDatabase = lazy(() => import('./views/FirearmsDatabase'));
 const SurvivalLibrary = lazy(() => import('./views/SurvivalLibrary'));
 const PdfReader = lazy(() => import('./views/PdfReader'));
 const SchoolHub = lazy(() => import('./views/SchoolHub'));
-const VisualScanner = lazy(() => import('./views/VisualScanner'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -54,10 +55,10 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
-              
+
               {/* Schematics & Databases */}
-              <Route path="/schematics" element={<SchematicsHub />} />
-        <Route path="/schematics/scanner" element={<VisualScanner />} />
+              <Route path="/schematics" element={<Schematicshub />} />
+              <Route path="/schematics/scanner" element={<VisualScanner />} />
               <Route path="/schematics/electronics" element={<ElectronicsDatabase />} />
               <Route path="/schematics/mechanics" element={<MechanicsDatabase />} />
               <Route path="/schematics/botany" element={<BotanyDatabase />} />
@@ -65,11 +66,10 @@ function App() {
               <Route path="/schematics/firearms" element={<FirearmsDatabase />} />
               <Route path="/schematics/library" element={<SurvivalLibrary />} />
               <Route path="/schematics/view/:fileName" element={<PdfReader />} />
-        <Route path="/school" element={<SchoolHub />} />
-        <Route path="/schematics/scanner" element={<VisualScanner />} />
+              <Route path="/school" element={<SchoolHub />} />
 
               {/* Calculators */}
-              <Route path="/calculator" element={<CalculatorHub />} />
+              <Route path="/calculator" element={<Calculatorhub />} />
               <Route path="/calculator/timesheet" element={<TimesheetCalc />} />
               <Route path="/calculator/tax" element={<TaxCalc />} />
               <Route path="/calculator/solar" element={<SolarCalc />} />
@@ -81,11 +81,11 @@ function App() {
               <Route path="/calculator/tech" element={<TechCalc />} />
               <Route path="/calculator/builder" element={<BuilderCalc />} />
               <Route path="/calculator/finance" element={<FinanceCalc />} />
-              
+
               {/* New Standalone Modules */}
               <Route path="/vehicle" element={<VehicleCalc />} />
               <Route path="/calculator/agronomy" element={<AgronomyCalc />} />
-              
+
             </Routes>
           </Suspense>
         </Router>
