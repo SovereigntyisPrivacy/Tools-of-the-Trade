@@ -5,7 +5,7 @@ import './App.css';
 
 const Dashboard = lazy(() => import('./views/Dashboard'));
 const Settings = lazy(() => import('./views/Settings'));
-const Calculatorhub = lazy(() => import('./views/Calculatorhub'));
+const CalculatorHub = lazy(() => import('./views/CalculatorHub'));
 const TimesheetCalc = lazy(() => import('./views/TimesheetCalc'));
 const TaxCalc = lazy(() => import('./views/TaxCalc'));
 const SolarCalc = lazy(() => import('./views/SolarCalc'));
@@ -23,7 +23,7 @@ const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
 const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
 
 // Schematics hubs
-const Schematicshub = lazy(() => import('./views/Schematicshub'));
+const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
 const VisualScanner = lazy(() => import('./views/VisualScanner'));
 const ElectronicsDatabase = lazy(() => import('./views/ElectronicsDatabase'));
 const MechanicsDatabase = lazy(() => import('./views/MechanicsDatabase'));
@@ -57,7 +57,7 @@ function App() {
               <Route path="/settings" element={<Settings />} />
 
               {/* Schematics & Databases */}
-              <Route path="/schematics" element={<Schematicshub />} />
+              <Route path="/schematics" element={<SchematicsHub />} />
               <Route path="/schematics/scanner" element={<VisualScanner />} />
               <Route path="/schematics/electronics" element={<ElectronicsDatabase />} />
               <Route path="/schematics/mechanics" element={<MechanicsDatabase />} />
@@ -69,7 +69,7 @@ function App() {
               <Route path="/school" element={<SchoolHub />} />
 
               {/* Calculators */}
-              <Route path="/calculator" element={<Calculatorhub />} />
+              <Route path="/calculator" element={<CalculatorHub />} />
               <Route path="/calculator/timesheet" element={<TimesheetCalc />} />
               <Route path="/calculator/tax" element={<TaxCalc />} />
               <Route path="/calculator/solar" element={<SolarCalc />} />
