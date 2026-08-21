@@ -1,4 +1,4 @@
-package com.tot.app;
+package com.xnoonex.toolsofthetrade;
 
 import com.getcapacitor.BridgeActivity;
 

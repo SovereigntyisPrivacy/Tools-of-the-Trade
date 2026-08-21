@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Tools of the Trade</string>
     <string name="title_activity_main">Tools of the Trade</string>
-    <string name="package_name">com.tot.app</string>
-    <string name="custom_url_scheme">com.tot.app</string>
+    <string name="package_name">com.xnoonex.toolsofthetrade</string>
+    <string name="custom_url_scheme">com.xnoonex.toolsofthetrade</string>
 </resources>
