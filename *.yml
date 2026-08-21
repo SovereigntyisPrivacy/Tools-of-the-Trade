@@ -1,0 +1,22 @@
+      - name: Build Release Bundle
+        run: cd android && ./gradlew bundleRelease
+
+      - name: Sign AAB
+        uses: r0adkll/sign-android-release@v1
+        id: sign_aab
+        with:
+          releaseDirectory: android/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.KEYSTORE }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Rename AAB
+        run: mv ${{steps.sign_aab.outputs.signedReleaseFile}} ToolsoftheTrade.aab
+
+      - name: Upload Signed AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ToolsoftheTrade-Signed-Bundle
+          path: ToolsoftheTrade.aab
+
