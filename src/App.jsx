@@ -29,7 +29,6 @@ const ElectronicsDatabase = lazy(() => import('./views/ElectronicsDatabase'));
 const MechanicsDatabase = lazy(() => import('./views/MechanicsDatabase'));
 const BotanyDatabase = lazy(() => import('./views/BotanyDatabase'));
 const PharmacologyDatabase = lazy(() => import('./views/PharmacologyDatabase'));
-const FirearmsDatabase = lazy(() => import('./views/FirearmsDatabase'));
 const SurvivalLibrary = lazy(() => import('./views/SurvivalLibrary'));
 const PdfReader = lazy(() => import('./views/PdfReader'));
 const SchoolHub = lazy(() => import('./views/SchoolHub'));
