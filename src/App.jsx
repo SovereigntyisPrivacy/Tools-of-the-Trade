@@ -24,6 +24,7 @@ const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
 
 // Schematics Hubs
 const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
+const VisualScanner = lazy(() => import('./views/VisualScanner'));
 const ElectronicsDatabase = lazy(() => import('./views/ElectronicsDatabase'));
 const MechanicsDatabase = lazy(() => import('./views/MechanicsDatabase'));
 const BotanyDatabase = lazy(() => import('./views/BotanyDatabase'));
@@ -31,6 +32,8 @@ const PharmacologyDatabase = lazy(() => import('./views/PharmacologyDatabase'));
 const FirearmsDatabase = lazy(() => import('./views/FirearmsDatabase'));
 const SurvivalLibrary = lazy(() => import('./views/SurvivalLibrary'));
 const PdfReader = lazy(() => import('./views/PdfReader'));
+const SchoolHub = lazy(() => import('./views/SchoolHub'));
+const VisualScanner = lazy(() => import('./views/VisualScanner'));
 
 function GlobalNav() {
   const location = useLocation();
@@ -56,6 +59,7 @@ function App() {
               
               {/* Schematics & Databases */}
               <Route path="/schematics" element={<SchematicsHub />} />
+        <Route path="/schematics/scanner" element={<VisualScanner />} />
               <Route path="/schematics/electronics" element={<ElectronicsDatabase />} />
               <Route path="/schematics/mechanics" element={<MechanicsDatabase />} />
               <Route path="/schematics/botany" element={<BotanyDatabase />} />
@@ -63,6 +67,8 @@ function App() {
               <Route path="/schematics/firearms" element={<FirearmsDatabase />} />
               <Route path="/schematics/library" element={<SurvivalLibrary />} />
               <Route path="/schematics/view/:fileName" element={<PdfReader />} />
+        <Route path="/school" element={<SchoolHub />} />
+        <Route path="/schematics/scanner" element={<VisualScanner />} />
 
               {/* Calculators */}
               <Route path="/calculator" element={<CalculatorHub />} />
