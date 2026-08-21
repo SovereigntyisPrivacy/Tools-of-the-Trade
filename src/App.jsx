@@ -36,10 +36,10 @@ const SchoolHub = lazy(() => import('./views/SchoolHub'));
 
 function GlobalNav() {
   const location = useLocation();
-  const navigate = useNavigate();
+  const useNavigateInstance = useNavigate();
   if (location.pathname === '/') return null;
   return (
-    <button className="global-home-btn" onClick={() => navigate('/')}>
+    <button className="global-home-btn" onClick={() => useNavigateInstance('/')}>
       🏠
     </button>
   );
