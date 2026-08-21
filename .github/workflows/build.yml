@@ -36,15 +36,18 @@ jobs:
       - name: Grant Execute Permission for Gradle
         run: cd android && chmod +x gradlew
 
-      - name: Build Release APK
+      - name: Build Release APK and AAB
         run: |
           cd android
           ./gradlew assembleRelease
+          ./gradlew bundleRelease
 
       - name: Sign Release APK
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
           BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+          
+          # Sign APK
           APK_IN=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           $BUILD_TOOLS/zipalign -v -p 4 "$APK_IN" android/app/build/outputs/apk/release/aligned.apk
           $BUILD_TOOLS/apksigner sign --ks android/app/release.keystore \
@@ -59,3 +62,9 @@ jobs:
         with:
           name: ToolsOfTheTrade-Signed-APK
           path: android/app/build/outputs/apk/release/ToolsOfTheTrade-Signed.apk
+
+      - name: Upload Release AAB (For Google Play)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ToolsOfTheTrade-Release-AAB
+          path: android/app/build/outputs/bundle/release/*.aab
