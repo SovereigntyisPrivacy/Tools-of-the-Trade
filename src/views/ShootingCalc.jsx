@@ -202,39 +202,62 @@ export default function ShootingCalc() {
             
             <div style={{...cardStyle, borderLeft: '4px solid #3b82f6', marginBottom: 0}}>
               <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>1. Firearm Classifications</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Handguns (Pistols & Revolvers):</strong> Designed to be fired with one hand without a shoulder stock. Typically used for concealed carry, personal defense, and duty sidearms.</p>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Handguns (Pistols & Revolvers):</strong> Designed to be fired with one hand. Typically used for concealed carry, personal defense, and duty sidearms.</p>
               <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Rifles (Long Guns):</strong> Designed to be fired from the shoulder with a rifled barrel (spiral grooves that spin the bullet). Used for hunting, long-range precision, and combat.</p>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Shotguns (Long Guns):</strong> Designed to be fired from the shoulder with a smoothbore barrel. Fires multiple pellets (shot) or a single heavy lead slug. Excellent for bird hunting and close-quarters defense.</p>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Shotguns (Long Guns):</strong> Designed to be fired from the shoulder with a smoothbore barrel. Fires multiple pellets (shot) or a single heavy lead slug. Excellent for close-quarters.</p>
             </div>
 
             <div style={{...cardStyle, borderLeft: '4px solid #f59e0b', marginBottom: 0}}>
               <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>2. Grains & Ballistics</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>A "Grain" (gr) is a unit of weight used for bullets and gunpowder. There are 7,000 grains in a pound. Heavier bullets (higher grain) travel slower but hit with more force and resist wind better. Lighter bullets are faster and shoot flatter, but lose energy quickly.</p>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>A "Grain" (gr) is a unit of weight. There are 7,000 grains in a pound. Heavier bullets (higher grain) travel slower but hit with more force and resist wind better. Lighter bullets are faster and shoot flatter, but lose energy quickly.</p>
             </div>
 
-            {/* NEW CALIBER SECTION */}
             <div style={{...cardStyle, borderLeft: '4px solid #10b981', marginBottom: 0}}>
               <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>3. The Caliber Cheat Sheet</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', marginBottom: '15px' }}>Caliber refers to the internal diameter of the barrel. Here is what you will actually see on the shelf and what it does:</p>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', marginBottom: '15px' }}>Caliber refers to the internal diameter of the barrel:</p>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.22 LR:</strong> A tiny "rimfire" cartridge. Almost zero recoil and dirt cheap. Perfect for training, plinking, or small varmints.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>9mm Luger:</strong> The undisputed global king of handguns. Offers the best balance of magazine capacity, manageable recoil, and defense capability.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>5.56x45mm NATO / .223 Rem:</strong> The standard AR-15 rifle round. Fires a light bullet at blistering speeds. Exceptional for home defense and medium game.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.308 Winchester / 7.62 NATO:</strong> The classic heavy-hitter. Fantastic for dropping large game or ringing steel targets out in the desert up to 800 yards.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>6.5 Creedmoor:</strong> The modern long-range cheat code. It fires a long, aerodynamic bullet that cuts through the wind and stays supersonic past 1,000 yards.</li>
-                <li><strong style={{color:'#fff'}}>12 Gauge:</strong> The universal shotgun shell. Can be loaded with tiny pellets (birdshot), heavy lead balls (00 Buckshot), or massive 1-ounce slugs.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.22 LR:</strong> A tiny "rimfire" cartridge. Almost zero recoil and dirt cheap. Perfect for training or plinking.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>9mm Luger:</strong> The undisputed global king of handguns. Offers the best balance of capacity and recoil.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>5.56x45mm NATO / .223 Rem:</strong> The standard AR-15 rifle round. Fires a light bullet at blistering speeds.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.308 Winchester / 7.62 NATO:</strong> The classic heavy-hitter. Fantastic for dropping large game or ringing steel out to 800 yards.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>6.5 Creedmoor:</strong> The modern long-range cheat code. It fires a highly aerodynamic bullet that stays supersonic past 1,000 yards.</li>
+                <li><strong style={{color:'#fff'}}>12 Gauge:</strong> The universal shotgun shell. Can be loaded with tiny pellets (birdshot), heavy lead balls (buckshot), or 1-ounce slugs.</li>
               </ul>
             </div>
 
-            <div style={{...cardStyle, borderLeft: '4px solid #ef4444'}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>4. Federal Legalities & The NFA</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>While out here you enjoy Constitutional Carry and zero state-level magazine bans, you still have to strictly obey federal National Firearms Act (NFA) laws.</p>
+            <div style={{...cardStyle, borderLeft: '4px solid #a855f7', marginBottom: 0}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>4. Optics & Sighting</h3>
+              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Red Dots & Holographics:</strong> 1x magnification. Infinite eye relief. You shoot with both eyes open for rapid target acquisition. Excellent for CQB (Close Quarters Battle).</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Prism Scopes:</strong> Fixed magnification (usually 3x or 4x). Uses an etched glass reticle, meaning it still works perfectly even if the battery dies. Great for shooters with astigmatism.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>LPVO (Low Power Variable Optic):</strong> Usually 1-6x or 1-8x magnification. The most versatile rifle optic. Can be used at 1x like a red dot, or dialed up to shoot at 500 yards.</li>
+                <li><strong style={{color:'#fff'}}>Precision Scopes (MPVO/HPVO):</strong> High magnification (e.g., 5-25x). Features exposed turrets so shooters can manually dial their Elevation and Windage DOPE for extreme long-range shots.</li>
+              </ul>
+            </div>
+
+            <div style={{...cardStyle, borderLeft: '4px solid #ef4444', marginBottom: 0}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>5. Federal NFA Regulations</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>Federal law applies everywhere. Violating the National Firearms Act (NFA) is a felony.</p>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
-                <li><strong>Standard Title I:</strong> Regular rifles (16"+ barrel), shotguns (18"+ barrel), and handguns. Require a standard ATF Form 4473 background check at a dealer.</li>
-                <li><strong>Title II (NFA Items):</strong> Requires an ATF Form 1 (to make) or Form 4 (to transfer), a $200 tax stamp, fingerprints, and months of waiting.</li>
-                <li><strong>SBRs & SBSs:</strong> A Short-Barreled Rifle has a barrel under 16 inches and a stock. A Short-Barreled Shotgun has a barrel under 18 inches. Both are NFA items.</li>
-                <li><strong>Suppressors:</strong> "Silencers" do not silence guns; they muffle the explosion to protect hearing. They are heavily restricted NFA items.</li>
-                <li><strong>Illegal Firearms:</strong> Unregistered NFA items carry a penalty of 10 years in federal prison. Post-1986 newly manufactured machine guns (fully automatic) are strictly illegal for civilians to own.</li>
+                <li><strong>Title I (Standard):</strong> Rifles (16"+ barrel), shotguns (18"+ barrel), and handguns. Require an ATF Form 4473 background check.</li>
+                <li><strong>Title II (NFA Items):</strong> Requires an ATF Form 1 (to make) or Form 4 (to transfer), a $200 tax stamp, fingerprints, and extensive waiting periods.</li>
+                <li><strong>SBRs & SBSs:</strong> Short-Barreled Rifles (under 16") and Short-Barreled Shotguns (under 18") with a stock are highly restricted NFA items.</li>
+                <li><strong>Suppressors:</strong> "Silencers" do not silence guns; they muffle the explosion. They are heavily restricted NFA items.</li>
+                <li><strong>Machine Guns:</strong> Post-1986 newly manufactured fully automatic weapons are strictly illegal for civilians to own.</li>
+              </ul>
+            </div>
+
+            <div style={{...cardStyle, borderLeft: '4px solid #eab308', marginBottom: 0}}>
+              <div style={{ background: 'rgba(234, 179, 8, 0.1)', padding: '10px', borderRadius: '8px', border: '1px dashed #eab308', marginBottom: '15px' }}>
+                <p style={{ color: '#eab308', fontSize: '0.85em', margin: 0, textAlign: 'justify', lineHeight: '1.4' }}><strong>DISCLAIMER:</strong> State laws and reciprocity agreements change constantly. This guide provides a generalized baseline. The developers are not lawyers. Always verify official, up-to-date local statutes before crossing state lines or carrying a firearm.</p>
+              </div>
+              <h3 style={{ margin: '0 0 10px 0', color: '#eab308' }}>6. State Laws & Reciprocity</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>State laws vary wildly. Crossing a border with a firearm legal in your state can be a felony in the next.</p>
+              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
+                <li style={{ marginBottom: '10px' }}><strong>Constitutional Carry:</strong> States like Arizona allow any legal gun owner over 21 to carry a concealed handgun without needing a permit.</li>
+                <li style={{ marginBottom: '10px' }}><strong>Shall-Issue:</strong> States that require a Concealed Carry Weapon (CCW) permit, but must issue it to you if you pass the background check and training.</li>
+                <li style={{ marginBottom: '10px' }}><strong>May-Issue / Strict States:</strong> States like California or New York heavily restrict permits, ban specific cosmetic rifle features (Assault Weapon Bans), and limit magazine capacities to 10 rounds.</li>
+                <li><strong>Reciprocity:</strong> Just because you have a CCW in your home state does not mean another state honors it. Always check a reciprocity map before traveling.</li>
               </ul>
             </div>
 
