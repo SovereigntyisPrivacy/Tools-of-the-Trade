@@ -1,3 +1,4 @@
+import Support from "./views/Support.jsx";
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './core/ThemeContext';
@@ -90,6 +91,7 @@ function App() {
               <Route path="/vehicle" element={<VehicleCalc />} />
               <Route path="/calculator/agronomy" element={<AgronomyCalc />} />
 
+        <Route path="/support" element={<Support />} />
             </Routes>
           </Suspense>
         </Router>
