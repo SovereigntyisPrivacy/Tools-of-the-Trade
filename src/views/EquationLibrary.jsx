@@ -5,26 +5,35 @@ export default function EquationLibrary() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('Physics');
 
-  const categories = ['Physics', 'Geometry', 'Electrical'];
+  const categories = ['Physics', 'Geometry', 'Electrical', 'Thermodynamics'];
 
   const formulas = {
     Physics: [
+      { name: "Kinematic Equation (Position)", eq: "x(t) = x₀ + v₀t + ½at²", vars: "x = position, v₀ = initial velocity, t = time, a = acceleration", desc: "Determines the position of an object under constant acceleration." },
       { name: "Kinetic Energy", eq: "KE = ½mv²", vars: "m = mass (kg), v = velocity (m/s)", desc: "Calculates the energy an object possesses due to its motion." },
       { name: "Newton's Second Law", eq: "F = ma", vars: "F = force (Newtons), m = mass (kg), a = acceleration (m/s²)", desc: "Determines the force required to accelerate a specific mass." },
       { name: "Work", eq: "W = Fd cos(θ)", vars: "F = force, d = displacement, θ = angle", desc: "Measures energy transfer when a force moves an object." },
-      { name: "Velocity", eq: "v = d/t", vars: "d = distance, t = time", desc: "The rate of change of an object's position." }
+      { name: "Momentum", eq: "p = mv", vars: "p = momentum, m = mass, v = velocity", desc: "The quantity of motion of a moving body." },
+      { name: "Gravitational Potential Energy", eq: "PE = mgh", vars: "m = mass, g = acceleration due to gravity (9.81 m/s²), h = height", desc: "Energy held by an object because of its position relative to other objects." }
     ],
     Geometry: [
       { name: "Pythagorean Theorem", eq: "a² + b² = c²", vars: "a, b = legs, c = hypotenuse", desc: "Finds the length of the longest side of a right-angled triangle." },
       { name: "Area of a Circle", eq: "A = πr²", vars: "r = radius", desc: "Total space enclosed within a circle." },
       { name: "Volume of a Cylinder", eq: "V = πr²h", vars: "r = radius, h = height", desc: "Calculates the capacity of a cylindrical object like a pipe or tank." },
-      { name: "Surface Area of a Sphere", eq: "SA = 4πr²", vars: "r = radius", desc: "The total area of the outside of a 3D sphere." }
+      { name: "Surface Area of a Sphere", eq: "SA = 4πr²", vars: "r = radius", desc: "The total area of the outside of a 3D sphere." },
+      { name: "Volume of a Cone", eq: "V = ⅓πr²h", vars: "r = radius, h = height", desc: "Calculates the volume of a conical shape." }
     ],
     Electrical: [
       { name: "Ohm's Law", eq: "V = IR", vars: "V = voltage (Volts), I = current (Amps), R = resistance (Ohms)", desc: "The foundational law connecting voltage, current, and resistance in a circuit." },
       { name: "Electrical Power", eq: "P = VI", vars: "P = power (Watts), V = voltage, I = current", desc: "Calculates the rate at which electrical energy is transferred by a circuit." },
       { name: "Resistors in Series", eq: "R_total = R₁ + R₂ + ...", vars: "R = individual resistance", desc: "Total resistance when components are wired end-to-end." },
-      { name: "Resistors in Parallel", eq: "1/R_total = 1/R₁ + 1/R₂ + ...", vars: "R = individual resistance", desc: "Total resistance when components are wired across each other." }
+      { name: "Resistors in Parallel", eq: "1/R_total = 1/R₁ + 1/R₂ + ...", vars: "R = individual resistance", desc: "Total resistance when components are wired across each other." },
+      { name: "Capacitance", eq: "C = Q/V", vars: "C = capacitance (Farads), Q = charge (Coulombs), V = voltage", desc: "Measures the ability of a system to store an electric charge." },
+      { name: "Frequency from Period", eq: "f = 1/T", vars: "f = frequency (Hz), T = period (seconds)", desc: "The number of occurrences of a repeating event per unit of time." }
+    ],
+    Thermodynamics: [
+      { name: "Ideal Gas Law", eq: "PV = nRT", vars: "P = pressure, V = volume, n = amount of substance, R = ideal gas constant, T = temperature", desc: "The equation of state of a hypothetical ideal gas." },
+      { name: "Specific Heat Capacity", eq: "q = mcΔT", vars: "q = heat energy, m = mass, c = specific heat capacity, ΔT = change in temperature", desc: "The heat required to raise the temperature of the unit mass of a given substance by a given amount." }
     ]
   };
 

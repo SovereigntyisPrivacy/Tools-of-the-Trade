@@ -5,14 +5,15 @@ export default function MathCalc() {
   const navigate = useNavigate();
   const [expression, setExpression] = useState('');
   const [result, setResult] = useState('0');
+  const [calculationHistory, setCalculationHistory] = useState([]);
   const scrollRef = useRef(null);
 
-  // Auto-scroll the expression box to the bottom as you type
+  // Auto-scroll the history box to the bottom when new items are added
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [expression]);
+  }, [calculationHistory, expression]);
 
   const handlePress = (val) => {
     setExpression((prev) => prev + val);
@@ -21,6 +22,12 @@ export default function MathCalc() {
   const handleClear = () => {
     setExpression('');
     setResult('0');
+  };
+
+  const handleClearAll = () => {
+    setExpression('');
+    setResult('0');
+    setCalculationHistory([]);
   };
 
   const handleDelete = () => {
@@ -37,11 +44,19 @@ export default function MathCalc() {
 
       const calcResult = Function(`'use strict'; return (${sanitized})`)();
       
+      let finalResult = '0';
       if (Number.isInteger(calcResult)) {
-        setResult(calcResult.toString());
+        finalResult = calcResult.toString();
       } else {
-        setResult(parseFloat(calcResult.toFixed(8)).toString());
+        finalResult = parseFloat(calcResult.toFixed(8)).toString();
       }
+
+      setResult(finalResult);
+      
+      // Add to history
+      setCalculationHistory(prev => [...prev, { expr: expression, res: finalResult }]);
+      setExpression(finalResult); // Setup the next calculation to start with the result
+
     } catch (e) {
       setResult('Error');
     }
@@ -62,23 +77,34 @@ export default function MathCalc() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px' }}>
         
         {/* SCROLLABLE DISPLAY SCREEN */}
-        <div style={{ background: '#111', borderRadius: '16px', padding: '15px 20px', marginBottom: '20px', border: '1px solid #333', textAlign: 'right', height: '180px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ background: '#111', borderRadius: '16px', padding: '15px 20px', marginBottom: '20px', border: '1px solid #333', textAlign: 'right', display: 'flex', flexDirection: 'column', flex: 1, maxHeight: '35vh' }}>
           
+          {/* HISTORY AREA */}
           <div 
             ref={scrollRef}
-            style={{ color: '#888', fontSize: '1.3em', flex: 1, overflowY: 'auto', wordWrap: 'break-word', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '10px', scrollbarWidth: 'none' }}
+            style={{ color: '#888', fontSize: '1.1em', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', scrollbarWidth: 'none', borderBottom: '1px dashed #333', paddingBottom: '10px', marginBottom: '10px' }}
           >
+            {calculationHistory.map((item, index) => (
+              <div key={index} style={{ marginBottom: '8px' }}>
+                <div style={{ color: '#666' }}>{item.expr}</div>
+                <div style={{ color: '#00cc66', fontWeight: 'bold' }}>= {item.res}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* CURRENT INPUT */}
+          <div style={{ color: '#fff', fontSize: '1.5em', wordWrap: 'break-word', minHeight: '1.5em' }}>
             {expression || '0'}
           </div>
           
-          <div style={{ color: '#00ffff', fontSize: '2.5em', fontWeight: 'bold', wordWrap: 'break-word', borderTop: '1px solid #333', paddingTop: '10px' }}>
+          <div style={{ color: '#00ffff', fontSize: '2.5em', fontWeight: 'bold', wordWrap: 'break-word', marginTop: '5px' }}>
             {result}
           </div>
         </div>
 
         {/* KEYPAD GRID */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', flex: 1 }}>
-          <button onClick={handleClear} style={actionStyle}>AC</button>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+          <button onClick={handleClear} onDoubleClick={handleClearAll} style={actionStyle}>AC</button>
           <button onClick={handleDelete} style={{...actionStyle, background: '#f59e0b'}}>DEL</button>
           <button onClick={() => handlePress('%')} style={opStyle}>%</button>
           <button onClick={() => handlePress('÷')} style={opStyle}>÷</button>
