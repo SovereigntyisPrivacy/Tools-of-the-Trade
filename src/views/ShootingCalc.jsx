@@ -192,6 +192,13 @@ export default function ShootingCalc() {
         {/* ========================================== */}
         {activeTab === 'Guide' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+            <div style={{...cardStyle, borderTop: '4px solid #fff', borderBottom: '4px solid #fff', background: 'rgba(255, 255, 255, 0.05)', padding: '25px 20px' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '1.2em' }}>The Second Amendment</h3>
+              <p style={{ color: '#fff', fontSize: '1.15em', lineHeight: '1.6', fontStyle: 'italic', textAlign: 'center', fontWeight: 'bold', margin: 0 }}>
+                "A well regulated Militia, being necessary to the security of a free State, the right of the people to keep and bear Arms, shall not be infringed."
+              </p>
+            </div>
             
             <div style={{...cardStyle, borderLeft: '4px solid #3b82f6'}}>
               <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>1. Firearm Classifications</h3>
