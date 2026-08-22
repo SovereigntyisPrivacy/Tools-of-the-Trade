@@ -177,7 +177,7 @@ export default function TaxCalc() {
             </div>
             <div style={{ borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '15px' }}>
               <div style={flexWrap}>
-                <div style={inputWrap}><label style={labelStyle}>Solar Install Cost<input type="number" placeholder="$0" value={solarCost} onChange={e => setSolarCost(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>Solar / Battery Install Cost<input type="number" placeholder="$0" value={solarCost} onChange={e => setSolarCost(e.target.value)} style={inputStyle} /></label></div>
                 <div style={inputWrap}><label style={labelStyle}>Edu Credits<input type="number" placeholder="$0" value={eduCredits} onChange={e => setEduCredits(e.target.value)} style={inputStyle} /></label></div>
               </div>
             </div>
@@ -227,29 +227,30 @@ export default function TaxCalc() {
           {showGuide && (
             <div style={{ padding: '20px', color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>
               
-              <h4 style={{ color: '#00cc66', margin: '0 0 5px 0' }}>Standard vs. Itemized Deductions</h4>
-              <p style={{ marginBottom: '15px' }}>The IRS gives everyone a default discount on their taxable income called the <strong>Standard Deduction</strong> (e.g., $16,100 for singles in 2026). However, if your individual write-offs—like heavy property taxes, massive medical bills, or high mortgage interest—add up to <em>more</em> than $16,100, you should "Itemize" to get the bigger tax break. This calculator automatically picks whichever option saves you the most money.</p>
+              <h4 style={{ color: '#00cc66', margin: '0 0 5px 0' }}>The "Big Refund" Trap</h4>
+              <p style={{ marginBottom: '15px' }}>A massive tax refund isn't a gift from the government; it means you overpaid out of your paycheck all year and gave the IRS an interest-free loan. You can adjust your W-4 with your employer to hold less out of your checks, giving you more take-home pay every week to invest or pay off debt.</p>
 
-              <h4 style={{ color: '#a855f7', margin: '0 0 5px 0' }}>Marginal vs. Effective Tax Rates</h4>
-              <p style={{ marginBottom: '15px' }}>Federal taxes fill up in progressive "buckets." Just because your top dollar hits the 24% bracket doesn't mean <em>all</em> your money is taxed at 24%—only the money inside that specific bucket. Your <strong>Effective Rate</strong> (shown on Step 4) is the true average percentage of your total income that actually went to the government.</p>
-              
-              <h4 style={{ color: '#3b82f6', margin: '0 0 5px 0' }}>State Tax Variations</h4>
-              <p style={{ marginBottom: '15px' }}>Unlike the federal bucket system, some states use a "Flat Tax." For example, Arizona charges a flat 2.5% across the board, no matter how much you make. Other states, like Texas or California, have their own aggressive progressive brackets. Always check your local state rate before estimating.</p>
-              
-              <h4 style={{ color: '#00ffff', margin: '0 0 5px 0' }}>The 1099 Pass-Through Loophole</h4>
-              <p style={{ marginBottom: '15px' }}>If you are a 1099 worker (freelancer, gig worker, consultant), you get hit with a 15.3% Self-Employment (FICA) tax right out of the gate. However, the IRS lets you subtract 50% of that tax from your gross income, AND gives you a 20% Qualified Business Income (QBI) deduction on your net profits. Always track your business expenses (mileage, tools, software) to lower that initial profit number.</p>
+              <h4 style={{ color: '#a855f7', margin: '0 0 5px 0' }}>The HSA "Triple-Tax" Cheat Code</h4>
+              <p style={{ marginBottom: '15px' }}>If you have a High Deductible Health Plan, a Health Savings Account (HSA) is arguably the greatest tax shelter available. The money goes in tax-free, it can be invested to grow tax-free, and it comes out completely tax-free if used for medical expenses.</p>
+
+              <h4 style={{ color: '#3b82f6', margin: '0 0 5px 0' }}>Solar & Battery Backup Credits</h4>
+              <p style={{ marginBottom: '15px' }}>Installing permanent solar panels or massive off-grid home battery systems qualifies for the Residential Clean Energy Credit. You can deduct up to 30% of the total installation and hardware cost directly off your final tax bill (this is a true dollar-for-dollar credit, not just a deduction).</p>
 
               <h4 style={{ color: '#f59e0b', margin: '0 0 5px 0' }}>Hardware & Home Office Write-Offs</h4>
-              <p style={{ marginBottom: '15px' }}>If you build a custom PC rig specifically for AI inference, graphic design, or hashing, and you operate as a registered sole proprietor or LLC, that hardware is a business deduction. Furthermore, if you use a dedicated area of your home <em>exclusively</em> for that business, you can deduct a percentage of your rent, internet, and off-grid power/solar setups as a Home Office expense.</p>
+              <p style={{ marginBottom: '15px' }}>If you build a custom PC rig specifically for AI inference, graphic design, or hashing, and you operate as a registered sole proprietor or LLC, that hardware is a business deduction. Furthermore, if you use a dedicated area of your home <em>exclusively</em> for that business, you can deduct a percentage of your rent, internet, and power.</p>
+              
+              <h4 style={{ color: '#00ffff', margin: '0 0 5px 0' }}>Automated Audit Red Flags</h4>
+              <p style={{ marginBottom: '15px' }}>When writing off business expenses as a 1099 worker, never use perfect "round numbers" (e.g., claiming exactly $1,000 for supplies or exactly $500 for tools), and never claim 100% business use on a personal cell phone or vehicle. The IRS uses automated algorithms to flag these exact anomalies for audits.</p>
 
               <h4 style={{ color: '#ef4444', margin: '0 0 5px 0' }}>Crypto & "Taxable Events"</h4>
               <p style={{ marginBottom: '15px' }}>Simply buying cryptocurrency and holding it is not taxed. A "Taxable Event" only occurs when you <strong>sell it for fiat cash</strong>, <strong>swap it for another coin</strong> (e.g., trading BTC for Monero), or <strong>buy a physical good</strong> with it. Furthermore, if you <em>mine</em> or <em>hash</em> crypto yourself, the Fair Market Value of the coin on the exact day it hits your wallet is taxed as standard income.</p>
 
               <h4 style={{ color: '#ef4444', margin: '0 0 5px 0' }}>Short-Term vs. Long-Term Gains</h4>
-              <p style={{ marginBottom: '15px' }}>If you buy an asset (stocks, crypto, property) and sell it in under 365 days, your profits are taxed at your standard, expensive income tax bracket (Short-Term). If you hold the asset for exactly 1 year and 1 day, the IRS rewards you with the Long-Term Capital Gains rate, which is significantly cheaper (often 0% or 15% for average earners).</p>
+              <p style={{ marginBottom: '15px' }}>If you buy an asset (stocks, crypto, property) and sell it in under 365 days, your profits are taxed at your standard, expensive income tax bracket. If you hold the asset for exactly 1 year and 1 day, the IRS rewards you with the Long-Term Capital Gains rate, which is significantly cheaper (often 0% or 15% for average earners).</p>
 
               <h4 style={{ color: '#ef4444', margin: '0 0 5px 0' }}>Loss Harvesting</h4>
               <p style={{ margin: 0 }}>If you sell crypto or stocks at a massive loss, you don't just lose money. The IRS allows you to deduct up to $3,000 of those "realized losses" directly against your regular W-2 paycheck income every single year, lowering your overall tax burden.</p>
+
             </div>
           )}
         </div>
