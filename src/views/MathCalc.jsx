@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function MathCalc() {
   const navigate = useNavigate();
   const [expression, setExpression] = useState('');
   const [result, setResult] = useState('0');
+  const scrollRef = useRef(null);
+
+  // Auto-scroll the expression box to the bottom as you type
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [expression]);
 
   const handlePress = (val) => {
     setExpression((prev) => prev + val);
@@ -21,12 +29,14 @@ export default function MathCalc() {
 
   const handleCalculate = () => {
     try {
-      // Note: In a production financial app, avoid raw eval(). 
-      // For a basic math utility running client-side, it functions.
-      const sanitized = expression.replace(/×/g, '*').replace(/÷/g, '/');
+      let sanitized = expression.replace(/×/g, '*').replace(/÷/g, '/');
+      
+      // Safety catch: strip any trailing operators before calculating
+      sanitized = sanitized.replace(/[+\-*/.]$/, '');
+      if (!sanitized) return;
+
       const calcResult = Function(`'use strict'; return (${sanitized})`)();
       
-      // Handle decimals cleanly
       if (Number.isInteger(calcResult)) {
         setResult(calcResult.toString());
       } else {
@@ -51,12 +61,17 @@ export default function MathCalc() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px' }}>
         
-        {/* DISPLAY SCREEN */}
-        <div style={{ background: '#111', borderRadius: '16px', padding: '20px', marginBottom: '20px', border: '1px solid #333', textAlign: 'right', minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div style={{ color: '#888', fontSize: '1.2em', minHeight: '1.2em', wordWrap: 'break-word' }}>
+        {/* SCROLLABLE DISPLAY SCREEN */}
+        <div style={{ background: '#111', borderRadius: '16px', padding: '15px 20px', marginBottom: '20px', border: '1px solid #333', textAlign: 'right', height: '180px', display: 'flex', flexDirection: 'column' }}>
+          
+          <div 
+            ref={scrollRef}
+            style={{ color: '#888', fontSize: '1.3em', flex: 1, overflowY: 'auto', wordWrap: 'break-word', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '10px', scrollbarWidth: 'none' }}
+          >
             {expression || '0'}
           </div>
-          <div style={{ color: '#00ffff', fontSize: '2.5em', fontWeight: 'bold', marginTop: '10px', wordWrap: 'break-word' }}>
+          
+          <div style={{ color: '#00ffff', fontSize: '2.5em', fontWeight: 'bold', wordWrap: 'break-word', borderTop: '1px solid #333', paddingTop: '10px' }}>
             {result}
           </div>
         </div>
@@ -66,12 +81,12 @@ export default function MathCalc() {
           <button onClick={handleClear} style={actionStyle}>AC</button>
           <button onClick={handleDelete} style={{...actionStyle, background: '#f59e0b'}}>DEL</button>
           <button onClick={() => handlePress('%')} style={opStyle}>%</button>
-          <button onClick={() => handlePress('/')} style={opStyle}>÷</button>
+          <button onClick={() => handlePress('÷')} style={opStyle}>÷</button>
 
           <button onClick={() => handlePress('7')} style={btnStyle}>7</button>
           <button onClick={() => handlePress('8')} style={btnStyle}>8</button>
           <button onClick={() => handlePress('9')} style={btnStyle}>9</button>
-          <button onClick={() => handlePress('*')} style={opStyle}>×</button>
+          <button onClick={() => handlePress('×')} style={opStyle}>×</button>
 
           <button onClick={() => handlePress('4')} style={btnStyle}>4</button>
           <button onClick={() => handlePress('5')} style={btnStyle}>5</button>
