@@ -193,37 +193,47 @@ export default function ShootingCalc() {
         {activeTab === 'Guide' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-            <div style={{...cardStyle, borderTop: '4px solid #fff', borderBottom: '4px solid #fff', background: 'rgba(255, 255, 255, 0.05)', padding: '25px 20px' }}>
+            <div style={{...cardStyle, borderTop: '4px solid #fff', borderBottom: '4px solid #fff', background: 'rgba(255, 255, 255, 0.05)', padding: '25px 20px', marginBottom: 0 }}>
               <h3 style={{ margin: '0 0 15px 0', color: '#fff', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '1.2em' }}>The Second Amendment</h3>
               <p style={{ color: '#fff', fontSize: '1.15em', lineHeight: '1.6', fontStyle: 'italic', textAlign: 'center', fontWeight: 'bold', margin: 0 }}>
                 "A well regulated Militia, being necessary to the security of a free State, the right of the people to keep and bear Arms, shall not be infringed."
               </p>
             </div>
             
-            <div style={{...cardStyle, borderLeft: '4px solid #3b82f6'}}>
+            <div style={{...cardStyle, borderLeft: '4px solid #3b82f6', marginBottom: 0}}>
               <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>1. Firearm Classifications</h3>
               <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Handguns (Pistols & Revolvers):</strong> Designed to be fired with one hand without a shoulder stock. Typically used for concealed carry, personal defense, and duty sidearms.</p>
               <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Rifles (Long Guns):</strong> Designed to be fired from the shoulder with a rifled barrel (spiral grooves that spin the bullet). Used for hunting, long-range precision, and combat.</p>
               <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Shotguns (Long Guns):</strong> Designed to be fired from the shoulder with a smoothbore barrel. Fires multiple pellets (shot) or a single heavy lead slug. Excellent for bird hunting and close-quarters defense.</p>
             </div>
 
-            <div style={{...cardStyle, borderLeft: '4px solid #f59e0b'}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>2. Grains & Caliber Logic</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>A "Grain" (gr) is a unit of weight used for bullets and gunpowder. There are 7,000 grains in a pound.</p>
-              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
-                <li><strong>9mm Handgun:</strong> Typically 115gr for cheap range plinking. Defense loads use 124gr or 147gr because heavier bullets hit harder and penetrate deeper.</li>
-                <li><strong>.308 / 7.62 NATO Rifle:</strong> Standard military ball ammo is 147gr. Precision shooters use 168gr or 175gr. A heavier bullet resists wind deflection better over a 1,000-yard distance.</li>
+            <div style={{...cardStyle, borderLeft: '4px solid #f59e0b', marginBottom: 0}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>2. Grains & Ballistics</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>A "Grain" (gr) is a unit of weight used for bullets and gunpowder. There are 7,000 grains in a pound. Heavier bullets (higher grain) travel slower but hit with more force and resist wind better. Lighter bullets are faster and shoot flatter, but lose energy quickly.</p>
+            </div>
+
+            {/* NEW CALIBER SECTION */}
+            <div style={{...cardStyle, borderLeft: '4px solid #10b981', marginBottom: 0}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>3. The Caliber Cheat Sheet</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', marginBottom: '15px' }}>Caliber refers to the internal diameter of the barrel. Here is what you will actually see on the shelf and what it does:</p>
+              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.22 LR:</strong> A tiny "rimfire" cartridge. Almost zero recoil and dirt cheap. Perfect for training, plinking, or small varmints.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>9mm Luger:</strong> The undisputed global king of handguns. Offers the best balance of magazine capacity, manageable recoil, and defense capability.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>5.56x45mm NATO / .223 Rem:</strong> The standard AR-15 rifle round. Fires a light bullet at blistering speeds. Exceptional for home defense and medium game.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.308 Winchester / 7.62 NATO:</strong> The classic heavy-hitter. Fantastic for dropping large game or ringing steel targets out in the desert up to 800 yards.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>6.5 Creedmoor:</strong> The modern long-range cheat code. It fires a long, aerodynamic bullet that cuts through the wind and stays supersonic past 1,000 yards.</li>
+                <li><strong style={{color:'#fff'}}>12 Gauge:</strong> The universal shotgun shell. Can be loaded with tiny pellets (birdshot), heavy lead balls (00 Buckshot), or massive 1-ounce slugs.</li>
               </ul>
             </div>
 
             <div style={{...cardStyle, borderLeft: '4px solid #ef4444'}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>3. Federal Legalities & The NFA</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>While out here in Arizona you enjoy Constitutional Carry and zero state-level magazine bans, you still have to strictly obey federal National Firearms Act (NFA) laws.</p>
+              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>4. Federal Legalities & The NFA</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>While out here you enjoy Constitutional Carry and zero state-level magazine bans, you still have to strictly obey federal National Firearms Act (NFA) laws.</p>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
                 <li><strong>Standard Title I:</strong> Regular rifles (16"+ barrel), shotguns (18"+ barrel), and handguns. Require a standard ATF Form 4473 background check at a dealer.</li>
                 <li><strong>Title II (NFA Items):</strong> Requires an ATF Form 1 (to make) or Form 4 (to transfer), a $200 tax stamp, fingerprints, and months of waiting.</li>
-                <li><strong>SBRs & SBSs:</strong> A Short-Barreled Rifle has a barrel under 16 inches and a stock. A Short-Barreled Shotgun has a barrel under 18 inches. Both are highly restricted NFA items.</li>
-                <li><strong>Suppressors:</strong> "Silencers" do not silence guns, they muffle the explosion to protect hearing. They are heavily restricted NFA items.</li>
+                <li><strong>SBRs & SBSs:</strong> A Short-Barreled Rifle has a barrel under 16 inches and a stock. A Short-Barreled Shotgun has a barrel under 18 inches. Both are NFA items.</li>
+                <li><strong>Suppressors:</strong> "Silencers" do not silence guns; they muffle the explosion to protect hearing. They are heavily restricted NFA items.</li>
                 <li><strong>Illegal Firearms:</strong> Unregistered NFA items carry a penalty of 10 years in federal prison. Post-1986 newly manufactured machine guns (fully automatic) are strictly illegal for civilians to own.</li>
               </ul>
             </div>
