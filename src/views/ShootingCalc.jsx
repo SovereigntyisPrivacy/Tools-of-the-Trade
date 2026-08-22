@@ -10,7 +10,6 @@ export default function ShootingCalc() {
   const [muzzleFps, setMuzzleFps] = useState('2600');
   const [bc, setBc] = useState('0.462');
   const [zeroRange, setZeroRange] = useState('100');
-  
   const [altitude, setAltitude] = useState('2400');
   const [distance, setDistance] = useState('1000');
   const [windSpd, setWindSpd] = useState('10');
@@ -24,7 +23,8 @@ export default function ShootingCalc() {
   const [loadBBc, setLoadBBc] = useState('0.505');
 
   // --- STATE: RELOADING BENCH ---
-  const [brassCost, setBrassCost] = useState('0'); // Often reused
+  const [reloadMode, setReloadMode] = useState('Metallic'); // 'Metallic' or 'Shotshell'
+  const [brassCost, setBrassCost] = useState('0'); 
   const [brassQty, setBrassQty] = useState('100');
   const [primerCost, setPrimerCost] = useState('85.00');
   const [primerQty, setPrimerQty] = useState('1000');
@@ -33,6 +33,15 @@ export default function ShootingCalc() {
   const [pwdCost, setPwdCost] = useState('45.00');
   const [pwdLbs, setPwdLbs] = useState('1');
   const [pwdCharge, setPwdCharge] = useState('44.0');
+  
+  // Shotshell Specific State
+  const [hullCost, setHullCost] = useState('0');
+  const [hullQty, setHullQty] = useState('100');
+  const [wadCost, setWadCost] = useState('15.00');
+  const [wadQty, setWadQty] = useState('500');
+  const [shotCost, setShotCost] = useState('55.00');
+  const [shotLbs, setShotLbs] = useState('25');
+  const [shotOz, setShotOz] = useState('1.125');
 
   const parse = (val) => parseFloat(val) || 0;
 
@@ -65,17 +74,27 @@ export default function ShootingCalc() {
   const dopeRanges = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 
   // --- TAB 4: RELOADING MATH ---
-  const bCost = parse(brassQty) > 0 ? parse(brassCost) / parse(brassQty) : 0;
   const pCost = parse(primerQty) > 0 ? parse(primerCost) / parse(primerQty) : 0;
-  const prCost = parse(projQty) > 0 ? parse(projCost) / parse(projQty) : 0;
-  
   const totalPowderGrains = parse(pwdLbs) * 7000;
   const pwdCostPerGrain = totalPowderGrains > 0 ? parse(pwdCost) / totalPowderGrains : 0;
   const pwdCostPerRound = pwdCostPerGrain * parse(pwdCharge);
-  
-  const totalCpr = bCost + pCost + prCost + pwdCostPerRound;
-  const boxCost = totalCpr * 50;
   const yieldPerJug = parse(pwdCharge) > 0 ? Math.floor(totalPowderGrains / parse(pwdCharge)) : 0;
+
+  // Metallic Logic
+  const bCost = parse(brassQty) > 0 ? parse(brassCost) / parse(brassQty) : 0;
+  const prCost = parse(projQty) > 0 ? parse(projCost) / parse(projQty) : 0;
+  const metCpr = bCost + pCost + prCost + pwdCostPerRound;
+  const metBoxCost = metCpr * 50;
+
+  // Shotshell Logic
+  const hCost = parse(hullQty) > 0 ? parse(hullCost) / parse(hullQty) : 0;
+  const wCost = parse(wadQty) > 0 ? parse(wadCost) / parse(wadQty) : 0;
+  const totalShotOunces = parse(shotLbs) * 16;
+  const shotCostPerOz = totalShotOunces > 0 ? parse(shotCost) / totalShotOunces : 0;
+  const shotCostPerShell = shotCostPerOz * parse(shotOz);
+  const shellsPerBag = parse(shotOz) > 0 ? Math.floor(totalShotOunces / parse(shotOz)) : 0;
+  const shellCpr = hCost + pCost + wCost + shotCostPerShell + pwdCostPerRound;
+  const shellBoxCost = shellCpr * 25;
 
   // --- STYLES ---
   const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.1em', marginTop: '6px' };
@@ -162,7 +181,6 @@ export default function ShootingCalc() {
                 <label style={{...labelStyle, color: '#fff', display: 'block', marginTop: '10px'}}>Muzzle FPS<input type="number" value={loadBVel} onChange={e=>setLoadBVel(e.target.value)} style={inputStyle} /></label>
               </div>
             </div>
-
             <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px' }}>
               <h3 style={{ color: '#fff', textAlign: 'center', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>500 Yard Analysis</h3>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
@@ -218,23 +236,48 @@ export default function ShootingCalc() {
         {/* ========================================== */}
         {activeTab === 'Reloading' && (
           <>
-            <p style={{ color: '#aaa', textAlign: 'center', marginBottom: '20px' }}>Calculate exact Cost Per Round (CPR) and powder yield.</p>
-            
-            <div style={{...cardStyle, borderLeft: '4px solid #a855f7'}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>1. Hardware Components</h3>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Brass Cost ($)<input type="number" value={brassCost} onChange={e=>setBrassCost(e.target.value)} style={inputStyle} /></label></div>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Brass Qty<input type="number" value={brassQty} onChange={e=>setBrassQty(e.target.value)} style={inputStyle} /></label></div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              <button onClick={() => setReloadMode('Metallic')} style={{ flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: reloadMode === 'Metallic' ? '#a855f7' : '#222', color: reloadMode === 'Metallic' ? '#fff' : '#888' }}>Metallic Cartridge</button>
+              <button onClick={() => setReloadMode('Shotshell')} style={{ flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: reloadMode === 'Shotshell' ? '#ef4444' : '#222', color: reloadMode === 'Shotshell' ? '#fff' : '#888' }}>Shotgun Shells</button>
+            </div>
+
+            <div style={{...cardStyle, borderLeft: reloadMode === 'Metallic' ? '4px solid #a855f7' : '4px solid #ef4444'}}>
+              <h3 style={{ margin: '0 0 10px 0', color: reloadMode === 'Metallic' ? '#a855f7' : '#ef4444' }}>1. Hardware Components</h3>
+              
+              {reloadMode === 'Metallic' ? (
+                <>
+                  <div style={flexWrap}>
+                    <div style={inputWrap}><label style={labelStyle}>Brass Cost ($)<input type="number" value={brassCost} onChange={e=>setBrassCost(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Brass Qty<input type="number" value={brassQty} onChange={e=>setBrassQty(e.target.value)} style={inputStyle} /></label></div>
+                  </div>
+                  <div style={flexWrap}>
+                    <div style={inputWrap}><label style={labelStyle}>Projectile Cost ($)<input type="number" value={projCost} onChange={e=>setProjCost(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Projectile Qty<input type="number" value={projQty} onChange={e=>setProjQty(e.target.value)} style={inputStyle} /></label></div>
+                  </div>
+                  <p style={{ color: '#666', fontSize: '0.8em', marginTop: '10px', fontStyle: 'italic', marginBottom: 0 }}>*If you reuse fired brass, set Brass Cost to 0.</p>
+                </>
+              ) : (
+                <>
+                  <div style={flexWrap}>
+                    <div style={inputWrap}><label style={labelStyle}>Hull Cost ($)<input type="number" value={hullCost} onChange={e=>setHullCost(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Hull Qty<input type="number" value={hullQty} onChange={e=>setHullQty(e.target.value)} style={inputStyle} /></label></div>
+                  </div>
+                  <div style={flexWrap}>
+                    <div style={inputWrap}><label style={labelStyle}>Wad Cost ($)<input type="number" value={wadCost} onChange={e=>setWadCost(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Wad Qty<input type="number" value={wadQty} onChange={e=>setWadQty(e.target.value)} style={inputStyle} /></label></div>
+                  </div>
+                  <div style={flexWrap}>
+                    <div style={inputWrap}><label style={labelStyle}>Shot Bag Cost ($)<input type="number" value={shotCost} onChange={e=>setShotCost(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Bag Weight (lbs)<input type="number" value={shotLbs} onChange={e=>setShotLbs(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Payload (oz)<input type="number" placeholder="e.g. 1.125" value={shotOz} onChange={e=>setShotOz(e.target.value)} style={{...inputStyle, border: '1px solid #ef4444'}} /></label></div>
+                  </div>
+                </>
+              )}
+
+              <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
+                <div style={inputWrap}><label style={labelStyle}>Primer Cost ($)<input type="number" value={primerCost} onChange={e=>setPrimerCost(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>Primer Qty<input type="number" value={primerQty} onChange={e=>setPrimerQty(e.target.value)} style={inputStyle} /></label></div>
               </div>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Primer Cost ($)<input type="number" value={primerCost} onChange={e=>setPrimerCost(e.target.value)} style={inputStyle} /></label></div>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Primer Qty<input type="number" value={primerQty} onChange={e=>setPrimerQty(e.target.value)} style={inputStyle} /></label></div>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Projectile Cost ($)<input type="number" value={projCost} onChange={e=>setProjCost(e.target.value)} style={inputStyle} /></label></div>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Projectile Qty<input type="number" value={projQty} onChange={e=>setProjQty(e.target.value)} style={inputStyle} /></label></div>
-              </div>
-              <p style={{ color: '#666', fontSize: '0.8em', marginTop: '10px', fontStyle: 'italic', marginBottom: 0 }}>*If you reuse fired brass, set Brass Cost to 0.</p>
             </div>
 
             <div style={{...cardStyle, borderLeft: '4px solid #f59e0b'}}>
@@ -250,7 +293,7 @@ export default function ShootingCalc() {
               <h3 style={{ color: '#00ffff', textAlign: 'center', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Reloading Yield</h3>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '12px' }}>
-                <span>Hardware CPR:</span> <span>${(bCost + pCost + prCost).toFixed(2)}</span>
+                <span>Hardware CPR:</span> <span>${reloadMode === 'Metallic' ? (bCost + pCost + prCost).toFixed(2) : (hCost + pCost + wCost + shotCostPerShell).toFixed(2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}>
                 <span>Powder CPR:</span> <span>${pwdCostPerRound.toFixed(3)}</span>
@@ -258,17 +301,22 @@ export default function ShootingCalc() {
               <div style={{ borderBottom: '1px dashed #444', margin: '10px 0' }}></div>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00cc66', fontWeight: 'bold', fontSize: '1.2em', marginBottom: '15px' }}>
-                <span>Total CPR:</span> <span>${totalCpr.toFixed(3)}</span>
+                <span>Total CPR:</span> <span>${reloadMode === 'Metallic' ? metCpr.toFixed(3) : shellCpr.toFixed(3)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ffaa00', marginBottom: '15px' }}>
-                <span>Cost per Box (50):</span> <span>${boxCost.toFixed(2)}</span>
+                <span>Cost per Box ({reloadMode === 'Metallic' ? '50' : '25'}):</span> <span>${reloadMode === 'Metallic' ? metBoxCost.toFixed(2) : shellBoxCost.toFixed(2)}</span>
               </div>
               
               <div style={{ borderBottom: '1px solid #333', margin: '15px 0' }}></div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#3b82f6', fontWeight: 'bold' }}>
-                <span>Rounds per Jug:</span> <span>{yieldPerJug} rds</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#3b82f6', fontWeight: 'bold', marginBottom: '10px' }}>
+                <span>Rounds per Powder Jug:</span> <span>{yieldPerJug} rds</span>
               </div>
+              {reloadMode === 'Shotshell' && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444', fontWeight: 'bold' }}>
+                  <span>Shells per Shot Bag:</span> <span>{shellsPerBag} rds</span>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -300,7 +348,6 @@ export default function ShootingCalc() {
 
             <div style={{...cardStyle, borderLeft: '4px solid #10b981', marginBottom: 0}}>
               <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>3. The Caliber Cheat Sheet</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', marginBottom: '15px' }}>Caliber refers to the internal diameter of the barrel:</p>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.22 LR:</strong> A tiny "rimfire" cartridge. Almost zero recoil and dirt cheap. Perfect for training or plinking.</li>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>9mm Luger:</strong> The undisputed global king of handguns. Offers the best balance of capacity and recoil.</li>
@@ -311,8 +358,23 @@ export default function ShootingCalc() {
               </ul>
             </div>
 
+            {/* NEW AMMO & PROJECTILE TYPES SECTION */}
+            <div style={{...cardStyle, borderLeft: '4px solid #ec4899', marginBottom: 0}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#ec4899' }}>4. Ammunition & Projectile Types</h3>
+              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>FMJ (Full Metal Jacket):</strong> Also called "Ball" ammo. A lead core wrapped entirely in copper. Does not expand. Great for cheap target practice, but over-penetrates in defense scenarios.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>JHP (Jacketed Hollow Point):</strong> The gold standard for self-defense. The tip has a hollow cavity designed to instantly "mushroom" and expand upon hitting liquid/tissue, transferring massive energy and stopping the bullet from passing through walls.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Ballistic Polymer Tip:</strong> (Often misidentified as "Diamond Tip"). These feature a sleek, colored plastic tip that makes the bullet fly straight like an FMJ, but upon impact, the plastic is driven violently back into the core, expanding it like a hollow point.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Armor Piercing (AP):</strong> Features a hardened steel or tungsten penetrator core instead of soft lead. Designed to punch right through Level III and IV body armor. Highly restricted.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Explosive & Incendiary:</strong> Specialty rounds (like the .50 BMG Raufoss Mk 211) that detonate on impact or ignite fuels. These are legally classified as Destructive Devices and are exceptionally illegal for standard civilians.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Shotgun - Birdshot:</strong> Hundreds of tiny lead or steel BBs. Excellent for shooting clay pigeons or birds out of the air. Terrible for self-defense.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Shotgun - Buckshot:</strong> Usually "00 Buck", containing 8 or 9 large lead balls roughly the size of a 9mm bullet. The absolute king of close-quarters home defense.</li>
+                <li><strong style={{color:'#fff'}}>Shotgun - Slugs:</strong> A single, massive chunk of lead (usually 1 ounce). Turns a close-range shotgun into a rifle capable of dropping a bear or punching through engine blocks.</li>
+              </ul>
+            </div>
+
             <div style={{...cardStyle, borderLeft: '4px solid #a855f7', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>4. Optics & Sighting</h3>
+              <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>5. Optics & Sighting</h3>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Red Dots & Holographics:</strong> 1x magnification. Infinite eye relief. You shoot with both eyes open for rapid target acquisition. Excellent for CQB.</li>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Prism Scopes:</strong> Fixed magnification (usually 3x or 4x). Uses an etched glass reticle, meaning it still works perfectly even if the battery dies. Great for shooters with astigmatism.</li>
@@ -322,7 +384,7 @@ export default function ShootingCalc() {
             </div>
 
             <div style={{...cardStyle, borderLeft: '4px solid #ef4444', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>5. Federal NFA Regulations</h3>
+              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>6. Federal NFA Regulations</h3>
               <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>Federal law applies everywhere. Violating the National Firearms Act (NFA) is a felony.</p>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
                 <li><strong>Title I (Standard):</strong> Rifles (16"+ barrel), shotguns (18"+ barrel), and handguns. Require an ATF Form 4473 background check.</li>
@@ -337,7 +399,7 @@ export default function ShootingCalc() {
               <div style={{ background: 'rgba(234, 179, 8, 0.1)', padding: '10px', borderRadius: '8px', border: '1px dashed #eab308', marginBottom: '15px' }}>
                 <p style={{ color: '#eab308', fontSize: '0.85em', margin: 0, textAlign: 'justify', lineHeight: '1.4' }}><strong>DISCLAIMER:</strong> State laws and reciprocity agreements change constantly. This guide provides a generalized baseline. The developers are not lawyers. Always verify official, up-to-date local statutes before crossing state lines or carrying a firearm.</p>
               </div>
-              <h3 style={{ margin: '0 0 10px 0', color: '#eab308' }}>6. State Laws & Reciprocity</h3>
+              <h3 style={{ margin: '0 0 10px 0', color: '#eab308' }}>7. State Laws & Reciprocity</h3>
               <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>State laws vary wildly. Crossing a border with a firearm legal in your state can be a felony in the next.</p>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
                 <li style={{ marginBottom: '10px' }}><strong>Constitutional Carry:</strong> States that allow any legal gun owner over 21 to carry a concealed handgun without needing a permit.</li>
