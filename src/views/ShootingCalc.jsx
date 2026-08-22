@@ -23,7 +23,7 @@ export default function ShootingCalc() {
   const [loadBBc, setLoadBBc] = useState('0.505');
 
   // --- STATE: RELOADING BENCH ---
-  const [reloadMode, setReloadMode] = useState('Metallic'); // 'Metallic' or 'Shotshell'
+  const [reloadMode, setReloadMode] = useState('Metallic'); 
   const [brassCost, setBrassCost] = useState('0'); 
   const [brassQty, setBrassQty] = useState('100');
   const [primerCost, setPrimerCost] = useState('85.00');
@@ -34,7 +34,6 @@ export default function ShootingCalc() {
   const [pwdLbs, setPwdLbs] = useState('1');
   const [pwdCharge, setPwdCharge] = useState('44.0');
   
-  // Shotshell Specific State
   const [hullCost, setHullCost] = useState('0');
   const [hullQty, setHullQty] = useState('100');
   const [wadCost, setWadCost] = useState('15.00');
@@ -49,7 +48,6 @@ export default function ShootingCalc() {
   const dist = parse(distance);
   const vel = parse(muzzleFps);
   const gr = parse(bulletGr);
-  
   const muzEnergy = (gr * Math.pow(vel, 2)) / 450240;
   const tof = (dist * 3) / (vel * 0.82); 
   const termVel = Math.max(0, vel - (dist * 0.65));
@@ -76,25 +74,18 @@ export default function ShootingCalc() {
   // --- TAB 4: RELOADING MATH ---
   const pCost = parse(primerQty) > 0 ? parse(primerCost) / parse(primerQty) : 0;
   const totalPowderGrains = parse(pwdLbs) * 7000;
-  const pwdCostPerGrain = totalPowderGrains > 0 ? parse(pwdCost) / totalPowderGrains : 0;
-  const pwdCostPerRound = pwdCostPerGrain * parse(pwdCharge);
+  const pwdCostPerRound = (totalPowderGrains > 0 ? parse(pwdCost) / totalPowderGrains : 0) * parse(pwdCharge);
   const yieldPerJug = parse(pwdCharge) > 0 ? Math.floor(totalPowderGrains / parse(pwdCharge)) : 0;
 
-  // Metallic Logic
   const bCost = parse(brassQty) > 0 ? parse(brassCost) / parse(brassQty) : 0;
   const prCost = parse(projQty) > 0 ? parse(projCost) / parse(projQty) : 0;
   const metCpr = bCost + pCost + prCost + pwdCostPerRound;
-  const metBoxCost = metCpr * 50;
 
-  // Shotshell Logic
   const hCost = parse(hullQty) > 0 ? parse(hullCost) / parse(hullQty) : 0;
   const wCost = parse(wadQty) > 0 ? parse(wadCost) / parse(wadQty) : 0;
   const totalShotOunces = parse(shotLbs) * 16;
-  const shotCostPerOz = totalShotOunces > 0 ? parse(shotCost) / totalShotOunces : 0;
-  const shotCostPerShell = shotCostPerOz * parse(shotOz);
-  const shellsPerBag = parse(shotOz) > 0 ? Math.floor(totalShotOunces / parse(shotOz)) : 0;
+  const shotCostPerShell = (totalShotOunces > 0 ? parse(shotCost) / totalShotOunces : 0) * parse(shotOz);
   const shellCpr = hCost + pCost + wCost + shotCostPerShell + pwdCostPerRound;
-  const shellBoxCost = shellCpr * 25;
 
   // --- STYLES ---
   const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.1em', marginTop: '6px' };
@@ -242,8 +233,7 @@ export default function ShootingCalc() {
             </div>
 
             <div style={{...cardStyle, borderLeft: reloadMode === 'Metallic' ? '4px solid #a855f7' : '4px solid #ef4444'}}>
-              <h3 style={{ margin: '0 0 10px 0', color: reloadMode === 'Metallic' ? '#a855f7' : '#ef4444' }}>1. Hardware Components</h3>
-              
+              <h3 style={{ margin: '0 0 10px 0', color: reloadMode === 'Metallic' ? '#a855f7' : '#ef4444' }}>Hardware</h3>
               {reloadMode === 'Metallic' ? (
                 <>
                   <div style={flexWrap}>
@@ -251,10 +241,9 @@ export default function ShootingCalc() {
                     <div style={inputWrap}><label style={labelStyle}>Brass Qty<input type="number" value={brassQty} onChange={e=>setBrassQty(e.target.value)} style={inputStyle} /></label></div>
                   </div>
                   <div style={flexWrap}>
-                    <div style={inputWrap}><label style={labelStyle}>Projectile Cost ($)<input type="number" value={projCost} onChange={e=>setProjCost(e.target.value)} style={inputStyle} /></label></div>
-                    <div style={inputWrap}><label style={labelStyle}>Projectile Qty<input type="number" value={projQty} onChange={e=>setProjQty(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Proj. Cost ($)<input type="number" value={projCost} onChange={e=>setProjCost(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Proj. Qty<input type="number" value={projQty} onChange={e=>setProjQty(e.target.value)} style={inputStyle} /></label></div>
                   </div>
-                  <p style={{ color: '#666', fontSize: '0.8em', marginTop: '10px', fontStyle: 'italic', marginBottom: 0 }}>*If you reuse fired brass, set Brass Cost to 0.</p>
                 </>
               ) : (
                 <>
@@ -263,60 +252,17 @@ export default function ShootingCalc() {
                     <div style={inputWrap}><label style={labelStyle}>Hull Qty<input type="number" value={hullQty} onChange={e=>setHullQty(e.target.value)} style={inputStyle} /></label></div>
                   </div>
                   <div style={flexWrap}>
-                    <div style={inputWrap}><label style={labelStyle}>Wad Cost ($)<input type="number" value={wadCost} onChange={e=>setWadCost(e.target.value)} style={inputStyle} /></label></div>
-                    <div style={inputWrap}><label style={labelStyle}>Wad Qty<input type="number" value={wadQty} onChange={e=>setWadQty(e.target.value)} style={inputStyle} /></label></div>
-                  </div>
-                  <div style={flexWrap}>
                     <div style={inputWrap}><label style={labelStyle}>Shot Bag Cost ($)<input type="number" value={shotCost} onChange={e=>setShotCost(e.target.value)} style={inputStyle} /></label></div>
-                    <div style={inputWrap}><label style={labelStyle}>Bag Weight (lbs)<input type="number" value={shotLbs} onChange={e=>setShotLbs(e.target.value)} style={inputStyle} /></label></div>
-                    <div style={inputWrap}><label style={labelStyle}>Payload (oz)<input type="number" placeholder="e.g. 1.125" value={shotOz} onChange={e=>setShotOz(e.target.value)} style={{...inputStyle, border: '1px solid #ef4444'}} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Payload (oz)<input type="number" value={shotOz} onChange={e=>setShotOz(e.target.value)} style={inputStyle} /></label></div>
                   </div>
                 </>
               )}
-
-              <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
-                <div style={inputWrap}><label style={labelStyle}>Primer Cost ($)<input type="number" value={primerCost} onChange={e=>setPrimerCost(e.target.value)} style={inputStyle} /></label></div>
-                <div style={inputWrap}><label style={labelStyle}>Primer Qty<input type="number" value={primerQty} onChange={e=>setPrimerQty(e.target.value)} style={inputStyle} /></label></div>
-              </div>
             </div>
-
-            <div style={{...cardStyle, borderLeft: '4px solid #f59e0b'}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>2. Gunpowder Logic</h3>
-              <div style={flexWrap}>
-                <div style={inputWrap}><label style={labelStyle}>Powder Cost ($)<input type="number" value={pwdCost} onChange={e=>setPwdCost(e.target.value)} style={inputStyle} /></label></div>
-                <div style={inputWrap}><label style={labelStyle}>Total Lbs<input type="number" value={pwdLbs} onChange={e=>setPwdLbs(e.target.value)} style={inputStyle} /></label></div>
-                <div style={inputWrap}><label style={labelStyle}>Charge (gr)<input type="number" value={pwdCharge} onChange={e=>setPwdCharge(e.target.value)} style={{...inputStyle, border: '1px solid #f59e0b'}} /></label></div>
-              </div>
-            </div>
-
             <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.1em' }}>
               <h3 style={{ color: '#00ffff', textAlign: 'center', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Reloading Yield</h3>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '12px' }}>
-                <span>Hardware CPR:</span> <span>${reloadMode === 'Metallic' ? (bCost + pCost + prCost).toFixed(2) : (hCost + pCost + wCost + shotCostPerShell).toFixed(2)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}>
-                <span>Powder CPR:</span> <span>${pwdCostPerRound.toFixed(3)}</span>
-              </div>
-              <div style={{ borderBottom: '1px dashed #444', margin: '10px 0' }}></div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00cc66', fontWeight: 'bold', fontSize: '1.2em', marginBottom: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00cc66', fontWeight: 'bold', fontSize: '1.2em' }}>
                 <span>Total CPR:</span> <span>${reloadMode === 'Metallic' ? metCpr.toFixed(3) : shellCpr.toFixed(3)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ffaa00', marginBottom: '15px' }}>
-                <span>Cost per Box ({reloadMode === 'Metallic' ? '50' : '25'}):</span> <span>${reloadMode === 'Metallic' ? metBoxCost.toFixed(2) : shellBoxCost.toFixed(2)}</span>
-              </div>
-              
-              <div style={{ borderBottom: '1px solid #333', margin: '15px 0' }}></div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#3b82f6', fontWeight: 'bold', marginBottom: '10px' }}>
-                <span>Rounds per Powder Jug:</span> <span>{yieldPerJug} rds</span>
-              </div>
-              {reloadMode === 'Shotshell' && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444', fontWeight: 'bold' }}>
-                  <span>Shells per Shot Bag:</span> <span>{shellsPerBag} rds</span>
-                </div>
-              )}
             </div>
           </>
         )}
@@ -327,6 +273,7 @@ export default function ShootingCalc() {
         {activeTab === 'Guide' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
+            {/* 2nd Amendment Header */}
             <div style={{...cardStyle, borderTop: '4px solid #fff', borderBottom: '4px solid #fff', background: 'rgba(255, 255, 255, 0.05)', padding: '25px 20px', marginBottom: 0 }}>
               <h3 style={{ margin: '0 0 15px 0', color: '#fff', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '1.2em' }}>The Second Amendment</h3>
               <p style={{ color: '#fff', fontSize: '1.15em', lineHeight: '1.6', fontStyle: 'italic', textAlign: 'center', fontWeight: 'bold', margin: 0 }}>
@@ -334,78 +281,81 @@ export default function ShootingCalc() {
               </p>
             </div>
             
+            {/* 1. Firearm Classifications */}
             <div style={{...cardStyle, borderLeft: '4px solid #3b82f6', marginBottom: 0}}>
               <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>1. Firearm Classifications</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Handguns (Pistols & Revolvers):</strong> Designed to be fired with one hand. Typically used for concealed carry, personal defense, and duty sidearms.</p>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Rifles (Long Guns):</strong> Designed to be fired from the shoulder with a rifled barrel (spiral grooves that spin the bullet). Used for hunting, long-range precision, and combat.</p>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Shotguns (Long Guns):</strong> Designed to be fired from the shoulder with a smoothbore barrel. Fires multiple pellets (shot) or a single heavy lead slug. Excellent for close-quarters.</p>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Handguns (Pistols & Revolvers):</strong> Designed to be fired with one hand. Used for concealed carry, personal defense, and duty sidearms.</p>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Rifles (Long Guns):</strong> Fired from the shoulder with a rifled barrel (spiral grooves spin the bullet). Used for hunting and long-range precision.</p>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Shotguns (Long Guns):</strong> Fired from the shoulder with a smoothbore barrel. Fires multiple pellets (shot) or a single heavy slug. Excellent for close-quarters.</p>
             </div>
 
-            <div style={{...cardStyle, borderLeft: '4px solid #f59e0b', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>2. Grains & Ballistics</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>A "Grain" (gr) is a unit of weight. There are 7,000 grains in a pound. Heavier bullets (higher grain) travel slower but hit with more force and resist wind better. Lighter bullets are faster and shoot flatter, but lose energy quickly.</p>
-            </div>
-
+            {/* 2. Calibers & Grains */}
             <div style={{...cardStyle, borderLeft: '4px solid #10b981', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>3. The Caliber Cheat Sheet</h3>
+              <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>2. The Caliber Cheat Sheet</h3>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.22 LR:</strong> A tiny "rimfire" cartridge. Almost zero recoil and dirt cheap. Perfect for training or plinking.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>9mm Luger:</strong> The undisputed global king of handguns. Offers the best balance of capacity and recoil.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>5.56x45mm NATO / .223 Rem:</strong> The standard AR-15 rifle round. Fires a light bullet at blistering speeds.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>9mm Luger:</strong> The global king of handguns. Optimal balance of capacity and recoil.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>5.56x45mm NATO / .223 Rem:</strong> Standard AR-15 round. Fires a light bullet at blistering speeds.</li>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.308 Winchester / 7.62 NATO:</strong> The classic heavy-hitter. Fantastic for dropping large game or ringing steel out to 800 yards.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>6.5 Creedmoor:</strong> The modern long-range cheat code. It fires a highly aerodynamic bullet that stays supersonic past 1,000 yards.</li>
-                <li><strong style={{color:'#fff'}}>12 Gauge:</strong> The universal shotgun shell. Can be loaded with tiny pellets (birdshot), heavy lead balls (buckshot), or 1-ounce slugs.</li>
+                <li><strong style={{color:'#fff'}}>6.5 Creedmoor:</strong> The modern long-range cheat code. Highly aerodynamic bullet that stays supersonic past 1,000 yards.</li>
               </ul>
             </div>
 
-            {/* NEW AMMO & PROJECTILE TYPES SECTION */}
+            {/* 3. EXPANDED Ammo Types */}
             <div style={{...cardStyle, borderLeft: '4px solid #ec4899', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#ec4899' }}>4. Ammunition & Projectile Types</h3>
+              <h3 style={{ margin: '0 0 10px 0', color: '#ec4899' }}>3. Ammunition Types & Behavior</h3>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>FMJ (Full Metal Jacket):</strong> Also called "Ball" ammo. A lead core wrapped entirely in copper. Does not expand. Great for cheap target practice, but over-penetrates in defense scenarios.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>JHP (Jacketed Hollow Point):</strong> The gold standard for self-defense. The tip has a hollow cavity designed to instantly "mushroom" and expand upon hitting liquid/tissue, transferring massive energy and stopping the bullet from passing through walls.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Ballistic Polymer Tip:</strong> (Often misidentified as "Diamond Tip"). These feature a sleek, colored plastic tip that makes the bullet fly straight like an FMJ, but upon impact, the plastic is driven violently back into the core, expanding it like a hollow point.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Armor Piercing (AP):</strong> Features a hardened steel or tungsten penetrator core instead of soft lead. Designed to punch right through Level III and IV body armor. Highly restricted.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Explosive & Incendiary:</strong> Specialty rounds (like the .50 BMG Raufoss Mk 211) that detonate on impact or ignite fuels. These are legally classified as Destructive Devices and are exceptionally illegal for standard civilians.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Shotgun - Birdshot:</strong> Hundreds of tiny lead or steel BBs. Excellent for shooting clay pigeons or birds out of the air. Terrible for self-defense.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Shotgun - Buckshot:</strong> Usually "00 Buck", containing 8 or 9 large lead balls roughly the size of a 9mm bullet. The absolute king of close-quarters home defense.</li>
-                <li><strong style={{color:'#fff'}}>Shotgun - Slugs:</strong> A single, massive chunk of lead (usually 1 ounce). Turns a close-range shotgun into a rifle capable of dropping a bear or punching through engine blocks.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>FMJ (Full Metal Jacket):</strong> "Ball" ammo. Lead core wrapped entirely in copper. Does not expand. Great for cheap target practice; over-penetrates in defense scenarios.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>JHP (Jacketed Hollow Point):</strong> The gold standard for self-defense. The tip has a hollow cavity designed to instantly "mushroom" and expand upon hitting liquid/tissue, transferring massive energy.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>SP (Soft Point):</strong> Exposed lead tip that expands slower than a hollow point. Great for hunting thick-skinned game where deep penetration before expansion is needed.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>OTM (Open Tip Match):</strong> Looks like a hollow point, but the hole is just a byproduct of the manufacturing process to make the bullet perfectly balanced for extreme long-range accuracy. Not designed to expand.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Ballistic Polymer Tip:</strong> Features a sleek plastic tip that makes the bullet fly straight. Upon impact, the plastic is driven violently back into the core, expanding it like a hollow point.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Frangible:</strong> Made of compressed copper dust. Disintegrates into powder upon hitting steel targets to prevent dangerous ricochets at close range.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Subsonic:</strong> Extra-heavy bullets loaded with less powder to travel slower than the speed of sound (under ~1,125 fps). Eliminates the supersonic "crack," making them incredibly quiet with a suppressor.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Armor Piercing (AP):</strong> Features a hardened steel or tungsten penetrator core instead of soft lead. Designed to punch through body armor. Highly restricted.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Tracer:</strong> The base of the bullet contains a pyrotechnic charge that burns brightly so the shooter can see the exact trajectory. Highly restricted at civilian ranges due to severe fire hazard.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Shotgun - Birdshot:</strong> Hundreds of tiny lead or steel BBs. Excellent for shooting clay pigeons or birds. Terrible for defense.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Shotgun - Buckshot:</strong> Contains 8 or 9 large lead balls. The absolute king of close-quarters home defense.</li>
+                <li><strong style={{color:'#fff'}}>Shotgun - Slugs:</strong> A single, massive chunk of lead (usually 1 ounce). Turns a close-range shotgun into a rifle capable of punching through engine blocks.</li>
               </ul>
             </div>
 
-            <div style={{...cardStyle, borderLeft: '4px solid #a855f7', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>5. Optics & Sighting</h3>
+            {/* 4. Safety & Storage */}
+            <div style={{...cardStyle, borderLeft: '4px solid #14b8a6', marginBottom: 0}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#14b8a6' }}>4. The 4 Universal Rules of Safety</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', fontStyle: 'italic', marginBottom: '15px' }}>These rules apply 100% of the time, with zero exceptions.</p>
+              <ol style={{ color: '#fff', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0, fontWeight: 'bold' }}>
+                <li style={{ marginBottom: '8px' }}>ALL GUNS ARE ALWAYS LOADED.</li>
+                <li style={{ marginBottom: '8px' }}>NEVER LET THE MUZZLE COVER ANYTHING YOU ARE NOT WILLING TO DESTROY.</li>
+                <li style={{ marginBottom: '8px' }}>KEEP YOUR FINGER OFF THE TRIGGER UNTIL YOUR SIGHTS ARE ON THE TARGET.</li>
+                <li>BE SURE OF YOUR TARGET AND WHAT IS BEYOND IT.</li>
+              </ol>
+              <div style={{ borderTop: '1px dashed #333', marginTop: '15px', paddingTop: '15px' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#14b8a6' }}>Storage & Protection</h4>
+                <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>Guns must be stored in a cool, dry place. A heavy steel gun safe is ideal, but a reinforced lockbox prevents unauthorized access. Always store ammunition in a separate, locked container. Throwing a few silica gel desiccant packs into your safe will suck moisture out of the air and prevent rust.</p>
+              </div>
+            </div>
+
+            {/* 5. Cleaning & Caring */}
+            <div style={{...cardStyle, borderLeft: '4px solid #f97316', marginBottom: 0}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#f97316' }}>5. Cleaning & Maintenance</h3>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Red Dots & Holographics:</strong> 1x magnification. Infinite eye relief. You shoot with both eyes open for rapid target acquisition. Excellent for CQB.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Prism Scopes:</strong> Fixed magnification (usually 3x or 4x). Uses an etched glass reticle, meaning it still works perfectly even if the battery dies. Great for shooters with astigmatism.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>LPVO (Low Power Variable Optic):</strong> Usually 1-6x or 1-8x magnification. The most versatile rifle optic. Can be used at 1x like a red dot, or dialed up to shoot at 500 yards.</li>
-                <li><strong style={{color:'#fff'}}>Precision Scopes (MPVO/HPVO):</strong> High magnification (e.g., 5-25x). Features exposed turrets so shooters can manually dial their Elevation and Windage DOPE for extreme long-range shots.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Field Stripping:</strong> Taking the weapon apart into its major component groups (slide, barrel, recoil spring, frame) without using specialized tools. Always visually and physically clear the chamber before stripping.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Bore Snake & Solvents:</strong> A carbon-cutting solvent combined with a brass brush or a pull-through "Bore Snake" will clear the lead and copper fouling out of the barrel's rifling to maintain accuracy.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Internal Lubrication:</strong> Standard commercial CLP (Clean, Lubricate, Protect) is the go-to for keeping internal moving parts like the bolt carrier group and trigger sear running smoothly.</li>
+                <li><strong style={{color:'#fff'}}>External Protection:</strong> Bare metal will rust if exposed to skin oils and moisture. For wiping down blades, tools, and exterior gun metal, natural palm seed oil or coconut oil are exceptional, heavy-duty protectants against surface corrosion.</li>
               </ul>
             </div>
 
+            {/* 6. Legalities */}
             <div style={{...cardStyle, borderLeft: '4px solid #ef4444', marginBottom: 0}}>
               <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>6. Federal NFA Regulations</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>Federal law applies everywhere. Violating the National Firearms Act (NFA) is a felony.</p>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
-                <li><strong>Title I (Standard):</strong> Rifles (16"+ barrel), shotguns (18"+ barrel), and handguns. Require an ATF Form 4473 background check.</li>
-                <li><strong>Title II (NFA Items):</strong> Requires an ATF Form 1 (to make) or Form 4 (to transfer), a $200 tax stamp, fingerprints, and extensive waiting periods.</li>
-                <li><strong>SBRs & SBSs:</strong> Short-Barreled Rifles (under 16") and Short-Barreled Shotguns (under 18") with a stock are highly restricted NFA items.</li>
-                <li><strong>Suppressors:</strong> "Silencers" do not silence guns; they muffle the explosion. They are heavily restricted NFA items.</li>
-                <li><strong>Machine Guns:</strong> Post-1986 newly manufactured fully automatic weapons are strictly illegal for civilians to own.</li>
-              </ul>
-            </div>
-
-            <div style={{...cardStyle, borderLeft: '4px solid #eab308', marginBottom: 0}}>
-              <div style={{ background: 'rgba(234, 179, 8, 0.1)', padding: '10px', borderRadius: '8px', border: '1px dashed #eab308', marginBottom: '15px' }}>
-                <p style={{ color: '#eab308', fontSize: '0.85em', margin: 0, textAlign: 'justify', lineHeight: '1.4' }}><strong>DISCLAIMER:</strong> State laws and reciprocity agreements change constantly. This guide provides a generalized baseline. The developers are not lawyers. Always verify official, up-to-date local statutes before crossing state lines or carrying a firearm.</p>
-              </div>
-              <h3 style={{ margin: '0 0 10px 0', color: '#eab308' }}>7. State Laws & Reciprocity</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>State laws vary wildly. Crossing a border with a firearm legal in your state can be a felony in the next.</p>
-              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
-                <li style={{ marginBottom: '10px' }}><strong>Constitutional Carry:</strong> States that allow any legal gun owner over 21 to carry a concealed handgun without needing a permit.</li>
-                <li style={{ marginBottom: '10px' }}><strong>Shall-Issue:</strong> States that require a Concealed Carry Weapon (CCW) permit, but must issue it to you if you pass the background check and training.</li>
-                <li style={{ marginBottom: '10px' }}><strong>May-Issue / Strict States:</strong> States that heavily restrict permits, ban specific cosmetic rifle features (Assault Weapon Bans), and limit magazine capacities to 10 rounds.</li>
-                <li><strong>Reciprocity:</strong> Just because you have a CCW in your home state does not mean another state honors it. Always check a reciprocity map before traveling.</li>
+                <li><strong>Title I:</strong> Rifles (16"+ barrel), shotguns (18"+ barrel), and handguns. Require an ATF Form 4473 check.</li>
+                <li><strong>Title II (NFA Items):</strong> Requires an ATF Form 1 or 4, a $200 tax stamp, fingerprints, and wait periods.</li>
+                <li><strong>SBRs & SBSs:</strong> Short-Barreled Rifles/Shotguns with a stock are highly restricted.</li>
+                <li><strong>Suppressors:</strong> Muffle the explosion; highly restricted NFA items.</li>
+                <li><strong>Machine Guns:</strong> Post-1986 fully automatic weapons are strictly illegal for civilians.</li>
               </ul>
             </div>
 
