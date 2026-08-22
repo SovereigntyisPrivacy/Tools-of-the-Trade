@@ -1,189 +1,319 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function TimesheetCalc() {
+export default function TimesheetCalc() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('Roster'); 
 
-  // Pay & Tax State
-  const [hourlyWage, setHourlyWage] = useState('');
-  const [taxRate, setTaxRate] = useState('');
+  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  // Shift State: Object containing arrays of shifts for each day
-  const defaultShifts = {
-    Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: []
-  };
-  const [shifts, setShifts] = useState(defaultShifts);
-
-  // Helper to parse "HH:mm" 24h format from native input type="time" into decimal hours
-  const parseTime = (timeStr) => {
-    if (!timeStr) return 0;
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours + (minutes / 60);
-  };
-
-  // Helper to calculate duration, automatically handling overnight shifts
-  const calcDuration = (inTime, outTime) => {
-    if (!inTime || !outTime) return 0;
-    let start = parseTime(inTime);
-    let end = parseTime(outTime);
-    
-    // Overnight Shift Logic (e.g., 22:00 to 06:00 crossover)
-    if (end < start) {
-      end += 24;
+  // --- STATE: MULTI-EMPLOYEE ROSTER ---
+  const [employees, setEmployees] = useState([
+    {
+      id: 1,
+      name: 'Employee 1',
+      rate: '25.00',
+      taxPct: '15',
+      shifts: { Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] }
     }
-    return end - start;
+  ]);
+  const [activeId, setActiveId] = useState(1);
+  const [copied, setCopied] = useState(false);
+
+  const activeEmp = employees.find(e => e.id === activeId) || employees[0];
+
+  const parse = (val) => parseFloat(val) || 0;
+
+  // --- MATHEMATICAL CORE ---
+  const calcShiftHours = (start, end) => {
+    if (!start || !end) return 0;
+    const [sH, sM] = start.split(':').map(Number);
+    const [eH, eM] = end.split(':').map(Number);
+    let sTime = sH + sM / 60;
+    let eTime = eH + eM / 60;
+    
+    // Automatically handle overnight shift crossovers 
+    if (eTime < sTime) eTime += 24; 
+    return eTime - sTime;
   };
 
-  // Shift Management Functions
+  const getEmpPayroll = (emp) => {
+    let totalHours = 0;
+    daysOfWeek.forEach(d => {
+      emp.shifts[d].forEach(s => {
+        totalHours += calcShiftHours(s.start, s.end);
+      });
+    });
+
+    const regHours = Math.min(40, totalHours);
+    const otHours = Math.max(0, totalHours - 40);
+    const rate = parse(emp.rate);
+    
+    // Time-and-a-half for OT
+    const gross = (regHours * rate) + (otHours * (rate * 1.5));
+    const tax = gross * (parse(emp.taxPct) / 100);
+    const net = gross - tax;
+
+    return { totalHours, regHours, otHours, gross, tax, net };
+  };
+
+  // --- ROSTER ACTIONS ---
+  const addEmployee = () => {
+    const newId = Date.now();
+    setEmployees([...employees, {
+      id: newId,
+      name: `Employee ${employees.length + 1}`,
+      rate: '20.00',
+      taxPct: '15',
+      shifts: { Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] }
+    }]);
+    setActiveId(newId);
+  };
+
+  const updateEmp = (id, field, val) => {
+    setEmployees(employees.map(e => e.id === id ? { ...e, [field]: val } : e));
+  };
+
+  const deleteEmp = (id) => {
+    if (employees.length === 1) return; // Prevent deleting last employee
+    const filtered = employees.filter(e => e.id !== id);
+    setEmployees(filtered);
+    if (activeId === id) setActiveId(filtered[0].id);
+  };
+
+  // --- TIMECARD ACTIONS ---
   const addShift = (day) => {
-    setShifts({
-      ...shifts,
-      [day]: [...shifts[day], { in: '', out: '' }]
+    setEmployees(employees.map(e => {
+      if (e.id === activeId) {
+        return { ...e, shifts: { ...e.shifts, [day]: [...e.shifts[day], { start: '', end: '' }] } };
+      }
+      return e;
+    }));
+  };
+
+  const updateShift = (day, idx, field, val) => {
+    setEmployees(employees.map(e => {
+      if (e.id === activeId) {
+        const newDayShifts = [...e.shifts[day]];
+        newDayShifts[idx][field] = val;
+        return { ...e, shifts: { ...e.shifts, [day]: newDayShifts } };
+      }
+      return e;
+    }));
+  };
+
+  const deleteShift = (day, idx) => {
+    setEmployees(employees.map(e => {
+      if (e.id === activeId) {
+        const newDayShifts = e.shifts[day].filter((_, i) => i !== idx);
+        return { ...e, shifts: { ...e.shifts, [day]: newDayShifts } };
+      }
+      return e;
+    }));
+  };
+
+  // --- DOSSIER EXPORT ---
+  const generateReport = () => {
+    let report = `SOVEREIGN TOOLS: MULTI-SHIFT PAYROLL DOSSIER\n`;
+    report += `=========================================\n`;
+    
+    let teamGross = 0, teamTax = 0, teamNet = 0, teamHours = 0;
+
+    employees.forEach(emp => {
+      const pay = getEmpPayroll(emp);
+      teamGross += pay.gross;
+      teamTax += pay.tax;
+      teamNet += pay.net;
+      teamHours += pay.totalHours;
+
+      report += `\n[ ${emp.name.toUpperCase()} ]\n`;
+      report += `Rate: $${emp.rate}/hr | Tax: ${emp.taxPct}%\n`;
+      report += `Total Hours: ${pay.totalHours.toFixed(2)} (Reg: ${pay.regHours.toFixed(2)} | OT: ${pay.otHours.toFixed(2)})\n`;
+      report += `Gross: $${pay.gross.toFixed(2)} | Tax: -$${pay.tax.toFixed(2)} | NET: $${pay.net.toFixed(2)}\n`;
+      
+      const hasShifts = daysOfWeek.some(d => emp.shifts[d].length > 0);
+      if (hasShifts) {
+        report += `Logged Shifts:\n`;
+        daysOfWeek.forEach(d => {
+          if (emp.shifts[d].length > 0) {
+            report += `  - ${d}: `;
+            const shiftStrs = emp.shifts[d].map(s => `${s.start || '??:??'} to ${s.end || '??:??'}`);
+            report += shiftStrs.join('  |  ') + `\n`;
+          }
+        });
+      }
     });
+
+    report += `\n=========================================\n`;
+    report += `[ TEAM PAYROLL SUMMARY ]\n`;
+    report += `Active Roster: ${employees.length} Workers\n`;
+    report += `Total Man-Hours: ${teamHours.toFixed(2)} hrs\n`;
+    report += `Total Gross Liability: $${teamGross.toFixed(2)}\n`;
+    report += `Total Withheld Taxes: -$${teamTax.toFixed(2)}\n`;
+    report += `Total Net Disbursed: $${teamNet.toFixed(2)}\n`;
+    report += `=========================================\n`;
+    return report;
   };
 
-  const removeShift = (day, index) => {
-    const updatedDay = [...shifts[day]];
-    updatedDay.splice(index, 1);
-    setShifts({ ...shifts, [day]: updatedDay });
+  const handleCopyReport = () => {
+    navigator.clipboard.writeText(generateReport());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
 
-  const updateShift = (day, index, field, value) => {
-    const updatedDay = [...shifts[day]];
-    updatedDay[index][field] = value;
-    setShifts({ ...shifts, [day]: updatedDay });
-  };
-
-  // --- Core Math ---
-  let totalHours = 0;
-  Object.keys(shifts).forEach(day => {
-    shifts[day].forEach(shift => {
-      totalHours += calcDuration(shift.in, shift.out);
-    });
-  });
-
-  const regHours = Math.min(totalHours, 40);
-  const otHours = Math.max(totalHours - 40, 0);
-
-  const wage = parseFloat(hourlyWage) || 0;
-  const tax = parseFloat(taxRate) || 0;
-
-  const regPay = regHours * wage;
-  const otPay = otHours * (wage * 1.5);
-  const grossPay = regPay + otPay;
-  const taxDeduction = grossPay * (tax / 100);
-  const netPay = grossPay - taxDeduction;
+  // --- STYLES ---
+  const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.05em', marginTop: '4px' };
+  const labelStyle = { color: '#00ffff', fontSize: '0.8em', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' };
+  const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
 
   return (
-    <div className="view-wrapper pb-safe">
-      <header className="header">
-        <button className="back-btn" onClick={() => navigate('/calculator')}>← Hub</button>
+    <div className="view-wrapper pb-safe" style={{ background: '#0a0a0a', minHeight: '100vh' }}>
+      <header className="header" style={{ borderBottom: '1px solid #222' }}>
+        <button className="back-btn" onClick={() => navigate('/calculator')}>Hub</button>
         <h2>Timesheet & Payroll</h2>
       </header>
 
-      <div className="calc-content" style={{ padding: '20px', overflowY: 'auto', height: '100%', paddingBottom: '120px' }}>
+      {/* TOP TABS */}
+      <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {['Roster', 'Timecard', 'Report'].map(tab => (
+          <button 
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{ padding: '10px 16px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: activeTab === tab ? '#00cc66' : '#222', color: activeTab === tab ? '#000' : '#aaa' }}>
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', paddingBottom: '120px' }}>
         
-        {/* Wage Profile */}
-        <div style={{ background: 'rgba(20,20,20,0.8)', borderTop: '4px solid #00ffff', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-          <h3 style={{ color: '#fff', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>💵 Wage Profile</h3>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', color: '#00ffff', fontWeight: 'bold', fontSize: '0.85em', marginBottom: '4px' }}>Hourly Rate ($)</label>
-              <input type="number" placeholder="25.00" value={hourlyWage} onChange={e => setHourlyWage(e.target.value)} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+        {/* ========================================== */}
+        {/* TAB 1: FLEET ROSTER                        */}
+        {/* ========================================== */}
+        {activeTab === 'Roster' && (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ color: '#fff', margin: 0 }}>Team Roster</h3>
+              <button onClick={addEmployee} style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>+ Add Worker</button>
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', color: '#00ffff', fontWeight: 'bold', fontSize: '0.85em', marginBottom: '4px' }}>Tax Deduction (%)</label>
-              <input type="number" placeholder="15" value={taxRate} onChange={e => setTaxRate(e.target.value)} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+            
+            {employees.map(emp => (
+              <div key={emp.id} style={{ ...cardStyle, borderLeft: activeId === emp.id ? '4px solid #00cc66' : '4px solid #444', cursor: 'pointer' }} onClick={() => setActiveId(emp.id)}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <input 
+                    type="text" value={emp.name} onChange={e => updateEmp(emp.id, 'name', e.target.value)} 
+                    style={{ ...inputStyle, width: '60%', margin: 0, border: 'none', borderBottom: '1px solid #333', background: 'transparent', fontSize: '1.2em', fontWeight: 'bold', padding: '5px' }} 
+                  />
+                  {employees.length > 1 && (
+                    <button onClick={(e) => { e.stopPropagation(); deleteEmp(emp.id); }} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '6px', padding: '6px 12px', fontWeight: 'bold' }}>Remove</button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '15px' }}>
+                  <div style={{ flex: 1 }}><label style={labelStyle}>Hourly Rate ($)<input type="number" value={emp.rate} onChange={e => updateEmp(emp.id, 'rate', e.target.value)} style={inputStyle} /></label></div>
+                  <div style={{ flex: 1 }}><label style={labelStyle}>Tax Withholding (%)<input type="number" value={emp.taxPct} onChange={e => updateEmp(emp.id, 'taxPct', e.target.value)} style={inputStyle} /></label></div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* ========================================== */}
+        {/* TAB 2: ISOLATED TIMECARD                   */}
+        {/* ========================================== */}
+        {activeTab === 'Timecard' && (
+          <>
+            <div style={{ marginBottom: '20px', background: '#111', padding: '15px', borderRadius: '12px', border: '1px solid #333' }}>
+              <label style={{ color: '#aaa', fontSize: '0.85em', fontWeight: 'bold', textTransform: 'uppercase' }}>Currently Editing Timecard For:
+                <select value={activeId} onChange={e => setActiveId(Number(e.target.value))} style={{ ...inputStyle, borderColor: '#00cc66', color: '#00cc66', fontWeight: 'bold', fontSize: '1.2em', marginTop: '10px' }}>
+                  {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+              </label>
             </div>
-          </div>
-        </div>
 
-        {/* Dynamic Shift Log */}
-        <div style={{ background: 'rgba(20,20,20,0.8)', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '15px' }}>
-            <h3 style={{ color: '#fff', margin: 0 }}>⏰ Time Clock</h3>
-            <div style={{ background: '#00cc66', color: '#000', padding: '5px 10px', borderRadius: '5px', fontWeight: 'bold' }}>
-              {totalHours.toFixed(2)} Hrs
-            </div>
-          </div>
-
-          <p style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '15px' }}>
-            Tap <strong>+ Add Shift</strong> to log AM/PM punches. Supports split shifts, lunch breaks, and overnight crossovers.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {Object.keys(shifts).map(day => {
-              const dayHours = shifts[day].reduce((sum, shift) => sum + calcDuration(shift.in, shift.out), 0);
-              
+            {daysOfWeek.map(day => {
+              let dayHrs = 0;
+              activeEmp.shifts[day].forEach(s => { dayHrs += calcShiftHours(s.start, s.end); });
               return (
-                <div key={day} style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: shifts[day].length > 0 ? '10px' : '0' }}>
-                    <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1em' }}>{day} <span style={{ color: '#aaa', fontSize: '0.8em', marginLeft: '5px' }}>({dayHours.toFixed(1)} hrs)</span></span>
-                    <button onClick={() => addShift(day)} style={{ background: 'rgba(0, 204, 102, 0.2)', color: '#00cc66', border: '1px solid #00cc66', borderRadius: '5px', padding: '5px 10px', fontWeight: 'bold' }}>
-                      + Add Shift
-                    </button>
+                <div key={day} style={{ ...cardStyle, padding: '15px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{day} <span style={{ color: '#888', fontWeight: 'normal', fontSize: '0.9em', marginLeft: '5px' }}>({dayHrs.toFixed(2)} hrs)</span></h4>
+                    <button onClick={() => addShift(day)} style={{ background: 'rgba(0,204,102,0.1)', color: '#00cc66', border: '1px solid #00cc66', borderRadius: '6px', padding: '6px 12px', fontWeight: 'bold', fontSize: '0.85em' }}>+ Add Shift</button>
                   </div>
-                  
-                  {shifts[day].map((shift, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '5px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                        <label style={{ fontSize: '0.7em', color: '#00cc66', marginBottom: '2px', fontWeight: 'bold' }}>IN</label>
-                        <input 
-                          type="time" 
-                          value={shift.in} 
-                          onChange={(e) => updateShift(day, idx, 'in', e.target.value)} 
-                          style={{ padding: '8px', background: '#000', border: '1px solid #444', color: '#fff', borderRadius: '5px', width: '100%' }} 
-                        />
-                      </div>
-                      <span style={{ color: '#555', alignSelf: 'flex-end', paddingBottom: '8px' }}>→</span>
-                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                        <label style={{ fontSize: '0.7em', color: '#ff4444', marginBottom: '2px', fontWeight: 'bold' }}>OUT</label>
-                        <input 
-                          type="time" 
-                          value={shift.out} 
-                          onChange={(e) => updateShift(day, idx, 'out', e.target.value)} 
-                          style={{ padding: '8px', background: '#000', border: '1px solid #444', color: '#fff', borderRadius: '5px', width: '100%' }} 
-                        />
-                      </div>
-                      <button onClick={() => removeShift(day, idx)} style={{ background: 'transparent', border: 'none', color: '#ff4444', fontSize: '1.2em', padding: '0 5px', alignSelf: 'flex-end', marginBottom: '4px' }}>
-                        ✕
-                      </button>
+                  {activeEmp.shifts[day].map((shift, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '15px', background: '#000', padding: '10px', borderRadius: '8px', border: '1px solid #222' }}>
+                      <input type="time" value={shift.start} onChange={e => updateShift(day, idx, 'start', e.target.value)} style={{ flex: 1, padding: '10px', background: '#111', color: '#fff', border: '1px solid #333', borderRadius: '6px' }} />
+                      <span style={{ color: '#666', fontWeight: 'bold' }}>to</span>
+                      <input type="time" value={shift.end} onChange={e => updateShift(day, idx, 'end', e.target.value)} style={{ flex: 1, padding: '10px', background: '#111', color: '#fff', border: '1px solid #333', borderRadius: '6px' }} />
+                      <button onClick={() => deleteShift(day, idx)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.5em', padding: '0 5px' }}>×</button>
                     </div>
                   ))}
                 </div>
               );
             })}
-          </div>
-        </div>
+          </>
+        )}
 
-        {/* Firing Solution / Summary */}
-        <div style={{ background: 'rgba(10,10,10,0.95)', border: '2px solid #00ffff', borderRadius: '12px', padding: '20px', marginBottom: '20px', boxShadow: '0 4px 15px rgba(0, 255, 255, 0.1)' }}>
-          <h3 style={{ color: '#fff', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px', textAlign: 'center' }}>PAY SUMMARY</h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', fontSize: '1.1em' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Regular Hours:</span><span style={{ color: '#fff' }}>{regHours.toFixed(2)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Overtime Hours:</span><span style={{ color: '#ffaa00' }}>{otHours.toFixed(2)}</span></div>
-          </div>
+        {/* ========================================== */}
+        {/* TAB 3: PAYROLL DOSSIER                     */}
+        {/* ========================================== */}
+        {activeTab === 'Report' && (
+          <>
+            <button 
+              onClick={handleCopyReport}
+              style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #3b82f6', background: copied ? '#00cc66' : 'rgba(59, 130, 246, 0.1)', color: copied ? '#000' : '#3b82f6', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px', transition: 'all 0.2s' }}>
+              {copied ? '✅ Dossier Copied to Clipboard!' : '📋 Export Master Payroll'}
+            </button>
 
-          <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <span style={{ color: '#aaa', fontSize: '1em' }}>Gross Pay:</span>
-              <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1em' }}>${grossPay.toFixed(2)}</span>
+            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.1em', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#00ffff', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px', textTransform: 'uppercase', letterSpacing: '2px' }}>Total Fleet Liability</h3>
+              
+              {(() => {
+                let tGross = 0, tTax = 0, tNet = 0, tHrs = 0;
+                employees.forEach(e => {
+                  const p = getEmpPayroll(e);
+                  tGross += p.gross; tTax += p.tax; tNet += p.net; tHrs += p.totalHours;
+                });
+                return (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Active Roster:</span> <span style={{color:'#fff'}}>{employees.length} Workers</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>Total Man-Hours:</span> <span style={{color:'#fff'}}>{tHrs.toFixed(2)} hrs</span></div>
+                    
+                    <div style={{ borderBottom: '1px dashed #444', margin: '10px 0' }}></div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ffaa00', marginBottom: '8px' }}><span>Gross Payroll:</span> <span>${tGross.toFixed(2)}</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444', marginBottom: '15px' }}><span>Withheld Taxes:</span> <span>-${tTax.toFixed(2)}</span></div>
+                    
+                    <div style={{ borderBottom: '1px solid #444', margin: '10px 0' }}></div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00cc66', fontWeight: 'bold', fontSize: '1.3em' }}><span>Net Disbursed:</span> <span>${tNet.toFixed(2)}</span></div>
+                  </>
+                )
+              })()}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #333' }}>
-              <span style={{ color: '#aaa', fontSize: '1em' }}>Est. Taxes:</span>
-              <span style={{ color: '#ff4444', fontWeight: 'bold', fontSize: '1.1em' }}>-${taxDeduction.toFixed(2)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.3em' }}>NET PAY:</span>
-              <span style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '1.4em' }}>${netPay.toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
+
+            <h4 style={{ color: '#fff', marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>Individual Breakdowns</h4>
+            
+            {employees.map(emp => {
+              const p = getEmpPayroll(emp);
+              return (
+                <div key={emp.id} style={{ ...cardStyle, borderLeft: '4px solid #3b82f6', marginBottom: '15px', padding: '15px' }}>
+                  <h4 style={{ color: '#fff', margin: '0 0 8px 0', fontSize: '1.1em' }}>{emp.name}</h4>
+                  <div style={{ color: '#888', fontSize: '0.85em', display: 'flex', gap: '15px', marginBottom: '12px' }}>
+                    <span>Rate: <strong style={{color:'#aaa'}}>${emp.rate}/hr</strong></span>
+                    <span>Tax: <strong style={{color:'#aaa'}}>{emp.taxPct}%</strong></span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95em', color: '#aaa', borderTop: '1px solid #222', paddingTop: '10px' }}>
+                    <span>Reg: {p.regHours.toFixed(2)}</span>
+                    <span>OT: {p.otHours.toFixed(2)}</span>
+                    <span style={{ color: '#00cc66', fontWeight: 'bold' }}>Net: ${p.net.toFixed(2)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
 
       </div>
     </div>
   );
 }
-
-export default TimesheetCalc;
