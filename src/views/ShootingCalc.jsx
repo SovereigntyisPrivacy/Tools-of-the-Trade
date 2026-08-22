@@ -1,247 +1,248 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function ShootingCalc() {
+export default function ShootingCalc() {
   const navigate = useNavigate();
 
-  // --- Weapon & Load State ---
+  // --- UI State ---
+  const [activeTab, setActiveTab] = useState('Solution'); // 'Solution' or 'Comparator'
+
+  // ==========================================
+  // TAB 1 STATE: SINGLE FIRING SOLUTION
+  // ==========================================
   const [bulletGr, setBulletGr] = useState('168');
   const [muzzleFps, setMuzzleFps] = useState('2600');
   const [bc, setBc] = useState('0.462');
-  const [zeroYds, setZeroYds] = useState('100');
-  const [opticHt, setOpticHt] = useState('1.5');
-
-  // --- Atmospherics State ---
+  const [zeroRange, setZeroRange] = useState('100');
+  const [opticHeight, setOpticHeight] = useState('1.5');
   const [altitude, setAltitude] = useState('2400');
-  const [tempF, setTempF] = useState('90');
-
-  // --- Target Vector State ---
-  const [targetYds, setTargetYds] = useState('1000');
+  const [temp, setTemp] = useState('90');
+  const [distance, setDistance] = useState('1000');
   const [incline, setIncline] = useState('0');
-  const [windMph, setWindMph] = useState('10');
-  const [windAngle, setWindAngle] = useState('90'); // 90 = Full Value
+  const [windSpd, setWindSpd] = useState('10');
+  const [windAngle, setWindAngle] = useState('90');
+  const [rifleWeight, setRifleWeight] = useState('10.5');
+  const [powderCharge, setPowderCharge] = useState('44.0');
+  const [targetSpeed, setTargetSpeed] = useState('3.0'); 
+  const [caliber, setCaliber] = useState('0.308');
+  const [bulletLength, setBulletLength] = useState('1.2');
+  const [barrelTwist, setBarrelTwist] = useState('10');
+  const [vitalZone, setVitalZone] = useState('8');
 
-  // --- Output State ---
-  const [solution, setSolution] = useState({
-    tof: 0,
-    termVel: 0,
-    muzEnergy: 0,
-    termEnergy: 0,
-    dropMil: 0,
-    dropMoa: 0,
-    dropIn: 0,
-    windMil: 0,
-    windMoa: 0,
-    windIn: 0,
-    adr: 1.0
-  });
+  const [tof, setTof] = useState(0);
+  const [termVel, setTermVel] = useState(0);
+  const [muzEnergy, setMuzEnergy] = useState(0);
+  const [termEnergy, setTermEnergy] = useState(0);
+  const [elevMil, setElevMil] = useState(0);
+  const [windMil, setWindMil] = useState(0);
+  const [recoilEnergy, setRecoilEnergy] = useState(0);
+  const [leadMil, setLeadMil] = useState(0);
+  const [sg, setSg] = useState(0);
+  const [mpbr, setMpbr] = useState(0);
 
-  // --- Ballistics Engine Logic ---
+  // ==========================================
+  // TAB 2 STATE: LOAD COMPARATOR
+  // ==========================================
+  const [loadAGr, setLoadAGr] = useState('150');
+  const [loadAVel, setLoadAVel] = useState('2820');
+  const [loadABc, setLoadABc] = useState('0.350');
+  
+  const [loadBGr, setLoadBGr] = useState('175');
+  const [loadBVel, setLoadBVel] = useState('2550');
+  const [loadBBc, setLoadBBc] = useState('0.505');
+
+  const parse = (val) => parseFloat(val) || 0;
+
+  // --- TAB 1 LOGIC ---
   useEffect(() => {
-    // 1. Calculate Air Density Ratio (ADR)
-    const alt = parseFloat(altitude) || 0;
-    const tF = parseFloat(tempF) || 59;
-    // Standard temp is 59F. Simplified density altitude math:
-    const adr = Math.exp(-alt / 31500) * ((460 + 59) / (460 + tF));
+    const dist = parse(distance);
+    const vel = parse(muzzleFps);
+    const gr = parse(bulletGr);
+    const speedMph = parse(targetSpeed);
+    const rWeight = parse(rifleWeight);
+    const pCharge = parse(powderCharge);
     
-    // 2. Parse Inputs
-    const mFps = parseFloat(muzzleFps) || 0;
-    const bGr = parseFloat(bulletGr) || 0;
-    const g1 = parseFloat(bc) || 0.001;
-    const distYds = parseFloat(targetYds) || 0;
-    const wMph = parseFloat(windMph) || 0;
-    const wAng = parseFloat(windAngle) || 0;
-    const incDeg = parseFloat(incline) || 0;
-    const optIn = parseFloat(opticHt) || 0;
-    const zYds = parseFloat(zeroYds) || 100;
+    if (dist > 0 && vel > 0 && gr > 0) {
+      setMuzEnergy((gr * Math.pow(vel, 2)) / 450240);
+      const estTof = (dist * 3) / (vel * 0.82); 
+      setTof(estTof);
+      const tv = vel - (dist * 0.65);
+      setTermVel(Math.max(0, tv));
+      setTermEnergy((gr * Math.pow(Math.max(0, tv), 2)) / 450240);
+      setElevMil((dist / 100) * 0.88); 
+      setWindMil((parse(windSpd) / 10) * (dist / 200) * 0.12);
 
-    if (mFps === 0 || bGr === 0 || distYds === 0) return;
+      const recVel = ((gr * vel) + (pCharge * 4000)) / (rWeight * 7000);
+      setRecoilEnergy((rWeight * Math.pow(recVel, 2)) / 64.32);
+      
+      const leadFeet = (speedMph * 1.46667) * estTof;
+      setLeadMil((leadFeet * 1000) / (dist * 3));
 
-    // 3. Energy Math
-    const muzE = (bGr * Math.pow(mFps, 2)) / 450240;
+      const d = parse(caliber);
+      const l = parse(bulletLength);
+      const t = parse(barrelTwist);
+      if (d > 0 && l > 0 && t > 0) {
+        const lenCal = l / d;
+        const sgBase = (30 * gr) / (Math.pow(t, 2) * Math.pow(d, 3) * lenCal * (1 + Math.pow(lenCal, 2)));
+        setSg(sgBase * Math.pow(vel / 2800, 1/3) * 1.8);
+      }
 
-    // 4. Simplified G1 Point Mass Iteration (Approximation for Field Use)
-    // Adjust BC for air density
-    const effectiveBc = g1 / adr;
-    
-    // Constant for G1 drag estimation
-    const dragCoeff = 28500 * effectiveBc;
-    
-    // Distance in feet
-    const distFt = distYds * 3;
-    const zeroFt = zYds * 3;
+      if (parse(vitalZone) > 0) setMpbr((vel / 10) + (parse(vitalZone) * 8) + (parse(bc) * 100));
+    }
+  }, [distance, muzzleFps, bulletGr, windSpd, targetSpeed, rifleWeight, powderCharge, caliber, bulletLength, barrelTwist, vitalZone, bc]);
 
-    // Terminal Velocity (Approximation)
-    const termV = mFps * Math.exp(-distFt / dragCoeff);
-    const termE = (bGr * Math.pow(termV, 2)) / 450240;
+  const airDensity = 1.0 - (parse(altitude) * 0.00003) - ((parse(temp) - 59) * 0.001);
 
-    // Time of Flight (Approximation)
-    const tof = (dragCoeff / mFps) * (Math.exp(distFt / dragCoeff) - 1);
+  // --- TAB 2 LOGIC (COMPARATOR) ---
+  const calcLoad = (gr, vel, bc) => {
+    const weight = parse(gr);
+    const speed = parse(vel);
+    const drag = parse(bc);
+    const me = (weight * Math.pow(speed, 2)) / 450240;
+    // Approximations for 500 yards
+    const tv500 = Math.max(0, speed - (500 * (1.1 - drag))); 
+    const te500 = (weight * Math.pow(tv500, 2)) / 450240;
+    const drop500 = (500 / 100) * 2.2 * (2800 / speed); // Rough MIL drop scale
+    return { me, tv500, te500, drop500 };
+  };
 
-    // Bullet Drop (Gravity = 32.174 ft/s^2)
-    const dropFt = 0.5 * 32.174 * Math.pow(tof, 2);
-    const dropInches = dropFt * 12;
+  const statA = calcLoad(loadAGr, loadAVel, loadABc);
+  const statB = calcLoad(loadBGr, loadBVel, loadBBc);
 
-    // Zeroing Offset (Calculate drop at zero range to find the bore angle)
-    const zeroTof = (dragCoeff / mFps) * (Math.exp(zeroFt / dragCoeff) - 1);
-    const zeroDropInches = (0.5 * 32.174 * Math.pow(zeroTof, 2)) * 12;
-    const boreAngleMoa = ((zeroDropInches + optIn) / zYds) * 0.955; // 1 MOA = 1.047" at 100yds
-
-    // Adjusted Drop for Distance & Incline
-    const slantCos = Math.cos(incDeg * (Math.PI / 180));
-    const totalDropInches = (dropInches * slantCos) - (boreAngleMoa * distYds * 1.047 / 100) + optIn;
-
-    // Windage (Approximation using Time of Flight minus Vacuum Time)
-    const vacTof = distFt / mFps;
-    const windLag = tof - vacTof;
-    const crossWindMph = wMph * Math.sin(wAng * (Math.PI / 180));
-    const windFps = crossWindMph * 1.46667;
-    const windDeflectFt = windFps * windLag;
-    const windDeflectInches = Math.abs(windDeflectFt * 12);
-
-    // Conversions
-    const dropMoaCalc = totalDropInches / (distYds * 1.047 / 100);
-    const dropMilCalc = dropMoaCalc / 3.438;
-
-    const windMoaCalc = windDeflectInches / (distYds * 1.047 / 100);
-    const windMilCalc = windMoaCalc / 3.438;
-
-    setSolution({
-      tof: tof.toFixed(3),
-      termVel: Math.round(termV),
-      muzEnergy: Math.round(muzE),
-      termEnergy: Math.round(termE),
-      dropIn: totalDropInches.toFixed(1),
-      dropMoa: dropMoaCalc.toFixed(1),
-      dropMil: dropMilCalc.toFixed(1),
-      windIn: windDeflectInches.toFixed(1),
-      windMoa: windMoaCalc.toFixed(1),
-      windMil: windMilCalc.toFixed(1),
-      adr: adr.toFixed(3)
-    });
-
-  }, [bulletGr, muzzleFps, bc, zeroYds, opticHt, altitude, tempF, targetYds, incline, windMph, windAngle]);
+  // --- STYLES ---
+  const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.1em', marginTop: '6px' };
+  const labelStyle = { color: '#00ffff', fontSize: '0.85em', fontWeight: 'bold' };
+  const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '20px' };
 
   return (
-    <div className="view-wrapper pb-safe">
-      <header className="header">
-        <button className="back-btn" onClick={() => navigate('/calculator')}>← Hub</button>
+    <div className="view-wrapper pb-safe" style={{ background: '#0a0a0a', minHeight: '100vh' }}>
+      <header className="header" style={{ borderBottom: '1px solid #222' }}>
+        <button className="back-btn" onClick={() => navigate('/calculator')}>Hub</button>
         <h2>Ballistics Engine</h2>
       </header>
 
-      <div className="calc-content" style={{ padding: '16px', overflowY: 'auto', height: '100%', paddingBottom: '20px' }}>
+      {/* TOP TAB NAVIGATION */}
+      <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '10px' }}>
+        <button 
+          onClick={() => setActiveTab('Solution')}
+          style={{ flex: 1, padding: '12px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: activeTab === 'Solution' ? '#00ffff' : '#222', color: activeTab === 'Solution' ? '#000' : '#888' }}>
+          Firing Solution
+        </button>
+        <button 
+          onClick={() => setActiveTab('Comparator')}
+          style={{ flex: 1, padding: '12px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: activeTab === 'Comparator' ? '#ffaa00' : '#222', color: activeTab === 'Comparator' ? '#000' : '#888' }}>
+          Load Comparator
+        </button>
+      </div>
 
-        {/* --- Card 1: Weapon & Load --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #d00000', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem', textAlign: 'center' }}>🎯 Weapon & Load</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
-            <div><label style={{ color: '#00e5ff', fontSize: '0.75rem', fontWeight: 'bold' }}>Bullet (gr)</label><input type="number" value={bulletGr} onChange={(e) => setBulletGr(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#00e5ff', fontSize: '0.75rem', fontWeight: 'bold' }}>Muzzle (fps)</label><input type="number" value={muzzleFps} onChange={(e) => setMuzzleFps(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#00e5ff', fontSize: '0.75rem', fontWeight: 'bold' }}>BC (G1)</label><input type="number" step="0.001" value={bc} onChange={(e) => setBc(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div><label style={{ color: '#aaa', fontSize: '0.75rem' }}>Zero Range (yds)</label><input type="number" value={zeroYds} onChange={(e) => setZeroYds(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#aaa', fontSize: '0.75rem' }}>Optic Height (in)</label><input type="number" step="0.1" value={opticHt} onChange={(e) => setOpticHt(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-          </div>
-        </div>
-
-        {/* --- Card 2: Atmospherics --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #ffb703', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem', textAlign: 'center' }}>🌡️ Atmospherics</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '10px' }}>
-            <div><label style={{ color: '#aaa', fontSize: '0.75rem', textAlign: 'center', display: 'block' }}>Altitude (ft)</label><input type="number" value={altitude} onChange={(e) => setAltitude(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#aaa', fontSize: '0.75rem', textAlign: 'center', display: 'block' }}>Temp (°F)</label><input type="number" value={tempF} onChange={(e) => setTempF(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-          </div>
-          <div style={{ textAlign: 'center', color: '#666', fontSize: '0.75rem' }}>Air Density Factor: {solution.adr} (1.0 = Sea Level)</div>
-        </div>
-
-        {/* --- Card 3: Target Vector --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #00e5ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem', textAlign: 'center' }}>🌍 Target Vector</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', marginBottom: '14px' }}>
-            <div><label style={{ color: '#00e5ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Distance (Yards)</label><input type="number" value={targetYds} onChange={(e) => setTargetYds(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #00e5ff', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#aaa', fontSize: '0.8rem' }}>Incline (°)</label><input type="number" value={incline} onChange={(e) => setIncline(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div><label style={{ color: '#aaa', fontSize: '0.75rem' }}>Wind Spd (mph)</label><input type="number" value={windMph} onChange={(e) => setWindMph(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div>
-              <label style={{ color: '#aaa', fontSize: '0.75rem' }}>Wind Angle (°)</label>
-              <select value={windAngle} onChange={(e) => setWindAngle(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }}>
-                <option value="90">90° (Full Value)</option>
-                <option value="45">45° (Half Value)</option>
-                <option value="30">30° (Low Value)</option>
-                <option value="0">0° (Head/Tail Wind)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* --- Card 4: Firing Solution --- */}
-        <div style={{ background: '#0a0a0a', border: '2px solid #00e5ff', borderRadius: '12px', padding: '16px', marginBottom: '20px', boxShadow: '0 0 15px rgba(0,229,255,0.1)' }}>
-          <h3 style={{ margin: '0 0 16px 0', color: '#fff', fontSize: '1.2rem', textAlign: 'center', letterSpacing: '2px' }}>FIRING SOLUTION</h3>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Time of Flight:</span><span style={{ color: '#fff', fontWeight: 'bold' }}>{solution.tof} sec</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Term. Velocity:</span><span style={{ color: '#fff', fontWeight: 'bold' }}>{solution.termVel} fps</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Muzzle Energy:</span><span style={{ color: '#ffb703', fontWeight: 'bold' }}>{solution.muzEnergy} ft-lbs</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}><span style={{ color: '#aaa' }}>Term. Energy:</span><span style={{ color: '#ffb703', fontWeight: 'bold' }}>{solution.termEnergy} ft-lbs</span></div>
-
-          <div style={{ background: '#121212', border: '1px solid #333', borderRadius: '8px', padding: '14px', marginBottom: '10px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#fff', fontWeight: '900', fontSize: '1.1rem', letterSpacing: '1px' }}>ELEVATION:</span>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#d00000', fontWeight: '900', fontSize: '1.4rem' }}>{solution.dropMil} MIL</div>
-                <div style={{ color: '#aaa', fontSize: '0.8rem' }}>{solution.dropMoa} MOA ({solution.dropIn}")</div>
+      <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', paddingBottom: '120px' }}>
+        
+        {/* ========================================== */}
+        {/* TAB 1: FIRING SOLUTION                     */}
+        {/* ========================================== */}
+        {activeTab === 'Solution' && (
+          <>
+            <div style={{...cardStyle, borderTop: '4px solid #ef4444'}}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🎯 Weapon & Load</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Bullet (gr)<input type="number" value={bulletGr} onChange={e=>setBulletGr(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Muzzle (fps)<input type="number" value={muzzleFps} onChange={e=>setMuzzleFps(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>BC (G1)<input type="number" value={bc} onChange={e=>setBc(e.target.value)} style={inputStyle} /></label></div>
               </div>
             </div>
-          </div>
 
-          <div style={{ background: '#121212', border: '1px solid #333', borderRadius: '8px', padding: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#fff', fontWeight: '900', fontSize: '1.1rem', letterSpacing: '1px' }}>WINDAGE:</span>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#00e5ff', fontWeight: '900', fontSize: '1.4rem' }}>{solution.windMil} MIL</div>
-                <div style={{ color: '#aaa', fontSize: '0.8rem' }}>{solution.windMoa} MOA ({solution.windIn}")</div>
+            <div style={{...cardStyle, borderTop: '4px solid #f59e0b'}}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🌡️ Atmospherics</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#aaa'}}>Altitude (ft)<input type="number" value={altitude} onChange={e=>setAltitude(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#aaa'}}>Temp (°F)<input type="number" value={temp} onChange={e=>setTemp(e.target.value)} style={inputStyle} /></label></div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* --- Card 5: Layman's Educational Guide --- */}
-        <div style={{ background: '#181818', borderLeft: '4px solid #a600ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>📖 Layman's Field Guide</h3>
-          
-          <div style={{ marginBottom: '12px' }}>
-            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>MIL vs. MOA</strong>
-            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>They are just different units of measurement for angles (like Celsius vs Fahrenheit). <strong>1 MOA</strong> is roughly 1 inch at 100 yards. <strong>1 MIL</strong> is exactly 10 cm at 100 meters (or ~3.6 inches at 100 yards). Check your scope turrets to see which one you have.</p>
-          </div>
+            <div style={{...cardStyle, borderTop: '4px solid #00cc66'}}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🌍 Target Vector</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Distance (Yards)<input type="number" value={distance} onChange={e=>setDistance(e.target.value)} style={{...inputStyle, border: '1px solid #00cc66'}} /></label></div>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#aaa'}}>Wind Spd (mph)<input type="number" value={windSpd} onChange={e=>setWindSpd(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+            </div>
 
-          <div style={{ marginBottom: '12px' }}>
-            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>The Wind Clock</strong>
-            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>Wind blowing directly across your face (3 or 9 o'clock) pushes the bullet the hardest (<strong>Full Value / 90°</strong>). Wind blowing diagonally (like 2 o'clock) is <strong>Half Value</strong>. Wind blowing straight at your face or back (12 or 6 o'clock) does not push the bullet left or right at all.</p>
-          </div>
+            <div style={{ border: '2px solid #00ffff', borderRadius: '12px', padding: '20px', background: '#000', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 20px 0', color: '#fff', textAlign: 'center', letterSpacing: '2px' }}>FIRING SOLUTION</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px' }}><span>Time of Flight:</span> <span style={{color: '#fff', fontWeight: 'bold'}}>{tof.toFixed(3)} sec</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px' }}><span>Term. Velocity:</span> <span style={{color: '#fff', fontWeight: 'bold'}}>{termVel.toFixed(0)} fps</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px' }}><span>Muzzle Energy:</span> <span style={{color: '#ffaa00', fontWeight: 'bold'}}>{muzEnergy.toFixed(0)} ft-lbs</span></div>
+              
+              <div style={{ background: '#111', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', border: '1px solid #333' }}>
+                <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.2em' }}>ELEVATION:</span>
+                <div style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '1.4em' }}>{elevMil.toFixed(1)} MIL</div>
+              </div>
+              
+              <div style={{ background: '#111', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', border: '1px solid #333' }}>
+                <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.2em' }}>WINDAGE:</span>
+                <div style={{ color: '#00ffff', fontWeight: 'bold', fontSize: '1.4em' }}>{windMil.toFixed(1)} MIL</div>
+              </div>
+            </div>
+          </>
+        )}
 
-          <div style={{ marginBottom: '12px' }}>
-            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>Atmospherics & Thin Air</strong>
-            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>Bullets are lazy. They fly faster and drop less in "thin" air. For example, hot summer air at a high altitude in Arizona has very low density, meaning your bullet will hit much higher on the target than it would on a freezing, sea-level day.</p>
-          </div>
+        {/* ========================================== */}
+        {/* TAB 2: LOAD COMPARATOR                     */}
+        {/* ========================================== */}
+        {activeTab === 'Comparator' && (
+          <>
+            <p style={{ color: '#aaa', textAlign: 'center', marginBottom: '20px' }}>Directly compare ballistics and kinetic energy out to 500 yards.</p>
+            
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {/* LOAD A */}
+              <div style={{ flex: 1, ...cardStyle, borderTop: '4px solid #ef4444' }}>
+                <h3 style={{ margin: '0 0 15px 0', color: '#ef4444', textAlign: 'center' }}>Load A</h3>
+                <label style={{...labelStyle, color: '#fff'}}>Grains<input type="number" value={loadAGr} onChange={e=>setLoadAGr(e.target.value)} style={inputStyle} /></label>
+                <label style={{...labelStyle, color: '#fff', display: 'block', marginTop: '10px'}}>Muzzle FPS<input type="number" value={loadAVel} onChange={e=>setLoadAVel(e.target.value)} style={inputStyle} /></label>
+                <label style={{...labelStyle, color: '#fff', display: 'block', marginTop: '10px'}}>BC (G1)<input type="number" value={loadABc} onChange={e=>setLoadABc(e.target.value)} style={inputStyle} /></label>
+              </div>
 
-          <div>
-            <strong style={{ color: '#a600ff', fontSize: '0.9rem' }}>Angles & Gravity</strong>
-            <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0 0', lineHeight: '1.4' }}>Whether you are shooting steeply UPHILL or DOWNHILL, you must aim lower than you think. Gravity only affects the bullet over the flat horizontal distance, not the angled distance.</p>
-          </div>
-        </div>
+              {/* LOAD B */}
+              <div style={{ flex: 1, ...cardStyle, borderTop: '4px solid #3b82f6' }}>
+                <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6', textAlign: 'center' }}>Load B</h3>
+                <label style={{...labelStyle, color: '#fff'}}>Grains<input type="number" value={loadBGr} onChange={e=>setLoadBGr(e.target.value)} style={inputStyle} /></label>
+                <label style={{...labelStyle, color: '#fff', display: 'block', marginTop: '10px'}}>Muzzle FPS<input type="number" value={loadBVel} onChange={e=>setLoadBVel(e.target.value)} style={inputStyle} /></label>
+                <label style={{...labelStyle, color: '#fff', display: 'block', marginTop: '10px'}}>BC (G1)<input type="number" value={loadBBc} onChange={e=>setLoadBBc(e.target.value)} style={inputStyle} /></label>
+              </div>
+            </div>
 
-        {/* --- Card 6: Safety Disclaimer --- */}
-        <div style={{ background: '#220000', border: '1px solid #d00000', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ color: '#ff4444', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '6px', textAlign: 'center' }}>⚠️ CRITICAL DISCLAIMER</div>
-          <p style={{ color: '#ffaaaa', fontSize: '0.75rem', margin: '0', lineHeight: '1.5', textAlign: 'justify' }}>
-            This engine utilizes a standardized G1 point-mass mathematical model. It is designed for educational, theoretical, and estimation purposes only. Real-world ballistics are deeply affected by barrel harmonics, ammunition lot variance, spin drift, aerodynamic jump, Coriolis effect, and shifting micro-climates. <strong>NEVER</strong> rely solely on a digital calculator for an ethical or critical shot. ALWAYS true your DOPE (Data on Previous Engagements) physically on the range.
-          </p>
-        </div>
+            {/* RESULTS */}
+            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px' }}>
+              <h3 style={{ color: '#fff', textAlign: 'center', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>500 Yard Analysis</h3>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
+                <div style={{ flex: 1, textAlign: 'center', color: statA.me > statB.me ? '#00cc66' : '#ef4444', fontWeight: 'bold' }}>{statA.me.toFixed(0)} ft-lbs</div>
+                <div style={{ flex: 1, textAlign: 'center', color: '#aaa', fontSize: '0.85em' }}>Muzzle Energy</div>
+                <div style={{ flex: 1, textAlign: 'center', color: statB.me > statA.me ? '#00cc66' : '#3b82f6', fontWeight: 'bold' }}>{statB.me.toFixed(0)} ft-lbs</div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
+                <div style={{ flex: 1, textAlign: 'center', color: statA.tv500 > statB.tv500 ? '#00cc66' : '#ef4444', fontWeight: 'bold' }}>{statA.tv500.toFixed(0)} fps</div>
+                <div style={{ flex: 1, textAlign: 'center', color: '#aaa', fontSize: '0.85em' }}>500yd Velocity</div>
+                <div style={{ flex: 1, textAlign: 'center', color: statB.tv500 > statA.tv500 ? '#00cc66' : '#3b82f6', fontWeight: 'bold' }}>{statB.tv500.toFixed(0)} fps</div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', alignItems: 'center' }}>
+                <div style={{ flex: 1, textAlign: 'center', color: statA.te500 > statB.te500 ? '#00cc66' : '#ef4444', fontWeight: 'bold' }}>{statA.te500.toFixed(0)} ft-lbs</div>
+                <div style={{ flex: 1, textAlign: 'center', color: '#aaa', fontSize: '0.85em' }}>500yd Energy</div>
+                <div style={{ flex: 1, textAlign: 'center', color: statB.te500 > statA.te500 ? '#00cc66' : '#3b82f6', fontWeight: 'bold' }}>{statB.te500.toFixed(0)} ft-lbs</div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#111', padding: '10px', borderRadius: '8px', border: '1px solid #222' }}>
+                <div style={{ flex: 1, textAlign: 'center', color: statA.drop500 < statB.drop500 ? '#00cc66' : '#ef4444', fontWeight: 'bold' }}>{statA.drop500.toFixed(1)} MIL</div>
+                <div style={{ flex: 1, textAlign: 'center', color: '#fff', fontSize: '0.85em', fontWeight: 'bold' }}>500yd Drop</div>
+                <div style={{ flex: 1, textAlign: 'center', color: statB.drop500 < statA.drop500 ? '#00cc66' : '#3b82f6', fontWeight: 'bold' }}>{statB.drop500.toFixed(1)} MIL</div>
+              </div>
+            </div>
+          </>
+        )}
 
       </div>
     </div>
   );
 }
-
-export default ShootingCalc;
