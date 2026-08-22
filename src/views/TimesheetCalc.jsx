@@ -5,7 +5,7 @@ export default function TimesheetCalc() {
   const navigate = useNavigate();
   
   // --- TOP-LEVEL NAVIGATION ---
-  const [activeTab, setActiveTab] = useState('Manager'); // 'Employee', 'Manager', 'Self-Employed', 'HR'
+  const [activeTab, setActiveTab] = useState('Manager'); 
 
   // --- SUB-NAVIGATION ---
   const [empTab, setEmpTab] = useState('Timecard');
@@ -20,7 +20,7 @@ export default function TimesheetCalc() {
 
   // --- MANAGER STATE ---
   const [mgrBudget, setMgrBudget] = useState('160'); 
-  const [mgrAvgRate, setMgrAvgRate] = useState('16.50'); // For estimating fleet payroll
+  const [mgrAvgRate, setMgrAvgRate] = useState('16.50'); 
   const [employees, setEmployees] = useState([
     { id: 1, name: 'Employee 1', shifts: { Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] } }
   ]);
@@ -42,7 +42,7 @@ export default function TimesheetCalc() {
     const [eH, eM] = end.split(':').map(Number);
     let sTime = sH + sM / 60;
     let eTime = eH + eM / 60;
-    if (eTime < sTime) eTime += 24; // Handle overnights
+    if (eTime < sTime) eTime += 24; 
     const totalWithBreak = (eTime - sTime) - (parse(breakMins) / 60);
     return Math.max(0, totalWithBreak); 
   };
@@ -86,10 +86,24 @@ export default function TimesheetCalc() {
   const updateMgrShift = (day, idx, field, val) => setEmployees(employees.map(e => e.id === activeEmpId ? { ...e, shifts: { ...e.shifts, [day]: e.shifts[day].map((s, i) => i === idx ? { ...s, [field]: val } : s) } } : e));
   const deleteMgrShift = (day, idx) => setEmployees(employees.map(e => e.id === activeEmpId ? { ...e, shifts: { ...e.shifts, [day]: e.shifts[day].filter((_, i) => i !== idx) } } : e));
   
-  const getEmpTotalHours = (emp) => {
+  const getEmpStats = (emp) => {
     let tHrs = 0;
-    daysOfWeek.forEach(d => emp.shifts[d].forEach(s => tHrs += calcShiftHours(s.start, s.end, s.break)));
-    return tHrs;
+    let missingBreaks = 0;
+    daysOfWeek.forEach(d => {
+      emp.shifts[d].forEach(s => {
+        const hrs = calcShiftHours(s.start, s.end, s.break);
+        tHrs += hrs;
+        // Flag shifts over 6 hours with less than 30 min break
+        if (hrs > 6 && parse(s.break) < 30) missingBreaks++;
+      });
+    });
+    const reg = Math.min(40, tHrs);
+    const ot = Math.max(0, tHrs - 40);
+    const rate = parse(mgrAvgRate);
+    const regCost = reg * rate;
+    const otCost = ot * rate * 1.5;
+    const totalCost = regCost + otCost;
+    return { tHrs, reg, ot, regCost, otCost, totalCost, missingBreaks };
   };
 
   // --- SELF-EMPLOYED FUNCTIONS ---
@@ -113,17 +127,16 @@ export default function TimesheetCalc() {
     let report = `WEEKLY MASTER SCHEDULE\n=======================\n\n`;
     let fleetHours = 0;
     let fleetGross = 0;
-    const rate = parse(mgrAvgRate);
 
     employees.forEach(e => {
-      const hrs = getEmpTotalHours(e);
-      const reg = Math.min(40, hrs);
-      const ot = Math.max(0, hrs - 40);
-      fleetHours += hrs;
-      fleetGross += (reg * rate) + (ot * rate * 1.5);
+      const stats = getEmpStats(e);
+      fleetHours += stats.tHrs;
+      fleetGross += stats.totalCost;
 
-      report += `[ ${e.name.toUpperCase()} ] - Total: ${hrs.toFixed(2)} hrs\n`;
-      if (ot > 0) report += `  ⚠️ Includes ${ot.toFixed(2)} hrs OVERTIME\n`;
+      report += `[ ${e.name.toUpperCase()} ]\n`;
+      report += `Total Hours: ${stats.tHrs.toFixed(2)} (Reg: ${stats.reg.toFixed(2)} | OT: ${stats.ot.toFixed(2)})\n`;
+      report += `Est. Cost: $${stats.totalCost.toFixed(2)}\n`;
+      if (stats.missingBreaks > 0) report += `⚠️ WARNING: ${stats.missingBreaks} shift(s) missing mandatory 30m break.\n`;
       
       daysOfWeek.forEach(d => {
         if (e.shifts[d].length > 0) {
@@ -137,8 +150,27 @@ export default function TimesheetCalc() {
     return report;
   };
 
-  const handleCopyReport = () => {
-    navigator.clipboard.writeText(generateMgrReport());
+  const generateGigReport = () => {
+    let report = `FREELANCE & GIG INVOICE SUMMARY\n=======================\n\n`;
+    let tGross = 0, tExp = 0, tNet = 0, tHrs = 0;
+    gigs.forEach(g => {
+      const stats = getGigStats(g);
+      tGross += stats.gross; tExp += stats.exp; tNet += stats.net; tHrs += parse(g.hours);
+      report += `[ ${g.name.toUpperCase()} ]\n`;
+      report += `Gross Payout: $${stats.gross.toFixed(2)} | Expenses: -$${stats.exp.toFixed(2)}\n`;
+      report += `Labor: ${parse(g.hours).toFixed(1)} hrs | True Hourly ROI: $${stats.trueHourly.toFixed(2)}/hr\n`;
+      report += `Est. Net Take-Home: $${stats.net.toFixed(2)}\n\n`;
+    });
+    report += `=======================\n`;
+    report += `TOTAL GROSS: $${tGross.toFixed(2)}\n`;
+    report += `TOTAL EXPENSES: -$${tExp.toFixed(2)}\n`;
+    report += `TOTAL LABOR: ${tHrs.toFixed(1)} hrs\n`;
+    report += `TOTAL NET DISBURSED: $${tNet.toFixed(2)}\n`;
+    return report;
+  };
+
+  const handleCopyReport = (type) => {
+    navigator.clipboard.writeText(type === 'mgr' ? generateMgrReport() : generateGigReport());
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -196,8 +228,8 @@ export default function TimesheetCalc() {
         })}
       </div>
 
-      {/* ADDED massive paddingBottom to permanently clear the ad overlay */}
-      <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '160px' }}>
+      {/* Removed massive paddingBottom to allow ad overlay */}
+      <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1 }}>
         
         {/* ========================================== */}
         {/* TAB 1: EMPLOYEE (SOLO PAY)                 */}
@@ -315,7 +347,16 @@ export default function TimesheetCalc() {
                       {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                     </select>
                   </label>
+                  <div style={{ marginTop: '15px', borderTop: '1px dashed #333', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#fff' }}>
+                    <span>Current Scheduled Hours:</span>
+                    <strong style={{ color: getEmpStats(activeEmp).tHrs > 40 ? '#ef4444' : '#00cc66' }}>{getEmpStats(activeEmp).tHrs.toFixed(2)} hrs</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '0.9em', marginTop: '5px' }}>
+                    <span>Est. Schedule Cost:</span>
+                    <span>${getEmpStats(activeEmp).totalCost.toFixed(2)}</span>
+                  </div>
                 </div>
+
                 {daysOfWeek.map(day => {
                   let dHrs = 0;
                   activeEmp.shifts[day].forEach(s => dHrs += calcShiftHours(s.start, s.end, s.break));
@@ -350,17 +391,14 @@ export default function TimesheetCalc() {
             {mgrTab === 'Report' && (() => {
               let totalFleetHours = 0;
               let fleetGross = 0;
-              let hasOvertime = false;
-              const rate = parse(mgrAvgRate);
+              let fleetOTCost = 0;
 
               const mappedEmps = employees.map(e => {
-                const hrs = getEmpTotalHours(e);
-                const reg = Math.min(40, hrs);
-                const ot = Math.max(0, hrs - 40);
-                if (ot > 0) hasOvertime = true;
-                totalFleetHours += hrs;
-                fleetGross += (reg * rate) + (ot * rate * 1.5);
-                return { ...e, hrs, reg, ot };
+                const stats = getEmpStats(e);
+                totalFleetHours += stats.tHrs;
+                fleetGross += stats.totalCost;
+                fleetOTCost += (stats.otCost - (stats.ot * parse(mgrAvgRate))); // Just the premium portion
+                return { ...e, ...stats };
               });
 
               const bgt = parse(mgrBudget);
@@ -381,26 +419,33 @@ export default function TimesheetCalc() {
                   </div>
 
                   <button 
-                    onClick={handleCopyReport}
+                    onClick={() => handleCopyReport('mgr')}
                     style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #a855f7', background: copied ? '#00cc66' : 'rgba(168, 85, 247, 0.1)', color: copied ? '#000' : '#a855f7', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px' }}>
                     {copied ? '✅ Schedule Copied!' : '📋 Export Master Schedule'}
                   </button>
 
                   <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.05em' }}>
-                    <h3 style={{ margin: '0 0 15px 0', color: '#a855f7', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>MASTER SCHEDULE</h3>
+                    <h3 style={{ margin: '0 0 15px 0', color: '#a855f7', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>ANALYTICS & SCHEDULE</h3>
                     
                     {mappedEmps.map(e => (
                       <div key={e.id} style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px dashed #222' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}>
                           <span style={{ color: '#a855f7' }}>{e.name}</span>
-                          <span>{e.hrs.toFixed(2)} hrs</span>
+                          <span style={{ color: e.ot > 0 ? '#ef4444' : '#fff' }}>{e.tHrs.toFixed(2)} hrs</span>
                         </div>
-                        {e.ot > 0 ? (
-                          <div style={{ color: '#ef4444', fontSize: '0.85em', textAlign: 'right' }}>⚠️ Includes {e.ot.toFixed(2)} OT Hrs</div>
-                        ) : (
-                          <div style={{ color: '#888', fontSize: '0.85em', textAlign: 'right' }}>Reg: {e.reg.toFixed(2)} hrs</div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '0.85em', marginBottom: '4px' }}>
+                          <span>Cost: ${e.totalCost.toFixed(2)}</span>
+                          <span>Reg: {e.reg.toFixed(2)} | OT: {e.ot.toFixed(2)}</span>
+                        </div>
+
+                        {e.missingBreaks > 0 && (
+                          <div style={{ color: '#ef4444', fontSize: '0.85em', fontWeight: 'bold', marginTop: '4px', padding: '4px', background: 'rgba(239,68,68,0.1)', borderRadius: '4px' }}>
+                            ⚠️ {e.missingBreaks} shift(s) missing mandatory 30m break.
+                          </div>
                         )}
-                        <div style={{ marginTop: '6px' }}>
+
+                        <div style={{ marginTop: '8px' }}>
                           {daysOfWeek.map(d => {
                             if (e.shifts[d].length > 0) {
                               return (
@@ -420,8 +465,18 @@ export default function TimesheetCalc() {
                       <span>Total Fleet Hours:</span>
                       <span>{totalFleetHours.toFixed(2)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b', fontSize: '1.1em', marginTop: '8px' }}>
-                      <span>Est. Scheduled Payroll:</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '1.1em', marginTop: '8px' }}>
+                      <span>Est. Base Payroll:</span>
+                      <span>${(fleetGross - fleetOTCost).toFixed(2)}</span>
+                    </div>
+                    {fleetOTCost > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444', fontSize: '1.0em', marginTop: '4px' }}>
+                        <span>Est. OT Premium Cost:</span>
+                        <span>+${fleetOTCost.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b', fontSize: '1.2em', fontWeight: 'bold', marginTop: '8px', borderTop: '1px solid #333', paddingTop: '8px' }}>
+                      <span>Total Est. Liability:</span>
                       <span>${fleetGross.toFixed(2)}</span>
                     </div>
                   </div>
@@ -548,6 +603,14 @@ export default function TimesheetCalc() {
               <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
                 <strong>W-2 (Employees):</strong> The employer dictates schedules, provides tools, and withholds taxes. Minimum wage and FLSA overtime laws apply.<br/><br/>
                 <strong>1099 (Contractors):</strong> Contractors dictate how and when work gets done. They pay their own Self-Employment taxes, and FLSA overtime laws generally do not apply. Misclassifying an employee as a contractor is a severe IRS audit flag.
+              </p>
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#00ffff' }}>HR Document Retention Rules</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
+                <strong>Payroll Records:</strong> The FLSA requires keeping payroll records (hours, wages, deductions) for at least 3 years. The IRS requires 4 years for employment tax records.<br/><br/>
+                <strong>Form I-9:</strong> Must be retained for 3 years after the date of hire, or 1 year after termination, whichever is later.
               </p>
             </div>
           </div>
