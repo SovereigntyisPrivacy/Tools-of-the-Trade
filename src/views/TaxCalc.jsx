@@ -219,19 +219,37 @@ export default function TaxCalc() {
           </>
         )}
 
-        {/* --- LAYMAN'S GUIDE ACCORDION (PERSISTENT) --- */}
+        {/* --- EXPANDED LAYMAN'S GUIDE ACCORDION (PERSISTENT) --- */}
         <div style={{ background: '#1a1a1a', borderRadius: '12px', border: '1px solid #444', overflow: 'hidden', marginTop: '10px' }}>
           <button onClick={() => setShowGuide(!showGuide)} style={{ width: '100%', padding: '15px', background: '#222', border: 'none', color: '#fff', fontSize: '1.1em', fontWeight: 'bold', textAlign: 'left', display: 'flex', justifyContent: 'space-between' }}>
             📖 The Layman's Tax Guide <span>{showGuide ? '▲' : '▼'}</span>
           </button>
           {showGuide && (
             <div style={{ padding: '20px', color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>
-              <h4 style={{ color: '#a855f7', margin: '0 0 5px 0' }}>Marginal vs. Effective</h4>
-              <p style={{ marginBottom: '15px' }}>Taxes fill up in "buckets." Just because you hit the 24% bracket doesn't mean all your money is taxed at 24%—only the money inside that specific bucket. Your <strong>Effective Rate</strong> (at the bottom) is the true average you actually paid.</p>
+              
+              <h4 style={{ color: '#00cc66', margin: '0 0 5px 0' }}>Standard vs. Itemized Deductions</h4>
+              <p style={{ marginBottom: '15px' }}>The IRS gives everyone a default discount on their taxable income called the <strong>Standard Deduction</strong> (e.g., $16,100 for singles in 2026). However, if your individual write-offs—like heavy property taxes, massive medical bills, or high mortgage interest—add up to <em>more</em> than $16,100, you should "Itemize" to get the bigger tax break. This calculator automatically picks whichever option saves you the most money.</p>
+
+              <h4 style={{ color: '#a855f7', margin: '0 0 5px 0' }}>Marginal vs. Effective Tax Rates</h4>
+              <p style={{ marginBottom: '15px' }}>Federal taxes fill up in progressive "buckets." Just because your top dollar hits the 24% bracket doesn't mean <em>all</em> your money is taxed at 24%—only the money inside that specific bucket. Your <strong>Effective Rate</strong> (shown on Step 4) is the true average percentage of your total income that actually went to the government.</p>
+              
+              <h4 style={{ color: '#3b82f6', margin: '0 0 5px 0' }}>State Tax Variations</h4>
+              <p style={{ marginBottom: '15px' }}>Unlike the federal bucket system, some states use a "Flat Tax." For example, Arizona charges a flat 2.5% across the board, no matter how much you make. Other states, like Texas or California, have their own aggressive progressive brackets. Always check your local state rate before estimating.</p>
+              
               <h4 style={{ color: '#00ffff', margin: '0 0 5px 0' }}>The 1099 Pass-Through Loophole</h4>
-              <p style={{ marginBottom: '15px' }}>If you are a 1099 worker, you pay double the FICA tax (15.3%). However, the IRS lets you subtract 50% of that tax from your gross income, AND gives you a 20% Qualified Business Income (QBI) deduction on your profits.</p>
+              <p style={{ marginBottom: '15px' }}>If you are a 1099 worker (freelancer, gig worker, consultant), you get hit with a 15.3% Self-Employment (FICA) tax right out of the gate. However, the IRS lets you subtract 50% of that tax from your gross income, AND gives you a 20% Qualified Business Income (QBI) deduction on your net profits. Always track your business expenses (mileage, tools, software) to lower that initial profit number.</p>
+
+              <h4 style={{ color: '#f59e0b', margin: '0 0 5px 0' }}>Hardware & Home Office Write-Offs</h4>
+              <p style={{ marginBottom: '15px' }}>If you build a custom PC rig specifically for AI inference, graphic design, or hashing, and you operate as a registered sole proprietor or LLC, that hardware is a business deduction. Furthermore, if you use a dedicated area of your home <em>exclusively</em> for that business, you can deduct a percentage of your rent, internet, and off-grid power/solar setups as a Home Office expense.</p>
+
+              <h4 style={{ color: '#ef4444', margin: '0 0 5px 0' }}>Crypto & "Taxable Events"</h4>
+              <p style={{ marginBottom: '15px' }}>Simply buying cryptocurrency and holding it is not taxed. A "Taxable Event" only occurs when you <strong>sell it for fiat cash</strong>, <strong>swap it for another coin</strong> (e.g., trading BTC for Monero), or <strong>buy a physical good</strong> with it. Furthermore, if you <em>mine</em> or <em>hash</em> crypto yourself, the Fair Market Value of the coin on the exact day it hits your wallet is taxed as standard income.</p>
+
+              <h4 style={{ color: '#ef4444', margin: '0 0 5px 0' }}>Short-Term vs. Long-Term Gains</h4>
+              <p style={{ marginBottom: '15px' }}>If you buy an asset (stocks, crypto, property) and sell it in under 365 days, your profits are taxed at your standard, expensive income tax bracket (Short-Term). If you hold the asset for exactly 1 year and 1 day, the IRS rewards you with the Long-Term Capital Gains rate, which is significantly cheaper (often 0% or 15% for average earners).</p>
+
               <h4 style={{ color: '#ef4444', margin: '0 0 5px 0' }}>Loss Harvesting</h4>
-              <p style={{ margin: 0 }}>If you sell crypto or stocks at a loss, the IRS allows you to deduct up to $3,000 of those losses against your regular paycheck income every single year.</p>
+              <p style={{ margin: 0 }}>If you sell crypto or stocks at a massive loss, you don't just lose money. The IRS allows you to deduct up to $3,000 of those "realized losses" directly against your regular W-2 paycheck income every single year, lowering your overall tax burden.</p>
             </div>
           )}
         </div>
