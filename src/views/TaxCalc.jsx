@@ -189,7 +189,7 @@ export default function TaxCalc() {
         </div>
 
         {/* --- LAYMAN'S GUIDE ACCORDION --- */}
-        <div style={{ background: '#1a1a1a', borderRadius: '12px', border: '1px solid #444', overflow: 'hidden' }}>
+        <div style={{ background: '#1a1a1a', borderRadius: '12px', border: '1px solid #444', overflow: 'hidden', marginBottom: '20px' }}>
           <button onClick={() => setShowGuide(!showGuide)} style={{ width: '100%', padding: '15px', background: '#222', border: 'none', color: '#fff', fontSize: '1.1em', fontWeight: 'bold', textAlign: 'left', display: 'flex', justifyContent: 'space-between' }}>
             📖 The Layman's Tax Guide <span>{showGuide ? '▲' : '▼'}</span>
           </button>
@@ -205,6 +205,11 @@ export default function TaxCalc() {
               <p style={{ margin: 0 }}>If you sell crypto or stocks at a loss, the IRS allows you to deduct up to $3,000 of those losses against your regular paycheck income every single year.</p>
             </div>
           )}
+        </div>
+
+        {/* --- LEGAL DISCLAIMER --- */}
+        <div style={{ textAlign: 'center', color: '#666', fontSize: '0.75em', lineHeight: '1.4', padding: '0 10px' }}>
+          <strong>Disclaimer:</strong> This tool provides tax and financial estimations for informational and educational purposes only. It does not constitute certified financial, legal, or tax advice, and cannot be used to officially file returns. Tax codes change constantly; always consult a licensed CPA or tax professional for your specific liability.
         </div>
 
       </div>
