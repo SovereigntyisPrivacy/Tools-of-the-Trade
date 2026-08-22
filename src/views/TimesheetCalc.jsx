@@ -255,8 +255,6 @@ export default function TimesheetCalc() {
         })}
       </div>
 
-      <div>
-
       <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1 }}>
         
         {/* ========================================== */}
@@ -330,7 +328,7 @@ export default function TimesheetCalc() {
             {empTab === 'Pay Stub' && (() => {
               const p = getSoloPayroll();
               return (
-                <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.1em' }}>
+                <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.1em', marginBottom: '80px' }}>
                   <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>WEEKLY PAY STUB</h3>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Regular Hours:</span> <span style={{color:'#fff'}}>{p.reg.toFixed(2)}</span></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Overtime (1.5x):</span> <span style={{color:'#ffaa00'}}>{p.ot.toFixed(2)}</span></div>
@@ -453,7 +451,7 @@ export default function TimesheetCalc() {
                 <div style={{ marginBottom: '80px' }}>
                   <div style={{ ...cardStyle, borderTop: isOverBudget ? '4px solid #ef4444' : '4px solid #00cc66' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                      <h4 style={{ margin: 0, color: '#fff' }}>Labor Budget Tracking</h4>
+                      <h4 style={{ margin: '0 0 10px 0', color: '#fff' }}>Labor Budget Tracking</h4>
                       <span style={{ color: isOverBudget ? '#ef4444' : '#00cc66', fontWeight: 'bold' }}>
                         {totalFleetHours.toFixed(1)} / {bgt.toFixed(1)} hrs
                       </span>
