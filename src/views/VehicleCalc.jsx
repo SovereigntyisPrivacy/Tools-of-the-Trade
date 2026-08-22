@@ -1,169 +1,305 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function VehicleCalc() {
+export default function VehicleCalc() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('Trucking'); // 'Trucking', 'Towing', 'Recovery', 'Rental'
 
-  // 1. Hauling & Towing
-  const [gvwr, setGvwr] = useState('');
-  const [gcwr, setGcwr] = useState('');
-  const [curb, setCurb] = useState('');
-  const [paxGear, setPaxGear] = useState('');
+  // --- CDL & TRUCKING STATE ---
+  const [driveHours, setDriveHours] = useState('0');
+  const [dutyHours, setDutyHours] = useState('0');
+  const [cycleHours, setCycleHours] = useState('0');
 
-  // 2. Trailer & Hitch
-  const [trailerWeight, setTrailerWeight] = useState('');
-  
-  // 3. Range & Trip Cost
-  const [tank, setTank] = useState('');
-  const [mpg, setMpg] = useState('');
-  const [fuelPrice, setFuelPrice] = useState('');
-  const [tripMiles, setTripMiles] = useState('');
+  // --- HOME TOWING STATE ---
+  const [gvwr, setGvwr] = useState('7000');
+  const [gcwr, setGcwr] = useState('13000');
+  const [curbWt, setCurbWt] = useState('5200');
+  const [gearWt, setGearWt] = useState('450');
+  const [trailerWt, setTrailerWt] = useState('6500');
 
-  // 4. Off-Road Recovery
-  const [stuckWeight, setStuckWeight] = useState('');
-  const [surfaceType, setSurfaceType] = useState('1.5'); // Mire factor
+  // --- RECOVERY STATE ---
+  const [stuckWt, setStuckWt] = useState('5500');
+  const [mireLvl, setMireLvl] = useState('1'); // Surface resistance multiplier
+  const [gradient, setGradient] = useState('0'); // Slope multiplier
 
-  // --- Calculations ---
+  // --- RENTAL & TRIP STATE ---
+  const [tripDist, setTripDist] = useState('350');
+  const [fuelPrice, setFuelPrice] = useState('3.50');
+  const [mpg, setMpg] = useState('10');
+  const [tankSize, setTankSize] = useState('33');
 
-  // 1. Towing
-  let maxPayload = 0, availPayload = 0, maxTowing = 0;
-  if (gvwr && curb) {
-    maxPayload = parseFloat(gvwr) - parseFloat(curb);
-    availPayload = maxPayload - (parseFloat(paxGear) || 0);
-  }
-  if (gcwr && gvwr) {
-    maxTowing = parseFloat(gcwr) - parseFloat(gvwr);
-  }
+  const parse = (val) => parseFloat(val) || 0;
 
-  // 2. Tongue & Hitch
-  let tongueMin = 0, tongueMax = 0, hitchClass = '';
-  if (trailerWeight) {
-    const tw = parseFloat(trailerWeight);
-    tongueMin = tw * 0.10;
-    tongueMax = tw * 0.15;
-    
-    if (tw <= 2000) hitchClass = 'Class I (2,000 lbs)';
-    else if (tw <= 3500) hitchClass = 'Class II (3,500 lbs)';
-    else if (tw <= 8000) hitchClass = 'Class III (8,000 lbs)';
-    else if (tw <= 10000) hitchClass = 'Class IV (10,000 lbs)';
-    else hitchClass = 'Class V / Gooseneck';
-  }
+  // --- MATH ENGINES ---
+  // Trucking HOS
+  const remainDrive = Math.max(0, 11 - parse(driveHours));
+  const remainDuty = Math.max(0, 14 - parse(dutyHours));
+  const remainCycle = Math.max(0, 70 - parse(cycleHours));
+  const activeLimit = Math.min(remainDrive, remainDuty, remainCycle);
 
-  // 3. Range
-  let maxRange = 0, tripCost = 0, fuelNeeded = 0;
-  if (tank && mpg) {
-    maxRange = parseFloat(tank) * parseFloat(mpg);
-  }
-  if (tripMiles && mpg && fuelPrice) {
-    fuelNeeded = parseFloat(tripMiles) / parseFloat(mpg);
-    tripCost = fuelNeeded * parseFloat(fuelPrice);
-  }
+  // Towing Payload & GCWR
+  const pGvwr = parse(gvwr), pGcwr = parse(gcwr), pCurb = parse(curbWt), pGear = parse(gearWt), pTrail = parse(trailerWt);
+  const maxPayload = Math.max(0, pGvwr - pCurb);
+  const availPayload = Math.max(0, maxPayload - pGear);
+  const maxTowing = Math.max(0, pGcwr - pCurb - pGear);
+  const minTongue = pTrail * 0.10;
+  const maxTongue = pTrail * 0.15;
+  const isOverweight = pTrail > maxTowing || maxTongue > availPayload;
 
-  // 4. Winch Recovery
-  let minWinch = 0, snatchBlockAdvantage = 0;
-  if (stuckWeight) {
-    const w = parseFloat(stuckWeight);
-    const mireFactor = parseFloat(surfaceType);
-    // Winch rating needs to handle the mire factor + a 1.5x safety/stall margin
-    minWinch = w * mireFactor * 1.5; 
-    snatchBlockAdvantage = minWinch / 2; // Adding 1 pulley cuts load in half
-  }
+  // Winch Recovery
+  const wStuck = parse(stuckWt);
+  const wMire = parse(mireLvl);
+  const wGrad = parse(gradient);
+  // Total Pull = Weight + (Weight * Mire) + (Weight * Gradient)
+  const reqPull = wStuck + (wStuck * wMire) + (wStuck * wGrad);
+  const safeWinch = reqPull * 1.5;
+  const needSnatch = safeWinch > 12000; // Assuming standard 12k winch threshold
+
+  // Rental / Trip
+  const tDist = parse(tripDist), tMpg = parse(mpg), tPrice = parse(fuelPrice), tTank = parse(tankSize);
+  const galNeeded = tMpg > 0 ? tDist / tMpg : 0;
+  const tripCost = galNeeded * tPrice;
+  const maxRange = tTank * tMpg;
+  const fuelStops = maxRange > 0 ? Math.floor(tDist / maxRange) : 0;
+
+  // --- STYLES ---
+  const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.05em', marginTop: '4px' };
+  const labelStyle = { color: '#00ffff', fontSize: '0.8em', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' };
+  const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
+  const flexWrap = { display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' };
+  const inputWrap = { flex: '1 1 110px', minWidth: '110px' };
 
   return (
-    <div className="view-wrapper pb-safe">
-      <header className="header">
-        <button className="back-btn" onClick={() => navigate('/calculator')}>← Hub</button>
+    <div className="view-wrapper pb-safe" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header className="header" style={{ borderBottom: '1px solid #222' }}>
+        <button className="back-btn" onClick={() => navigate('/calculator')}>Hub</button>
         <h2>Vehicle & Fleet</h2>
       </header>
 
-      <div className="calc-content" style={{ padding: '20px', overflowY: 'auto', height: '100%', paddingBottom: '120px' }}>
+      {/* TOP TABS */}
+      <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {['Trucking', 'Home Towing', 'Recovery', 'Rental'].map(tab => {
+          let color = '#fff';
+          if (tab === 'Trucking') color = '#3b82f6';
+          if (tab === 'Home Towing') color = '#a855f7';
+          if (tab === 'Recovery') color = '#f59e0b';
+          if (tab === 'Rental') color = '#00cc66';
+
+          return (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{ padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: activeTab === tab ? color : '#222', color: activeTab === tab ? '#000' : '#aaa' }}>
+              {tab}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '150px' }}>
         
-        {/* 1. Hauling Limits */}
-        <div style={{ background: 'rgba(20,20,20,0.8)', borderTop: '4px solid #ff4444', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-          <h3 style={{ color: '#fff', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>🛻 Hauling & Towing Limits</h3>
-          
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#ff4444', fontSize: '0.85em', marginBottom: '4px', fontWeight: 'bold' }}>GVWR (lbs)</label><input type="number" placeholder="7000" value={gvwr} onChange={e => setGvwr(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#ffaa00', fontSize: '0.85em', marginBottom: '4px', fontWeight: 'bold' }}>GCWR (lbs)</label><input type="number" placeholder="13000" value={gcwr} onChange={e => setGcwr(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-          </div>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Curb Weight</label><input type="number" placeholder="5200" value={curb} onChange={e => setCurb(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Pax & Gear Wt</label><input type="number" placeholder="450" value={paxGear} onChange={e => setPaxGear(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1em' }}><span style={{ color: '#aaa' }}>Max Payload:</span><span style={{ color: '#fff', fontWeight: 'bold' }}>{maxPayload > 0 ? maxPayload : 0} lbs</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', paddingTop: '8px', borderTop: '1px dashed #333' }}><span style={{ color: '#fff', fontWeight: 'bold' }}>Avail. Payload:</span><span style={{ color: availPayload >= 0 ? '#00cc66' : '#ff4444', fontWeight: 'bold' }}>{availPayload} lbs</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', paddingTop: '8px', borderTop: '1px solid #333' }}><span style={{ color: '#fff', fontWeight: 'bold' }}>Max Towing:</span><span style={{ color: '#ffaa00', fontWeight: 'bold' }}>{maxTowing > 0 ? maxTowing : 0} lbs</span></div>
-            {availPayload < 0 && <div style={{ color: '#ff4444', fontSize: '0.85em', textAlign: 'center', marginTop: '5px' }}>⚠️ Overloaded. Remove gear to prevent suspension damage.</div>}
-          </div>
-        </div>
-
-        {/* 2. Trailer & Hitch */}
-        <div style={{ background: 'rgba(20,20,20,0.8)', borderTop: '4px solid #ffaa00', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-          <h3 style={{ color: '#fff', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>🔗 Trailer Tongue & Hitch Planner</h3>
-          <p style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '15px' }}>Improper tongue weight causes fatal trailer sway. Targets mandatory 10-15% distribution.</p>
-          
-          <label style={{ display: 'block', color: '#ffaa00', fontWeight: 'bold', fontSize: '0.85em', marginBottom: '4px' }}>Total Loaded Trailer Weight (lbs)</label>
-          <input type="number" placeholder="e.g. 6500" value={trailerWeight} onChange={e => setTrailerWeight(e.target.value)} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px', marginBottom: '15px', fontSize: '1.1em' }} />
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1em' }}><span style={{ color: '#aaa' }}>Min Tongue Wt (10%):</span><span style={{ color: '#fff', fontWeight: 'bold' }}>{tongueMin.toFixed(0)} lbs</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1em' }}><span style={{ color: '#aaa' }}>Max Tongue Wt (15%):</span><span style={{ color: '#fff', fontWeight: 'bold' }}>{tongueMax.toFixed(0)} lbs</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', paddingTop: '8px', borderTop: '1px dashed #333' }}><span style={{ color: '#fff', fontWeight: 'bold' }}>Req. Hitch:</span><span style={{ color: '#ffaa00', fontWeight: 'bold' }}>{hitchClass || 'N/A'}</span></div>
-          </div>
-        </div>
-
-        {/* 3. Range & Fuel */}
-        <div style={{ background: 'rgba(20,20,20,0.8)', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-          <h3 style={{ color: '#fff', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>⛽ Range & Trip Cost</h3>
-          
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#00ffff', fontSize: '0.85em', marginBottom: '4px' }}>Tank (Gal)</label><input type="number" placeholder="18" value={tank} onChange={e => setTank(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#00ffff', fontSize: '0.85em', marginBottom: '4px' }}>Avg MPG</label><input type="number" placeholder="22" value={mpg} onChange={e => setMpg(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333', marginBottom: '15px' }}>
-            <span style={{ color: '#fff', fontWeight: 'bold' }}>Max Range:</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{maxRange > 0 ? maxRange.toFixed(0) : 0} Miles</span>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Trip Dist (Mi)</label><input type="number" placeholder="350" value={tripMiles} onChange={e => setTripMiles(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Fuel Price ($)</label><input type="number" placeholder="3.50" value={fuelPrice} onChange={e => setFuelPrice(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1em' }}><span style={{ color: '#aaa' }}>Fuel Needed:</span><span style={{ color: '#fff', fontWeight: 'bold' }}>{fuelNeeded > 0 ? fuelNeeded.toFixed(1) : 0} Gal</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2em', paddingTop: '8px', borderTop: '1px dashed #333' }}><span style={{ color: '#fff', fontWeight: 'bold' }}>Trip Cost:</span><span style={{ color: '#ff4444', fontWeight: 'bold' }}>${tripCost > 0 ? tripCost.toFixed(2) : 0}</span></div>
-          </div>
-        </div>
-
-        {/* 4. Winch Recovery */}
-        <div style={{ background: 'rgba(20,20,20,0.8)', borderTop: '4px solid #a55eea', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-          <h3 style={{ color: '#fff', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>⛓️ Off-Road Winch Recovery</h3>
-          <p style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '15px' }}>Accounts for surface suction/drag and minimum 1.5x winch stall safety factor.</p>
-          
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <div style={{ flex: 1 }}><label style={{ display: 'block', color: '#a55eea', fontSize: '0.85em', marginBottom: '4px', fontWeight: 'bold' }}>Stuck Weight</label><input type="number" placeholder="5500" value={stuckWeight} onChange={e => setStuckWeight(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} /></div>
-            <div style={{ flex: 2 }}><label style={{ display: 'block', color: '#aaa', fontSize: '0.85em', marginBottom: '4px' }}>Surface Mire / Grade</label>
-              <select value={surfaceType} onChange={e => setSurfaceType(e.target.value)} style={{ width: '100%', padding: '10px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }}>
-                <option value="1.0">Flat Hard Surface (1.0x)</option>
-                <option value="1.5">Deep Sand / Gravel (1.5x)</option>
-                <option value="2.0">Deep Mud / Suction (2.0x)</option>
-                <option value="2.5">Steep Incline + Mud (2.5x)</option>
-              </select>
+        {/* ========================================== */}
+        {/* TAB 1: CDL & TRUCKING                      */}
+        {/* ========================================== */}
+        {activeTab === 'Trucking' && (
+          <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>FMCSA Hours of Service (HOS)</h3>
+              <div style={flexWrap}>
+                <div style={inputWrap}><label style={{...labelStyle, color: '#3b82f6'}}>Driven Today (Hrs)<input type="number" step="0.5" value={driveHours} onChange={e=>setDriveHours(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={{...labelStyle, color: '#3b82f6'}}>On-Duty Today (Hrs)<input type="number" step="0.5" value={dutyHours} onChange={e=>setDutyHours(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={inputWrap}><label style={{...labelStyle, color: '#3b82f6'}}>Cycle Hours (Past 8 Days)<input type="number" step="1" value={cycleHours} onChange={e=>setCycleHours(e.target.value)} style={inputStyle} /></label></div>
             </div>
-          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2em' }}><span style={{ color: '#fff', fontWeight: 'bold' }}>Min Winch Rating:</span><span style={{ color: '#ff4444', fontWeight: 'bold' }}>{minWinch > 0 ? minWinch.toFixed(0) : 0} lbs</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1em', paddingTop: '8px', borderTop: '1px dashed #333' }}><span style={{ color: '#aaa' }}>w/ Snatch Block:</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{snatchBlockAdvantage > 0 ? snatchBlockAdvantage.toFixed(0) : 0} lbs</span></div>
-          </div>
-        </div>
+            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px', marginBottom: '20px' }}>
+              <h4 style={{ margin: '0 0 15px 0', color: '#fff', textAlign: 'center', borderBottom: '1px solid #222', paddingBottom: '10px' }}>LOGBOOK LIMITS</h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>11-Hr Drive Limit:</span> <strong style={{color: remainDrive <= 1 ? '#ef4444' : '#fff'}}>{remainDrive.toFixed(1)} hrs left</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>14-Hr Shift Limit:</span> <strong style={{color: remainDuty <= 1 ? '#ef4444' : '#fff'}}>{remainDuty.toFixed(1)} hrs left</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>70-Hr Cycle Limit:</span> <strong style={{color: remainCycle <= 5 ? '#ef4444' : '#fff'}}>{remainCycle.toFixed(1)} hrs left</strong></div>
+              <div style={{ borderTop: '1px dashed #444', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#00ffff', fontWeight: 'bold', fontSize: '1.2em' }}>
+                <span>Remaining Drive Time:</span> <span>{Math.max(0, activeLimit).toFixed(1)} hrs</span>
+              </div>
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#00cc66' }}>Federal Axle Weight Limits</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
+                Maximum Gross Vehicle Weight: <strong>80,000 lbs</strong><br/>
+                Steer Axle: <strong>12,000 lbs</strong> (or tire rating)<br/>
+                Drive Tandems: <strong>34,000 lbs</strong><br/>
+                Trailer Tandems: <strong>34,000 lbs</strong><br/>
+                <em>Note: Bridge laws may reduce these maximums based on axle spacing.</em>
+              </p>
+            </div>
+
+            <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(59, 130, 246, 0.05)', border: '1px dashed #3b82f6', borderRadius: '12px', textAlign: 'center' }}>
+              <span style={{ fontSize: '1.5em', display: 'block', marginBottom: '8px' }}>☕ 🛣️</span>
+              <strong style={{ color: '#3b82f6', display: 'block', marginBottom: '4px' }}>Highway Humanity Check</strong>
+              <span style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.4', display: 'block' }}>
+                Pull over. Stretch your legs. Drink some water. White-line fever kills. No freight load is worth dying for, and dispatch isn't driving the rig.
+              </span>
+            </div>
+          </>
+        )}
+
+        {/* ========================================== */}
+        {/* TAB 2: HOME TOWING                         */}
+        {/* ========================================== */}
+        {activeTab === 'Home Towing' && (
+          <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>Tow Vehicle Specs</h3>
+              <div style={flexWrap}>
+                <div style={inputWrap}><label style={{...labelStyle, color: '#a855f7'}}>GVWR (lbs)<input type="number" value={gvwr} onChange={e=>setGvwr(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={{...labelStyle, color: '#a855f7'}}>GCWR (lbs)<input type="number" value={gcwr} onChange={e=>setGcwr(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={flexWrap}>
+                <div style={inputWrap}><label style={labelStyle}>Curb Wt (lbs)<input type="number" value={curbWt} onChange={e=>setCurbWt(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>Pax & Gear (lbs)<input type="number" value={gearWt} onChange={e=>setGearWt(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+            </div>
+
+            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Gross Payload Cap:</span> <span>{maxPayload.toLocaleString()} lbs</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>Avail. Payload (For Hitch):</span> <strong style={{color: availPayload < 0 ? '#ef4444' : '#00cc66'}}>{availPayload.toLocaleString()} lbs</strong></div>
+              <div style={{ borderTop: '1px dashed #444', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#a855f7', fontWeight: 'bold', fontSize: '1.2em' }}>
+                <span>Max Safe Towing:</span> <span>{maxTowing.toLocaleString()} lbs</span>
+              </div>
+            </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>Trailer Hitch Planner</h3>
+              <p style={{ color: '#aaa', fontSize: '0.85em', lineHeight: '1.4', marginBottom: '15px' }}>Improper tongue weight causes fatal highway trailer sway. Target 10% to 15% weight distribution on the hitch.</p>
+              
+              <label style={{...labelStyle, color: '#f59e0b'}}>Loaded Trailer Wt (lbs)<input type="number" value={trailerWt} onChange={e=>setTrailerWt(e.target.value)} style={inputStyle} /></label>
+              
+              <div style={{ marginTop: '15px', padding: '15px', background: '#000', borderRadius: '8px', border: isOverweight ? '1px solid #ef4444' : '1px solid #222' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Min Tongue (10%):</span> <span>{minTongue.toLocaleString()} lbs</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px' }}><span>Max Tongue (15%):</span> <span>{maxTongue.toLocaleString()} lbs</span></div>
+                {isOverweight ? (
+                  <div style={{ color: '#ef4444', fontWeight: 'bold', textAlign: 'center', marginTop: '10px', fontSize: '0.9em' }}>⚠️ DANGER: Trailer exceeds vehicle capacity or payload limits.</div>
+                ) : (
+                  <div style={{ color: '#00cc66', fontWeight: 'bold', textAlign: 'center', marginTop: '10px' }}>✅ Safe to Tow</div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ========================================== */}
+        {/* TAB 3: RECOVERY & WINCH                    */}
+        {/* ========================================== */}
+        {activeTab === 'Recovery' && (
+          <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>Winch Rigging Calculator</h3>
+              <p style={{ color: '#aaa', fontSize: '0.85em', lineHeight: '1.4', marginBottom: '15px' }}>Accounts for surface suction (Mire) and slope drag (Gradient).</p>
+
+              <label style={{...labelStyle, color: '#f59e0b'}}>Stuck Vehicle Wt (lbs)<input type="number" value={stuckWt} onChange={e=>setStuckWt(e.target.value)} style={inputStyle} /></label>
+              
+              <div style={{ marginTop: '10px' }}>
+                <label style={labelStyle}>Mire Depth (Suction)
+                  <select value={mireLvl} onChange={e=>setMireLvl(e.target.value)} style={inputStyle}>
+                    <option value="0.04">Hard Flat Surface (0.04x)</option>
+                    <option value="0.33">Grass / Gravel (0.33x)</option>
+                    <option value="1">Wheel Depth Mud (1x Wt)</option>
+                    <option value="2">Fender Deep Mud (2x Wt)</option>
+                    <option value="3">Frame Deep Suction (3x Wt)</option>
+                  </select>
+                </label>
+              </div>
+
+              <div style={{ marginTop: '10px' }}>
+                <label style={labelStyle}>Slope / Gradient
+                  <select value={gradient} onChange={e=>setGradient(e.target.value)} style={inputStyle}>
+                    <option value="0">Flat (0°)</option>
+                    <option value="0.25">15° Incline (0.25x Wt)</option>
+                    <option value="0.5">30° Incline (0.5x Wt)</option>
+                    <option value="0.75">45° Incline (0.75x Wt)</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Rolling Resistance:</span> <span>{wStuck.toLocaleString()} lbs</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Mire Suction:</span> <span>{(wStuck * wMire).toLocaleString()} lbs</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>Gradient Drag:</span> <span>{(wStuck * wGrad).toLocaleString()} lbs</span></div>
+              
+              <div style={{ borderTop: '1px solid #444', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold', fontSize: '1.2em' }}>
+                <span>Total Pull Required:</span> <span>{reqPull.toLocaleString()} lbs</span>
+              </div>
+              
+              <div style={{ borderTop: '1px dashed #444', marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#f59e0b', fontWeight: 'bold', fontSize: '1.2em' }}>
+                <span>Min Winch Rating (1.5x):</span> <span>{safeWinch.toLocaleString()} lbs</span>
+              </div>
+            </div>
+
+            {needSnatch && (
+              <div style={{ padding: '15px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '12px' }}>
+                <h4 style={{ margin: '0 0 5px 0', color: '#ef4444' }}>⚠️ Snatch Block Required</h4>
+                <p style={{ color: '#aaa', fontSize: '0.9em', margin: 0, lineHeight: '1.4' }}>This pull exceeds a standard 12,000 lb truck winch. You MUST rig a 2-to-1 mechanical advantage using a snatch block to halve the winch load to <strong>{(safeWinch / 2).toLocaleString()} lbs</strong>.</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ========================================== */}
+        {/* TAB 4: RENTAL & TRIP                       */}
+        {/* ========================================== */}
+        {activeTab === 'Rental' && (
+          <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #00cc66' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#00cc66' }}>Trip Fuel Estimator</h3>
+              
+              <label style={labelStyle}>Quick Select Vehicle
+                <select onChange={(e) => {
+                  const vals = e.target.value.split(',');
+                  setMpg(vals[0]); setTankSize(vals[1]);
+                }} style={{...inputStyle, marginBottom: '10px'}}>
+                  <option value="10,33">Standard Select...</option>
+                  <option value="18,25">Cargo Van (18 MPG | 25 Gal)</option>
+                  <option value="10,33">15ft Box Truck (10 MPG | 33 Gal)</option>
+                  <option value="8,40">26ft Box Truck (8 MPG | 40 Gal)</option>
+                </select>
+              </label>
+
+              <div style={flexWrap}>
+                <div style={inputWrap}><label style={labelStyle}>Est. MPG<input type="number" value={mpg} onChange={e=>setMpg(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>Tank (Gal)<input type="number" value={tankSize} onChange={e=>setTankSize(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={flexWrap}>
+                <div style={inputWrap}><label style={{...labelStyle, color: '#00cc66'}}>Trip Distance (Mi)<input type="number" value={tripDist} onChange={e=>setTripDist(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={{...labelStyle, color: '#00cc66'}}>Fuel Price ($)<input type="number" value={fuelPrice} onChange={e=>setFuelPrice(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+            </div>
+
+            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Max Range (Full Tank):</span> <span>{maxRange.toLocaleString()} Miles</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>Est. Fuel Stops Needed:</span> <span>{fuelStops} stops</span></div>
+              
+              <div style={{ borderTop: '1px solid #444', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold' }}>
+                <span>Total Fuel Needed:</span> <span>{galNeeded.toFixed(1)} Gallons</span>
+              </div>
+              <div style={{ borderTop: '1px dashed #444', marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#00cc66', fontWeight: 'bold', fontSize: '1.3em' }}>
+                <span>Estimated Trip Cost:</span> <span>${tripCost.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>Moving Truck Sizing Guide</h3>
+              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '18px', lineHeight: '1.5', margin: 0 }}>
+                <li><strong>Cargo Van / Pickup:</strong> Studio apt, college dorm, partial moves.</li>
+                <li><strong>10 ft - 15 ft Truck:</strong> 1 to 2 bedroom apartment.</li>
+                <li><strong>20 ft Truck:</strong> 2 to 3 bedroom house.</li>
+                <li><strong>26 ft Truck:</strong> 3 to 4+ bedroom house. <em>(Note: Maximum size before requiring a CDL).</em></li>
+              </ul>
+            </div>
+          </>
+        )}
 
       </div>
     </div>
   );
 }
-
-export default VehicleCalc;
