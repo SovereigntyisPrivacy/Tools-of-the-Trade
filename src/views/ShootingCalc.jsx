@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom';
 
 export default function ShootingCalc() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('DOPE Card'); 
+  const [activeTab, setActiveTab] = useState('Solution'); 
 
   // --- STATE: WEAPON & LOAD ---
   const [bulletGr, setBulletGr] = useState('168');
   const [muzzleFps, setMuzzleFps] = useState('2600');
   const [bc, setBc] = useState('0.462');
   const [zeroRange, setZeroRange] = useState('100');
-  
   const [altitude, setAltitude] = useState('2400');
   const [distance, setDistance] = useState('1000');
   const [windSpd, setWindSpd] = useState('10');
@@ -22,12 +21,6 @@ export default function ShootingCalc() {
   const [loadBGr, setLoadBGr] = useState('175');
   const [loadBVel, setLoadBVel] = useState('2550');
   const [loadBBc, setLoadBBc] = useState('0.505');
-
-  // --- STATE: DOPE CARD SETTINGS ---
-  const [dopeStart, setDopeStart] = useState('100');
-  const [dopeEnd, setDopeEnd] = useState('1000');
-  const [dopeStep, setDopeStep] = useState('50');
-  const [dopeWind, setDopeWind] = useState('10');
 
   // --- STATE: RELOADING BENCH ---
   const [reloadMode, setReloadMode] = useState('Metallic'); 
@@ -76,15 +69,7 @@ export default function ShootingCalc() {
   const statB = calcLoad(loadBGr, loadBVel, loadBBc);
 
   // --- TAB 3: DOPE CARD GENERATOR ---
-  const dStart = parse(dopeStart);
-  const dEnd = parse(dopeEnd);
-  const dStep = Math.max(10, parse(dopeStep)); // Prevent infinite loops
-  const dynamicRanges = [];
-  if (dStart <= dEnd) {
-    for (let i = dStart; i <= dEnd; i += dStep) {
-      dynamicRanges.push(i);
-    }
-  }
+  const dopeRanges = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 
   // --- TAB 4: RELOADING MATH ---
   const pCost = parse(primerQty) > 0 ? parse(primerCost) / parse(primerQty) : 0;
@@ -204,61 +189,37 @@ export default function ShootingCalc() {
         )}
 
         {/* ========================================== */}
-        {/* TAB 3: DYNAMIC DOPE CARD                   */}
+        {/* TAB 3: DOPE CARD                           */}
         {/* ========================================== */}
         {activeTab === 'DOPE Card' && (
-          <>
-            <div style={{...cardStyle, borderTop: '4px solid #00ffff'}}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#00ffff' }}>⚙️ Card Settings</h3>
-              <div style={flexWrap}>
-                <div style={inputWrap}><label style={labelStyle}>Start Yardage<input type="number" value={dopeStart} onChange={e=>setDopeStart(e.target.value)} style={inputStyle} /></label></div>
-                <div style={inputWrap}><label style={labelStyle}>End Yardage<input type="number" value={dopeEnd} onChange={e=>setDopeEnd(e.target.value)} style={inputStyle} /></label></div>
-              </div>
-              <div style={flexWrap}>
-                <div style={inputWrap}><label style={labelStyle}>Step Increment<input type="number" value={dopeStep} onChange={e=>setDopeStep(e.target.value)} style={{...inputStyle, border: '1px solid #00ffff'}} /></label></div>
-                <div style={inputWrap}><label style={labelStyle}>Crosswind (mph)<input type="number" value={dopeWind} onChange={e=>setDopeWind(e.target.value)} style={inputStyle} /></label></div>
-              </div>
+          <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', overflow: 'hidden' }}>
+            <div style={{ background: '#111', padding: '15px', textAlign: 'center', borderBottom: '1px solid #333' }}>
+              <h3 style={{ margin: 0, color: '#fff' }}>Range Card</h3>
+              <div style={{ color: '#00ffff', fontSize: '0.85em', marginTop: '5px' }}>{bulletGr}gr @ {muzzleFps} fps</div>
             </div>
-
-            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', overflow: 'hidden' }}>
-              <div style={{ background: '#111', padding: '15px', textAlign: 'center', borderBottom: '1px solid #333' }}>
-                <h3 style={{ margin: 0, color: '#fff', letterSpacing: '1px' }}>DATA ON PREVIOUS ENGAGEMENT</h3>
-                <div style={{ color: '#aaa', fontSize: '0.85em', marginTop: '5px' }}>{bulletGr}gr | {muzzleFps} fps | BC: {bc}</div>
-              </div>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff', fontSize: '0.85em' }}>
-                  <thead>
-                    <tr style={{ background: '#222', color: '#aaa' }}>
-                      <th style={{ padding: '12px 8px', textAlign: 'center' }}>Yards</th>
-                      <th style={{ padding: '12px 8px', textAlign: 'center' }}>Elev (MIL)</th>
-                      <th style={{ padding: '12px 8px', textAlign: 'center' }}>Wind (MIL)</th>
-                      <th style={{ padding: '12px 8px', textAlign: 'center' }}>Vel (fps)</th>
-                      <th style={{ padding: '12px 8px', textAlign: 'center' }}>Energy</th>
+            <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff', fontSize: '0.9em' }}>
+              <thead>
+                <tr style={{ background: '#222', color: '#aaa' }}>
+                  <th style={{ padding: '10px', textAlign: 'left' }}>Yards</th>
+                  <th style={{ padding: '10px', textAlign: 'center' }}>Elev (MIL)</th>
+                  <th style={{ padding: '10px', textAlign: 'right' }}>Vel (fps)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dopeRanges.map(r => {
+                  const drop = (r / 100) * 0.88 * (r / 500 || 1);
+                  const v = Math.max(0, vel - (r * 0.65));
+                  return (
+                    <tr key={r} style={{ borderBottom: '1px solid #222' }}>
+                      <td style={{ padding: '10px', fontWeight: 'bold' }}>{r}</td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: '#ef4444' }}>{drop.toFixed(1)}</td>
+                      <td style={{ padding: '10px', textAlign: 'right', color: v < 1125 ? '#888' : '#fff' }}>{v.toFixed(0)}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {dynamicRanges.length > 0 ? dynamicRanges.map(r => {
-                      const drop = (r / 100) * 0.88 * (r / 500 || 1);
-                      const wHold = (parse(dopeWind) / 10) * (r / 200) * 0.12;
-                      const v = Math.max(0, vel - (r * 0.65));
-                      const en = (gr * Math.pow(v, 2)) / 450240;
-                      return (
-                        <tr key={r} style={{ borderBottom: '1px solid #222' }}>
-                          <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'center' }}>{r}</td>
-                          <td style={{ padding: '12px 8px', textAlign: 'center', color: '#ef4444', fontWeight: 'bold' }}>{drop.toFixed(1)}</td>
-                          <td style={{ padding: '12px 8px', textAlign: 'center', color: '#00ffff' }}>{wHold.toFixed(1)}</td>
-                          <td style={{ padding: '12px 8px', textAlign: 'center', color: v < 1125 ? '#888' : '#fff' }}>{v.toFixed(0)}</td>
-                          <td style={{ padding: '12px 8px', textAlign: 'center', color: '#ffaa00' }}>{en.toFixed(0)}</td>
-                        </tr>
-                      )
-                    }) : (
-                      <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#666' }}>Invalid Range Settings</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* ========================================== */}
@@ -325,20 +286,41 @@ export default function ShootingCalc() {
               <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Shotguns:</strong> Fired from the shoulder with a smoothbore barrel. Fires multiple pellets or slugs.</p>
             </div>
 
+            <div style={{...cardStyle, borderLeft: '4px solid #10b981', marginBottom: 0}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>2. The Caliber Cheat Sheet</h3>
+              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.22 LR:</strong> A tiny "rimfire" cartridge. Almost zero recoil and dirt cheap. Perfect for training or plinking.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>9mm Luger:</strong> The global king of handguns. Optimal balance of capacity and recoil.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.38 Special & .357 Magnum:</strong> The legendary wheel-gun powerhouse. Known for incredible kinetic energy transfer and stopping power. When fired out of a long-barreled revolver, the slow-burning magnum powder has time to fully ignite, creating a devastatingly fast and accurate projectile. As a bonus, any .357 revolver can safely fire cheaper, lower-recoil .38 Special ammunition.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.45 ACP:</strong> A heavy, slow, naturally subsonic round. Won "Two World Wars." Incredible stopping power out of a 1911 pistol.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>10mm Auto:</strong> An overpowered handgun cartridge primarily used by guides and hunters in Alaska to stop charging bears.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>5.56x45mm NATO / .223 Rem:</strong> Standard AR-15 round. Fires a light bullet at blistering speeds.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.300 Blackout:</strong> A rifle round specifically engineered to be fired through a short barrel with a suppressor. Highly effective at close ranges.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>7.62x39mm:</strong> The classic AK-47 round. Shoots a heavier, slower bullet than the 5.56 NATO.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.308 Winchester / 7.62 NATO:</strong> The classic heavy-hitter. Fantastic for dropping large game or ringing steel out to 800 yards.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>6.5 Creedmoor:</strong> The modern long-range cheat code. Highly aerodynamic bullet that stays supersonic past 1,000 yards.</li>
+                <li><strong style={{color:'#fff'}}>.50 BMG:</strong> A massive anti-materiel cartridge designed for heavy machine guns and extreme long-range rifles. Can disable vehicles.</li>
+              </ul>
+            </div>
+
             <div style={{...cardStyle, borderLeft: '4px solid #ec4899', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#ec4899' }}>2. Ammunition Types & Behavior</h3>
+              <h3 style={{ margin: '0 0 10px 0', color: '#ec4899' }}>3. Ammunition Types & Pressures</h3>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>FMJ (Full Metal Jacket):</strong> Lead core wrapped in copper. Does not expand. Over-penetrates in defense scenarios.</li>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>JHP (Jacketed Hollow Point):</strong> The gold standard for defense. Tip expands instantly upon hitting liquid/tissue, transferring massive energy.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Hard Cast Lead:</strong> Solid, unjacketed blocks of lead hardened with antimony. Designed to smash entirely through bone and deep muscle without expanding. Ideal for bear defense.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Wadcutter (WC) & Semi-Wadcutter (SWC):</strong> Completely flat-faced bullets designed to punch perfectly clean, circular holes in paper targets for competition scoring.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Overpressure (+P and +P+):</strong> Ammunition loaded with extra gunpowder to exceed standard SAAMI pressure limits. Generates much higher velocities, but can dangerously damage firearms not explicitly rated for "+P" pressures.</li>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>OTM (Open Tip Match):</strong> Looks like a hollow point, but the hole is a byproduct of manufacturing to make the bullet perfectly balanced for extreme precision. Not designed to expand.</li>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Frangible:</strong> Compressed copper dust. Disintegrates into powder upon hitting steel targets to prevent dangerous ricochets at close range.</li>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Subsonic:</strong> Extra-heavy bullets loaded to travel slower than the speed of sound (under ~1,125 fps). Eliminates the supersonic "crack."</li>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Armor Piercing (AP):</strong> Features a hardened steel or tungsten penetrator core. Highly restricted.</li>
+                <li><strong style={{color:'#fff'}}>Incendiary / Tracer:</strong> Contains a pyrotechnic charge that either burns brightly in flight (Tracer) or detonates/burns upon impact (Incendiary). Heavily regulated and banned at most civilian ranges due to severe fire hazard.</li>
               </ul>
             </div>
 
             <div style={{...cardStyle, borderLeft: '4px solid #14b8a6', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#14b8a6' }}>3. The 4 Universal Rules of Safety</h3>
+              <h3 style={{ margin: '0 0 10px 0', color: '#14b8a6' }}>4. The 4 Universal Rules of Safety</h3>
               <ol style={{ color: '#fff', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0, fontWeight: 'bold' }}>
                 <li style={{ marginBottom: '8px' }}>ALL GUNS ARE ALWAYS LOADED.</li>
                 <li style={{ marginBottom: '8px' }}>NEVER LET THE MUZZLE COVER ANYTHING YOU ARE NOT WILLING TO DESTROY.</li>
@@ -346,7 +328,31 @@ export default function ShootingCalc() {
                 <li>BE SURE OF YOUR TARGET AND WHAT IS BEYOND IT.</li>
               </ol>
             </div>
-            
+
+            <div style={{...cardStyle, borderLeft: '4px solid #ef4444', marginBottom: 0}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>5. Legalities: Transport, Checks & NFA</h3>
+              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
+                <li style={{ marginBottom: '10px' }}><strong>FOPA Safe Passage:</strong> Under 18 U.S.C. § 926A, travelers can legally transport firearms through highly restrictive states as long as the gun is legal in their origin and destination states. The gun must be unloaded and locked in a container totally inaccessible to the passenger compartment.</li>
+                <li style={{ marginBottom: '10px' }}><strong>Universal Background Checks vs. Private Sales:</strong> Under federal law, buying a gun from a licensed dealer requires a Form 4473 and an FBI NICS background check. In many free states, private sales between residents do not require this. However, restrictive states have implemented "Universal" checks, forcing private sellers to go through a dealer anyway.</li>
+                <li style={{ marginBottom: '10px' }}><strong>Red Flag Laws (ERPOs):</strong> Extreme Risk Protection Orders allow police to temporarily confiscate an individual's firearms based on sworn claims that the person is a danger to themselves or others, often without a prior criminal conviction.</li>
+                <li style={{ marginBottom: '10px' }}><strong>Title II (NFA Items):</strong> Suppressors, Short-Barreled Rifles (SBRs), and Short-Barreled Shotguns (SBSs). Requires an ATF Form 1 or 4, a $200 tax stamp, fingerprints, and wait periods.</li>
+                <li><strong>Machine Guns:</strong> Post-1986 fully automatic weapons are strictly illegal for civilians.</li>
+              </ul>
+            </div>
+
+            <div style={{...cardStyle, borderLeft: '4px solid #eab308', marginBottom: 0}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#eab308' }}>6. Legalities: Self-Defense & Use of Force</h3>
+              <div style={{ background: 'rgba(234, 179, 8, 0.1)', padding: '10px', borderRadius: '8px', border: '1px dashed #eab308', marginBottom: '15px' }}>
+                <p style={{ color: '#eab308', fontSize: '0.85em', margin: 0, textAlign: 'justify', lineHeight: '1.4' }}><strong>DISCLAIMER:</strong> Self-defense laws vary wildly by state. The developers are not lawyers. This is a baseline definition of terms, not legal advice.</p>
+              </div>
+              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
+                <li style={{ marginBottom: '10px' }}><strong>Castle Doctrine:</strong> A common law principle stating you have no legal duty to retreat when defending yourself from an intruder inside your own home, vehicle, or workplace.</li>
+                <li style={{ marginBottom: '10px' }}><strong>Stand Your Ground:</strong> An expansion of the Castle Doctrine that removes the "duty to retreat" in any public space where you have a legal right to be. If threatened with lethal force, you can meet it with lethal force without attempting to run away first.</li>
+                <li style={{ marginBottom: '10px' }}><strong>Duty to Retreat:</strong> Enforced in restrictive states. It legally mandates that an individual must attempt to flee or safely escape a deadly threat before they are legally allowed to use deadly force to defend themselves.</li>
+                <li><strong>Civil Liability Shields:</strong> In roughly 23 states, if you are cleared of criminal charges in a self-defense shooting, the law shields you from being sued for monetary damages in civil court by the attacker or their family.</li>
+              </ul>
+            </div>
+
           </div>
         )}
 
