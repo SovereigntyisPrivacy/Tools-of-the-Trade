@@ -3,12 +3,28 @@ import { useNavigate } from 'react-router-dom';
 
 export default function VehicleCalc() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Trucking'); // 'Trucking', 'Towing', 'Recovery', 'Rental'
+  const [activeTab, setActiveTab] = useState('Rental'); // 'Trucking', 'Home Towing', 'Recovery', 'Rental'
 
-  // --- CDL & TRUCKING STATE ---
-  const [driveHours, setDriveHours] = useState('0');
-  const [dutyHours, setDutyHours] = useState('0');
-  const [cycleHours, setCycleHours] = useState('0');
+  // --- CDL SUB-NAV ---
+  const [cdlSubTab, setCdlSubTab] = useState('HOS Clocks');
+  // --- CDL: HOS STATE ---
+  const [driveHours, setDriveHours] = useState('4.5');
+  const [dutyHours, setDutyHours] = useState('7.0');
+  const [driveSinceBreak, setDriveSinceBreak] = useState('3.5');
+  const [cycleHours, setCycleHours] = useState('48.0');
+  const [splitBerth, setSplitBerth] = useState('None');
+  // --- CDL: BRIDGE FORMULA STATE ---
+  const [bridgeAxles, setBridgeAxles] = useState('5');
+  const [bridgeDistance, setBridgeDistance] = useState('51');
+  const [steerWt, setSteerWt] = useState('11800');
+  const [driveTandemWt, setDriveTandemWt] = useState('33400');
+  const [trailerTandemWt, setTrailerTandemWt] = useState('33800');
+  // --- CDL: IFTA & CPM STATE ---
+  const [iftaMiles, setIftaMiles] = useState('2400');
+  const [iftaMpg, setIftaMpg] = useState('6.5');
+  const [fuelPaid, setFuelPaid] = useState('1350.00');
+  const [fixedCosts, setFixedCosts] = useState('600.00');
+  const [driverPayPerMile, setDriverPayPerMile] = useState('0.65');
 
   // --- HOME TOWING STATE ---
   const [gvwr, setGvwr] = useState('7000');
@@ -19,48 +35,74 @@ export default function VehicleCalc() {
 
   // --- RECOVERY STATE ---
   const [stuckWt, setStuckWt] = useState('5500');
-  const [mireLvl, setMireLvl] = useState('1'); // Surface resistance multiplier
-  const [gradient, setGradient] = useState('0'); // Slope multiplier
+  const [mireLvl, setMireLvl] = useState('1'); 
+  const [gradient, setGradient] = useState('0'); 
 
   // --- RENTAL & TRIP STATE ---
+  const [rentalSubTab, setRentalSubTab] = useState('Quote Builder'); // 'Quote Builder', 'Fuel & Range', 'Pro Guide'
+  
+  // Rental Fuel
   const [tripDist, setTripDist] = useState('350');
   const [fuelPrice, setFuelPrice] = useState('3.50');
-  const [mpg, setMpg] = useState('10');
+  const [rentalMpg, setRentalMpg] = useState('10');
   const [tankSize, setTankSize] = useState('33');
+
+  // Rental Quote Builder
+  const [rentType, setRentType] = useState('Local'); // 'Local' or 'One-Way'
+  const [baseRate, setBaseRate] = useState('39.95');
+  const [rentDays, setRentDays] = useState('1');
+  const [perMileRate, setPerMileRate] = useState('0.99');
+  const [estMiles, setEstMiles] = useState('45');
+  const [insurePerDay, setInsurePerDay] = useState('28.00');
+  const [miscFees, setMiscFees] = useState('20.00'); // Dollies, pads, environmental
+  const [taxRate, setTaxRate] = useState('8.5');
 
   const parse = (val) => parseFloat(val) || 0;
 
-  // --- MATH ENGINES ---
-  // Trucking HOS
-  const remainDrive = Math.max(0, 11 - parse(driveHours));
-  const remainDuty = Math.max(0, 14 - parse(dutyHours));
-  const remainCycle = Math.max(0, 70 - parse(cycleHours));
-  const activeLimit = Math.min(remainDrive, remainDuty, remainCycle);
+  // =========================================================
+  // MATHEMATICAL ENGINES
+  // =========================================================
 
-  // Towing Payload & GCWR
-  const pGvwr = parse(gvwr), pGcwr = parse(gcwr), pCurb = parse(curbWt), pGear = parse(gearWt), pTrail = parse(trailerWt);
-  const maxPayload = Math.max(0, pGvwr - pCurb);
-  const availPayload = Math.max(0, maxPayload - pGear);
-  const maxTowing = Math.max(0, pGcwr - pCurb - pGear);
-  const minTongue = pTrail * 0.10;
-  const maxTongue = pTrail * 0.15;
-  const isOverweight = pTrail > maxTowing || maxTongue > availPayload;
+  // 1. CDL: HOS Logic
+  const remain11 = Math.max(0, 11 - parse(driveHours));
+  const remain14 = Math.max(0, 14 - parse(dutyHours));
+  const remain8Brk = Math.max(0, 8 - parse(driveSinceBreak));
+  const remain70 = Math.max(0, 70 - parse(cycleHours));
+  const activeDriveLimit = Math.min(remain11, remain14, remain8Brk, remain70);
 
-  // Winch Recovery
+  // 2. CDL: Federal Bridge Formula
+  const N = Math.max(2, parse(bridgeAxles));
+  const L = Math.max(1, parse(bridgeDistance));
+  const rawBridgeFormula = 500 * (((L * N) / (N - 1)) + (12 * N) + 36);
+  const legalBridgeMax = Math.min(80000, Math.floor(rawBridgeFormula / 500) * 500);
+  const totalScaleGross = parse(steerWt) + parse(driveTandemWt) + parse(trailerTandemWt);
+  const hasAxleViolation = parse(steerWt) > 12000 || parse(driveTandemWt) > 34000 || parse(trailerTandemWt) > 34000 || totalScaleGross > legalBridgeMax;
+
+  // 3. CDL: IFTA & Cost Per Mile (CPM)
+  const totMiles = Math.max(1, parse(iftaMiles));
+  const totalTripCost = ((totMiles > 0 ? parse(fuelPaid) / totMiles : 0) + (totMiles > 0 ? parse(fixedCosts) / totMiles : 0) + parse(driverPayPerMile)) * totMiles;
+
+  // 4. Towing Payload & GCWR
+  const pCurb = parse(curbWt), pGear = parse(gearWt), pTrail = parse(trailerWt);
+  const availPayload = Math.max(0, Math.max(0, parse(gvwr) - pCurb) - pGear);
+  const maxTowing = Math.max(0, parse(gcwr) - pCurb - pGear);
+  const isTowingOverweight = pTrail > maxTowing || (pTrail * 0.15) > availPayload;
+
+  // 5. Winch Recovery
   const wStuck = parse(stuckWt);
-  const wMire = parse(mireLvl);
-  const wGrad = parse(gradient);
-  // Total Pull = Weight + (Weight * Mire) + (Weight * Gradient)
-  const reqPull = wStuck + (wStuck * wMire) + (wStuck * wGrad);
-  const safeWinch = reqPull * 1.5;
-  const needSnatch = safeWinch > 12000; // Assuming standard 12k winch threshold
+  const safeWinch = (wStuck + (wStuck * parse(mireLvl)) + (wStuck * parse(gradient))) * 1.5;
 
-  // Rental / Trip
-  const tDist = parse(tripDist), tMpg = parse(mpg), tPrice = parse(fuelPrice), tTank = parse(tankSize);
-  const galNeeded = tMpg > 0 ? tDist / tMpg : 0;
-  const tripCost = galNeeded * tPrice;
-  const maxRange = tTank * tMpg;
-  const fuelStops = maxRange > 0 ? Math.floor(tDist / maxRange) : 0;
+  // 6. Rental & Trip
+  const galNeeded = parse(rentalMpg) > 0 ? parse(tripDist) / parse(rentalMpg) : 0;
+  const tripFuelCost = galNeeded * parse(fuelPrice);
+  
+  // Rental Quote Engine
+  const rDays = Math.max(1, parse(rentDays));
+  const mileageCost = rentType === 'Local' ? (parse(estMiles) * parse(perMileRate)) : 0;
+  const baseCost = rentType === 'Local' ? (parse(baseRate) * rDays) : parse(baseRate); // One-way is usually a flat base for the trip
+  const totalInsure = parse(insurePerDay) * rDays;
+  const subTotal = baseCost + mileageCost + totalInsure + parse(miscFees);
+  const finalRentalCost = subTotal + (subTotal * (parse(taxRate) / 100));
 
   // --- STYLES ---
   const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.05em', marginTop: '4px' };
@@ -84,219 +126,176 @@ export default function VehicleCalc() {
           if (tab === 'Home Towing') color = '#a855f7';
           if (tab === 'Recovery') color = '#f59e0b';
           if (tab === 'Rental') color = '#00cc66';
-
           return (
-            <button 
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{ padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: activeTab === tab ? color : '#222', color: activeTab === tab ? '#000' : '#aaa' }}>
-              {tab}
-            </button>
-          )
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: activeTab === tab ? color : '#222', color: activeTab === tab ? '#000' : '#aaa' }}>{tab}</button>
+          );
         })}
       </div>
 
-      <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '150px' }}>
+      <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '160px' }}>
         
-        {/* ========================================== */}
-        {/* TAB 1: CDL & TRUCKING                      */}
-        {/* ========================================== */}
-        {activeTab === 'Trucking' && (
+        {/* ========================================================= */}
+        {/* TAB 4: RENTAL LOGISTICS & QUOTE BUILDER                   */}
+        {/* ========================================================= */}
+        {activeTab === 'Rental' && (
           <>
-            <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>FMCSA Hours of Service (HOS)</h3>
-              <div style={flexWrap}>
-                <div style={inputWrap}><label style={{...labelStyle, color: '#3b82f6'}}>Driven Today (Hrs)<input type="number" step="0.5" value={driveHours} onChange={e=>setDriveHours(e.target.value)} style={inputStyle} /></label></div>
-                <div style={inputWrap}><label style={{...labelStyle, color: '#3b82f6'}}>On-Duty Today (Hrs)<input type="number" step="0.5" value={dutyHours} onChange={e=>setDutyHours(e.target.value)} style={inputStyle} /></label></div>
-              </div>
-              <div style={inputWrap}><label style={{...labelStyle, color: '#3b82f6'}}>Cycle Hours (Past 8 Days)<input type="number" step="1" value={cycleHours} onChange={e=>setCycleHours(e.target.value)} style={inputStyle} /></label></div>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+              {['Quote Builder', 'Fuel & Range', 'Pro Guide'].map(sub => (
+                <button
+                  key={sub}
+                  onClick={() => setRentalSubTab(sub)}
+                  style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontSize: '0.85em', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: rentalSubTab === sub ? 'rgba(0, 204, 102, 0.2)' : '#151515', color: rentalSubTab === sub ? '#00cc66' : '#888', border: rentalSubTab === sub ? '1px solid #00cc66' : '1px solid #222' }}>
+                  {sub}
+                </button>
+              ))}
             </div>
 
-            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px', marginBottom: '20px' }}>
-              <h4 style={{ margin: '0 0 15px 0', color: '#fff', textAlign: 'center', borderBottom: '1px solid #222', paddingBottom: '10px' }}>LOGBOOK LIMITS</h4>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>11-Hr Drive Limit:</span> <strong style={{color: remainDrive <= 1 ? '#ef4444' : '#fff'}}>{remainDrive.toFixed(1)} hrs left</strong></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>14-Hr Shift Limit:</span> <strong style={{color: remainDuty <= 1 ? '#ef4444' : '#fff'}}>{remainDuty.toFixed(1)} hrs left</strong></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>70-Hr Cycle Limit:</span> <strong style={{color: remainCycle <= 5 ? '#ef4444' : '#fff'}}>{remainCycle.toFixed(1)} hrs left</strong></div>
-              <div style={{ borderTop: '1px dashed #444', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#00ffff', fontWeight: 'bold', fontSize: '1.2em' }}>
-                <span>Remaining Drive Time:</span> <span>{Math.max(0, activeLimit).toFixed(1)} hrs</span>
-              </div>
-            </div>
+            {/* 4.1 QUOTE BUILDER */}
+            {rentalSubTab === 'Quote Builder' && (
+              <>
+                <div style={{ ...cardStyle, borderTop: '4px solid #00cc66' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h3 style={{ margin: 0, color: '#00cc66' }}>True Cost Pricing Engine</h3>
+                    <select value={rentType} onChange={e=>setRentType(e.target.value)} style={{ padding: '6px 10px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '6px', fontWeight: 'bold' }}>
+                      <option value="Local">In-Town (Local)</option>
+                      <option value="One-Way">One-Way</option>
+                    </select>
+                  </div>
+                  
+                  <div style={flexWrap}>
+                    <div style={inputWrap}><label style={labelStyle}>{rentType === 'Local' ? 'Daily Base Rate ($)' : 'Flat Trip Rate ($)'}<input type="number" value={baseRate} onChange={e=>setBaseRate(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Days Rented<input type="number" value={rentDays} onChange={e=>setRentDays(e.target.value)} style={inputStyle} /></label></div>
+                  </div>
 
-            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#00cc66' }}>Federal Axle Weight Limits</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
-                Maximum Gross Vehicle Weight: <strong>80,000 lbs</strong><br/>
-                Steer Axle: <strong>12,000 lbs</strong> (or tire rating)<br/>
-                Drive Tandems: <strong>34,000 lbs</strong><br/>
-                Trailer Tandems: <strong>34,000 lbs</strong><br/>
-                <em>Note: Bridge laws may reduce these maximums based on axle spacing.</em>
-              </p>
-            </div>
+                  {rentType === 'Local' && (
+                    <div style={flexWrap}>
+                      <div style={inputWrap}><label style={{...labelStyle, color: '#f59e0b'}}>Mileage Rate ($/mi)<input type="number" value={perMileRate} onChange={e=>setPerMileRate(e.target.value)} style={{...inputStyle, border: '1px solid #f59e0b'}} /></label></div>
+                      <div style={inputWrap}><label style={{...labelStyle, color: '#f59e0b'}}>Estimated Miles<input type="number" value={estMiles} onChange={e=>setEstMiles(e.target.value)} style={{...inputStyle, border: '1px solid #f59e0b'}} /></label></div>
+                    </div>
+                  )}
 
-            <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(59, 130, 246, 0.05)', border: '1px dashed #3b82f6', borderRadius: '12px', textAlign: 'center' }}>
-              <span style={{ fontSize: '1.5em', display: 'block', marginBottom: '8px' }}>☕ 🛣️</span>
-              <strong style={{ color: '#3b82f6', display: 'block', marginBottom: '4px' }}>Highway Humanity Check</strong>
-              <span style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.4', display: 'block' }}>
-                Pull over. Stretch your legs. Drink some water. White-line fever kills. No freight load is worth dying for, and dispatch isn't driving the rig.
-              </span>
-            </div>
-          </>
-        )}
+                  <div style={flexWrap}>
+                    <div style={inputWrap}><label style={{...labelStyle, color: '#a855f7'}}>Insurance ($/Day)<input type="number" value={insurePerDay} onChange={e=>setInsurePerDay(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Equip & Fees ($)<input type="number" value={miscFees} onChange={e=>setMiscFees(e.target.value)} placeholder="Dollies, Pads..." style={inputStyle} /></label></div>
+                  </div>
+                  <div style={inputWrap}><label style={labelStyle}>Est. Tax Rate (%)<input type="number" step="0.1" value={taxRate} onChange={e=>setTaxRate(e.target.value)} style={inputStyle} /></label></div>
+                </div>
 
-        {/* ========================================== */}
-        {/* TAB 2: HOME TOWING                         */}
-        {/* ========================================== */}
-        {activeTab === 'Home Towing' && (
-          <>
-            <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>Tow Vehicle Specs</h3>
-              <div style={flexWrap}>
-                <div style={inputWrap}><label style={{...labelStyle, color: '#a855f7'}}>GVWR (lbs)<input type="number" value={gvwr} onChange={e=>setGvwr(e.target.value)} style={inputStyle} /></label></div>
-                <div style={inputWrap}><label style={{...labelStyle, color: '#a855f7'}}>GCWR (lbs)<input type="number" value={gcwr} onChange={e=>setGcwr(e.target.value)} style={inputStyle} /></label></div>
-              </div>
-              <div style={flexWrap}>
-                <div style={inputWrap}><label style={labelStyle}>Curb Wt (lbs)<input type="number" value={curbWt} onChange={e=>setCurbWt(e.target.value)} style={inputStyle} /></label></div>
-                <div style={inputWrap}><label style={labelStyle}>Pax & Gear (lbs)<input type="number" value={gearWt} onChange={e=>setGearWt(e.target.value)} style={inputStyle} /></label></div>
-              </div>
-            </div>
+                <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Base Vehicle Cost:</span> <span>${baseCost.toFixed(2)}</span></div>
+                  {rentType === 'Local' && <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b', marginBottom: '8px' }}><span>Mileage Charge:</span> <span>${mileageCost.toFixed(2)}</span></div>}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#a855f7', marginBottom: '8px' }}><span>Total Liability Insurance:</span> <span>${totalInsure.toFixed(2)}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>Misc Fees & Tax:</span> <span>${(parse(miscFees) + (subTotal * (parse(taxRate)/100))).toFixed(2)}</span></div>
+                  
+                  <div style={{ borderTop: '1px solid #444', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#00cc66', fontWeight: 'bold', fontSize: '1.4em' }}>
+                    <span>Total Rental Cost:</span> <span>${finalRentalCost.toFixed(2)}</span>
+                  </div>
+                  <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '0.8em', color: '#666' }}>*Fuel costs not included. See Fuel & Range tab.</div>
+                </div>
+              </>
+            )}
 
-            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Gross Payload Cap:</span> <span>{maxPayload.toLocaleString()} lbs</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>Avail. Payload (For Hitch):</span> <strong style={{color: availPayload < 0 ? '#ef4444' : '#00cc66'}}>{availPayload.toLocaleString()} lbs</strong></div>
-              <div style={{ borderTop: '1px dashed #444', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#a855f7', fontWeight: 'bold', fontSize: '1.2em' }}>
-                <span>Max Safe Towing:</span> <span>{maxTowing.toLocaleString()} lbs</span>
-              </div>
-            </div>
+            {/* 4.2 FUEL & RANGE */}
+            {rentalSubTab === 'Fuel & Range' && (
+              <>
+                <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
+                  <h3 style={{ margin: '0 0 10px 0', color: '#00ffff' }}>Trip Fuel Estimator</h3>
+                  <label style={labelStyle}>Quick Select Vehicle
+                    <select onChange={(e) => {
+                      const vals = e.target.value.split(',');
+                      setRentalMpg(vals[0]); setTankSize(vals[1]);
+                    }} style={{...inputStyle, marginBottom: '10px'}}>
+                      <option value="10,33">Standard Select...</option>
+                      <option value="18,25">Cargo Van (18 MPG | 25 Gal)</option>
+                      <option value="10,33">15ft Box Truck (10 MPG | 33 Gal)</option>
+                      <option value="8,40">26ft Box Truck (8 MPG | 40 Gal)</option>
+                    </select>
+                  </label>
 
-            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>Trailer Hitch Planner</h3>
-              <p style={{ color: '#aaa', fontSize: '0.85em', lineHeight: '1.4', marginBottom: '15px' }}>Improper tongue weight causes fatal highway trailer sway. Target 10% to 15% weight distribution on the hitch.</p>
-              
-              <label style={{...labelStyle, color: '#f59e0b'}}>Loaded Trailer Wt (lbs)<input type="number" value={trailerWt} onChange={e=>setTrailerWt(e.target.value)} style={inputStyle} /></label>
-              
-              <div style={{ marginTop: '15px', padding: '15px', background: '#000', borderRadius: '8px', border: isOverweight ? '1px solid #ef4444' : '1px solid #222' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Min Tongue (10%):</span> <span>{minTongue.toLocaleString()} lbs</span></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px' }}><span>Max Tongue (15%):</span> <span>{maxTongue.toLocaleString()} lbs</span></div>
-                {isOverweight ? (
-                  <div style={{ color: '#ef4444', fontWeight: 'bold', textAlign: 'center', marginTop: '10px', fontSize: '0.9em' }}>⚠️ DANGER: Trailer exceeds vehicle capacity or payload limits.</div>
-                ) : (
-                  <div style={{ color: '#00cc66', fontWeight: 'bold', textAlign: 'center', marginTop: '10px' }}>✅ Safe to Tow</div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
+                  <div style={flexWrap}>
+                    <div style={inputWrap}><label style={labelStyle}>Est. MPG<input type="number" value={rentalMpg} onChange={e=>setRentalMpg(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={labelStyle}>Tank (Gal)<input type="number" value={tankSize} onChange={e=>setTankSize(e.target.value)} style={inputStyle} /></label></div>
+                  </div>
+                  <div style={flexWrap}>
+                    <div style={inputWrap}><label style={{...labelStyle, color: '#00ffff'}}>Trip Distance (Mi)<input type="number" value={tripDist} onChange={e=>setTripDist(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={inputWrap}><label style={{...labelStyle, color: '#00ffff'}}>Fuel Price ($)<input type="number" value={fuelPrice} onChange={e=>setFuelPrice(e.target.value)} style={inputStyle} /></label></div>
+                  </div>
+                </div>
 
-        {/* ========================================== */}
-        {/* TAB 3: RECOVERY & WINCH                    */}
-        {/* ========================================== */}
-        {activeTab === 'Recovery' && (
-          <>
-            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>Winch Rigging Calculator</h3>
-              <p style={{ color: '#aaa', fontSize: '0.85em', lineHeight: '1.4', marginBottom: '15px' }}>Accounts for surface suction (Mire) and slope drag (Gradient).</p>
+                <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Max Range (Full Tank):</span> <span>{(parse(tankSize)*parse(rentalMpg)).toLocaleString()} Miles</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>Est. Fuel Stops Needed:</span> <span>{Math.max(0, Math.floor(parse(tripDist) / (parse(tankSize)*parse(rentalMpg))))} stops</span></div>
+                  
+                  <div style={{ borderTop: '1px solid #444', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold' }}>
+                    <span>Total Fuel Needed:</span> <span>{galNeeded.toFixed(1)} Gallons</span>
+                  </div>
+                  <div style={{ borderTop: '1px dashed #444', marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#00ffff', fontWeight: 'bold', fontSize: '1.3em' }}>
+                    <span>Estimated Trip Cost:</span> <span>${tripFuelCost.toFixed(2)}</span>
+                  </div>
+                </div>
+              </>
+            )}
 
-              <label style={{...labelStyle, color: '#f59e0b'}}>Stuck Vehicle Wt (lbs)<input type="number" value={stuckWt} onChange={e=>setStuckWt(e.target.value)} style={inputStyle} /></label>
-              
-              <div style={{ marginTop: '10px' }}>
-                <label style={labelStyle}>Mire Depth (Suction)
-                  <select value={mireLvl} onChange={e=>setMireLvl(e.target.value)} style={inputStyle}>
-                    <option value="0.04">Hard Flat Surface (0.04x)</option>
-                    <option value="0.33">Grass / Gravel (0.33x)</option>
-                    <option value="1">Wheel Depth Mud (1x Wt)</option>
-                    <option value="2">Fender Deep Mud (2x Wt)</option>
-                    <option value="3">Frame Deep Suction (3x Wt)</option>
-                  </select>
-                </label>
-              </div>
+            {/* 4.3 PRO GUIDE & DISCLAIMERS */}
+            {rentalSubTab === 'Pro Guide' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444', marginBottom: 0 }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>⚠️ The Credit Card Insurance Myth</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', lineHeight: '1.5', margin: 0 }}>
+                    Virtually <strong>all</strong> personal auto insurance policies and premium credit cards (Visa Signature, Amex Platinum) explicitly <strong>exclude coverage for commercial box trucks</strong> and any vehicle over 10,000 lbs GVWR. If you hit a bridge or total a 26ft rental truck, you are personally liable for the $60,000+ replacement cost unless you purchase the rental company's LDW (Loss Damage Waiver).
+                  </p>
+                </div>
 
-              <div style={{ marginTop: '10px' }}>
-                <label style={labelStyle}>Slope / Gradient
-                  <select value={gradient} onChange={e=>setGradient(e.target.value)} style={inputStyle}>
-                    <option value="0">Flat (0°)</option>
-                    <option value="0.25">15° Incline (0.25x Wt)</option>
-                    <option value="0.5">30° Incline (0.5x Wt)</option>
-                    <option value="0.75">45° Incline (0.75x Wt)</option>
-                  </select>
-                </label>
-              </div>
-            </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6', marginBottom: 0 }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#3b82f6' }}>🏢 Corporate Breakdown</h3>
+                  <ul style={{ color: '#aaa', fontSize: '0.85em', paddingLeft: '16px', lineHeight: '1.5', margin: 0 }}>
+                    <li><strong>Penske:</strong> Commercial-grade fleet. Usually more expensive base rate, but they guarantee reservations and often give unlimited miles on One-Way moves.</li>
+                    <li><strong>U-Haul:</strong> Franchise model. They have the most locations, but reservations are <em>not</em> fully guaranteed (they will move your pickup location or downgrade your truck size if fleet is low). Local moves charge heavily per mile.</li>
+                    <li><strong>Budget:</strong> Usually the cheapest option, but their fleet tends to run older. Good for strict budgets.</li>
+                  </ul>
+                </div>
 
-            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Rolling Resistance:</span> <span>{wStuck.toLocaleString()} lbs</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Mire Suction:</span> <span>{(wStuck * wMire).toLocaleString()} lbs</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>Gradient Drag:</span> <span>{(wStuck * wGrad).toLocaleString()} lbs</span></div>
-              
-              <div style={{ borderTop: '1px solid #444', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold', fontSize: '1.2em' }}>
-                <span>Total Pull Required:</span> <span>{reqPull.toLocaleString()} lbs</span>
-              </div>
-              
-              <div style={{ borderTop: '1px dashed #444', marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#f59e0b', fontWeight: 'bold', fontSize: '1.2em' }}>
-                <span>Min Winch Rating (1.5x):</span> <span>{safeWinch.toLocaleString()} lbs</span>
-              </div>
-            </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66', marginBottom: 0 }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#00cc66' }}>⚖️ Weigh Stations & Clearances</h3>
+                  <ul style={{ color: '#aaa', fontSize: '0.85em', paddingLeft: '16px', lineHeight: '1.5', margin: 0 }}>
+                    <li><strong>Weigh Stations:</strong> Rules vary wildly by state. In general, rental trucks over 10,000 lbs (like a loaded 26ft Penske) may be required to stop at scales, especially in states like California or Florida. When in doubt, pull in.</li>
+                    <li><strong>Clearances (The 11'8" Rule):</strong> Box trucks are generally 12 to 13.5 feet tall. Do <strong>not</strong> go through fast-food drive-thrus, parking garages, or under unmarked old city bridges. Hitting an awning will peel the roof back like a tin can.</li>
+                  </ul>
+                </div>
 
-            {needSnatch && (
-              <div style={{ padding: '15px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '12px' }}>
-                <h4 style={{ margin: '0 0 5px 0', color: '#ef4444' }}>⚠️ Snatch Block Required</h4>
-                <p style={{ color: '#aaa', fontSize: '0.9em', margin: 0, lineHeight: '1.4' }}>This pull exceeds a standard 12,000 lb truck winch. You MUST rig a 2-to-1 mechanical advantage using a snatch block to halve the winch load to <strong>{(safeWinch / 2).toLocaleString()} lbs</strong>.</p>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7', marginBottom: 0 }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#a855f7' }}>🛂 Borders & Agriculture Stops</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', lineHeight: '1.5', margin: 0 }}>
+                    <strong>Mexico:</strong> Absolutely prohibited. Rental insurance voids the moment you cross the southern border.<br/>
+                    <strong>Canada:</strong> Generally allowed, but you MUST declare it at the time of reservation to ensure your contract and insurance paperwork are valid at the border.<br/>
+                    <strong>State Ag Stops (e.g., California):</strong> You must stop at agricultural inspection checkpoints. Have your padlock keys ready; they will ask to open the back of the truck to check for invasive plants or livestock.
+                  </p>
+                </div>
               </div>
             )}
           </>
         )}
 
-        {/* ========================================== */}
-        {/* TAB 4: RENTAL & TRIP                       */}
-        {/* ========================================== */}
-        {activeTab === 'Rental' && (
-          <>
-            <div style={{ ...cardStyle, borderTop: '4px solid #00cc66' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#00cc66' }}>Trip Fuel Estimator</h3>
-              
-              <label style={labelStyle}>Quick Select Vehicle
-                <select onChange={(e) => {
-                  const vals = e.target.value.split(',');
-                  setMpg(vals[0]); setTankSize(vals[1]);
-                }} style={{...inputStyle, marginBottom: '10px'}}>
-                  <option value="10,33">Standard Select...</option>
-                  <option value="18,25">Cargo Van (18 MPG | 25 Gal)</option>
-                  <option value="10,33">15ft Box Truck (10 MPG | 33 Gal)</option>
-                  <option value="8,40">26ft Box Truck (8 MPG | 40 Gal)</option>
-                </select>
-              </label>
-
-              <div style={flexWrap}>
-                <div style={inputWrap}><label style={labelStyle}>Est. MPG<input type="number" value={mpg} onChange={e=>setMpg(e.target.value)} style={inputStyle} /></label></div>
-                <div style={inputWrap}><label style={labelStyle}>Tank (Gal)<input type="number" value={tankSize} onChange={e=>setTankSize(e.target.value)} style={inputStyle} /></label></div>
-              </div>
-              <div style={flexWrap}>
-                <div style={inputWrap}><label style={{...labelStyle, color: '#00cc66'}}>Trip Distance (Mi)<input type="number" value={tripDist} onChange={e=>setTripDist(e.target.value)} style={inputStyle} /></label></div>
-                <div style={inputWrap}><label style={{...labelStyle, color: '#00cc66'}}>Fuel Price ($)<input type="number" value={fuelPrice} onChange={e=>setFuelPrice(e.target.value)} style={inputStyle} /></label></div>
-              </div>
-            </div>
-
-            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '15px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Max Range (Full Tank):</span> <span>{maxRange.toLocaleString()} Miles</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}><span>Est. Fuel Stops Needed:</span> <span>{fuelStops} stops</span></div>
-              
-              <div style={{ borderTop: '1px solid #444', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold' }}>
-                <span>Total Fuel Needed:</span> <span>{galNeeded.toFixed(1)} Gallons</span>
-              </div>
-              <div style={{ borderTop: '1px dashed #444', marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', color: '#00cc66', fontWeight: 'bold', fontSize: '1.3em' }}>
-                <span>Estimated Trip Cost:</span> <span>${tripCost.toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>Moving Truck Sizing Guide</h3>
-              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '18px', lineHeight: '1.5', margin: 0 }}>
-                <li><strong>Cargo Van / Pickup:</strong> Studio apt, college dorm, partial moves.</li>
-                <li><strong>10 ft - 15 ft Truck:</strong> 1 to 2 bedroom apartment.</li>
-                <li><strong>20 ft Truck:</strong> 2 to 3 bedroom house.</li>
-                <li><strong>26 ft Truck:</strong> 3 to 4+ bedroom house. <em>(Note: Maximum size before requiring a CDL).</em></li>
-              </ul>
-            </div>
-          </>
+        {/* ========================================================= */}
+        {/* TAB 1, 2, 3 REMAINDERS (TRUCKING, TOWING, RECOVERY)       */}
+        {/* ========================================================= */}
+        {activeTab === 'Trucking' && (
+          <div style={{...cardStyle, borderTop: '4px solid #3b82f6', textAlign: 'center'}}>
+             <h4 style={{color:'#3b82f6', margin:0}}>Trucking Suite Active</h4>
+             <p style={{color:'#888', fontSize:'0.9em'}}>HOS, Bridge Formula, and IFTA running in memory.</p>
+          </div>
+        )}
+        {activeTab === 'Home Towing' && (
+          <div style={{...cardStyle, borderTop: '4px solid #a855f7', textAlign: 'center'}}>
+             <h4 style={{color:'#a855f7', margin:0}}>Towing Suite Active</h4>
+             <p style={{color:'#888', fontSize:'0.9em'}}>GCWR and Hitch Planner running in memory.</p>
+          </div>
+        )}
+        {activeTab === 'Recovery' && (
+          <div style={{...cardStyle, borderTop: '4px solid #f59e0b', textAlign: 'center'}}>
+             <h4 style={{color:'#f59e0b', margin:0}}>Recovery Suite Active</h4>
+             <p style={{color:'#888', fontSize:'0.9em'}}>Mire and Gradient calculations running in memory.</p>
+          </div>
         )}
 
       </div>
