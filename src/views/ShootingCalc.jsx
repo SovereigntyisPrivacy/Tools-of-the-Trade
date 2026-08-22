@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 
 export default function ShootingCalc() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Solution'); 
+  const [activeTab, setActiveTab] = useState('DOPE Card'); 
 
   // --- STATE: WEAPON & LOAD ---
   const [bulletGr, setBulletGr] = useState('168');
   const [muzzleFps, setMuzzleFps] = useState('2600');
   const [bc, setBc] = useState('0.462');
   const [zeroRange, setZeroRange] = useState('100');
+  
   const [altitude, setAltitude] = useState('2400');
   const [distance, setDistance] = useState('1000');
   const [windSpd, setWindSpd] = useState('10');
@@ -21,6 +22,12 @@ export default function ShootingCalc() {
   const [loadBGr, setLoadBGr] = useState('175');
   const [loadBVel, setLoadBVel] = useState('2550');
   const [loadBBc, setLoadBBc] = useState('0.505');
+
+  // --- STATE: DOPE CARD SETTINGS ---
+  const [dopeStart, setDopeStart] = useState('100');
+  const [dopeEnd, setDopeEnd] = useState('1000');
+  const [dopeStep, setDopeStep] = useState('50');
+  const [dopeWind, setDopeWind] = useState('10');
 
   // --- STATE: RELOADING BENCH ---
   const [reloadMode, setReloadMode] = useState('Metallic'); 
@@ -69,7 +76,15 @@ export default function ShootingCalc() {
   const statB = calcLoad(loadBGr, loadBVel, loadBBc);
 
   // --- TAB 3: DOPE CARD GENERATOR ---
-  const dopeRanges = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+  const dStart = parse(dopeStart);
+  const dEnd = parse(dopeEnd);
+  const dStep = Math.max(10, parse(dopeStep)); // Prevent infinite loops
+  const dynamicRanges = [];
+  if (dStart <= dEnd) {
+    for (let i = dStart; i <= dEnd; i += dStep) {
+      dynamicRanges.push(i);
+    }
+  }
 
   // --- TAB 4: RELOADING MATH ---
   const pCost = parse(primerQty) > 0 ? parse(primerCost) / parse(primerQty) : 0;
@@ -189,37 +204,61 @@ export default function ShootingCalc() {
         )}
 
         {/* ========================================== */}
-        {/* TAB 3: DOPE CARD                           */}
+        {/* TAB 3: DYNAMIC DOPE CARD                   */}
         {/* ========================================== */}
         {activeTab === 'DOPE Card' && (
-          <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', overflow: 'hidden' }}>
-            <div style={{ background: '#111', padding: '15px', textAlign: 'center', borderBottom: '1px solid #333' }}>
-              <h3 style={{ margin: 0, color: '#fff' }}>Range Card</h3>
-              <div style={{ color: '#00ffff', fontSize: '0.85em', marginTop: '5px' }}>{bulletGr}gr @ {muzzleFps} fps</div>
+          <>
+            <div style={{...cardStyle, borderTop: '4px solid #00ffff'}}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#00ffff' }}>⚙️ Card Settings</h3>
+              <div style={flexWrap}>
+                <div style={inputWrap}><label style={labelStyle}>Start Yardage<input type="number" value={dopeStart} onChange={e=>setDopeStart(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>End Yardage<input type="number" value={dopeEnd} onChange={e=>setDopeEnd(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={flexWrap}>
+                <div style={inputWrap}><label style={labelStyle}>Step Increment<input type="number" value={dopeStep} onChange={e=>setDopeStep(e.target.value)} style={{...inputStyle, border: '1px solid #00ffff'}} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>Crosswind (mph)<input type="number" value={dopeWind} onChange={e=>setDopeWind(e.target.value)} style={inputStyle} /></label></div>
+              </div>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff', fontSize: '0.9em' }}>
-              <thead>
-                <tr style={{ background: '#222', color: '#aaa' }}>
-                  <th style={{ padding: '10px', textAlign: 'left' }}>Yards</th>
-                  <th style={{ padding: '10px', textAlign: 'center' }}>Elev (MIL)</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Vel (fps)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dopeRanges.map(r => {
-                  const drop = (r / 100) * 0.88 * (r / 500 || 1);
-                  const v = Math.max(0, vel - (r * 0.65));
-                  return (
-                    <tr key={r} style={{ borderBottom: '1px solid #222' }}>
-                      <td style={{ padding: '10px', fontWeight: 'bold' }}>{r}</td>
-                      <td style={{ padding: '10px', textAlign: 'center', color: '#ef4444' }}>{drop.toFixed(1)}</td>
-                      <td style={{ padding: '10px', textAlign: 'right', color: v < 1125 ? '#888' : '#fff' }}>{v.toFixed(0)}</td>
+
+            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', overflow: 'hidden' }}>
+              <div style={{ background: '#111', padding: '15px', textAlign: 'center', borderBottom: '1px solid #333' }}>
+                <h3 style={{ margin: 0, color: '#fff', letterSpacing: '1px' }}>DATA ON PREVIOUS ENGAGEMENT</h3>
+                <div style={{ color: '#aaa', fontSize: '0.85em', marginTop: '5px' }}>{bulletGr}gr | {muzzleFps} fps | BC: {bc}</div>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff', fontSize: '0.85em' }}>
+                  <thead>
+                    <tr style={{ background: '#222', color: '#aaa' }}>
+                      <th style={{ padding: '12px 8px', textAlign: 'center' }}>Yards</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center' }}>Elev (MIL)</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center' }}>Wind (MIL)</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center' }}>Vel (fps)</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center' }}>Energy</th>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody>
+                    {dynamicRanges.length > 0 ? dynamicRanges.map(r => {
+                      const drop = (r / 100) * 0.88 * (r / 500 || 1);
+                      const wHold = (parse(dopeWind) / 10) * (r / 200) * 0.12;
+                      const v = Math.max(0, vel - (r * 0.65));
+                      const en = (gr * Math.pow(v, 2)) / 450240;
+                      return (
+                        <tr key={r} style={{ borderBottom: '1px solid #222' }}>
+                          <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'center' }}>{r}</td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center', color: '#ef4444', fontWeight: 'bold' }}>{drop.toFixed(1)}</td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center', color: '#00ffff' }}>{wHold.toFixed(1)}</td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center', color: v < 1125 ? '#888' : '#fff' }}>{v.toFixed(0)}</td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center', color: '#ffaa00' }}>{en.toFixed(0)}</td>
+                        </tr>
+                      )
+                    }) : (
+                      <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#666' }}>Invalid Range Settings</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         )}
 
         {/* ========================================== */}
@@ -272,8 +311,6 @@ export default function ShootingCalc() {
         {/* ========================================== */}
         {activeTab === 'Guide' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-            {/* 2nd Amendment Header */}
             <div style={{...cardStyle, borderTop: '4px solid #fff', borderBottom: '4px solid #fff', background: 'rgba(255, 255, 255, 0.05)', padding: '25px 20px', marginBottom: 0 }}>
               <h3 style={{ margin: '0 0 15px 0', color: '#fff', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '1.2em' }}>The Second Amendment</h3>
               <p style={{ color: '#fff', fontSize: '1.15em', lineHeight: '1.6', fontStyle: 'italic', textAlign: 'center', fontWeight: 'bold', margin: 0 }}>
@@ -281,84 +318,35 @@ export default function ShootingCalc() {
               </p>
             </div>
             
-            {/* 1. Firearm Classifications */}
             <div style={{...cardStyle, borderLeft: '4px solid #3b82f6', marginBottom: 0}}>
               <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>1. Firearm Classifications</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Handguns (Pistols & Revolvers):</strong> Designed to be fired with one hand. Used for concealed carry, personal defense, and duty sidearms.</p>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Rifles (Long Guns):</strong> Fired from the shoulder with a rifled barrel (spiral grooves spin the bullet). Used for hunting and long-range precision.</p>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Shotguns (Long Guns):</strong> Fired from the shoulder with a smoothbore barrel. Fires multiple pellets (shot) or a single heavy slug. Excellent for close-quarters.</p>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Handguns:</strong> Designed to be fired with one hand. Used for concealed carry, personal defense, and duty sidearms.</p>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Rifles:</strong> Fired from the shoulder with a rifled barrel. Used for hunting and long-range precision.</p>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}><strong>Shotguns:</strong> Fired from the shoulder with a smoothbore barrel. Fires multiple pellets or slugs.</p>
             </div>
 
-            {/* 2. Calibers & Grains */}
-            <div style={{...cardStyle, borderLeft: '4px solid #10b981', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>2. The Caliber Cheat Sheet</h3>
-              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.22 LR:</strong> A tiny "rimfire" cartridge. Almost zero recoil and dirt cheap. Perfect for training or plinking.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>9mm Luger:</strong> The global king of handguns. Optimal balance of capacity and recoil.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>5.56x45mm NATO / .223 Rem:</strong> Standard AR-15 round. Fires a light bullet at blistering speeds.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>.308 Winchester / 7.62 NATO:</strong> The classic heavy-hitter. Fantastic for dropping large game or ringing steel out to 800 yards.</li>
-                <li><strong style={{color:'#fff'}}>6.5 Creedmoor:</strong> The modern long-range cheat code. Highly aerodynamic bullet that stays supersonic past 1,000 yards.</li>
-              </ul>
-            </div>
-
-            {/* 3. EXPANDED Ammo Types */}
             <div style={{...cardStyle, borderLeft: '4px solid #ec4899', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#ec4899' }}>3. Ammunition Types & Behavior</h3>
+              <h3 style={{ margin: '0 0 10px 0', color: '#ec4899' }}>2. Ammunition Types & Behavior</h3>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>FMJ (Full Metal Jacket):</strong> "Ball" ammo. Lead core wrapped entirely in copper. Does not expand. Great for cheap target practice; over-penetrates in defense scenarios.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>JHP (Jacketed Hollow Point):</strong> The gold standard for self-defense. The tip has a hollow cavity designed to instantly "mushroom" and expand upon hitting liquid/tissue, transferring massive energy.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>SP (Soft Point):</strong> Exposed lead tip that expands slower than a hollow point. Great for hunting thick-skinned game where deep penetration before expansion is needed.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>OTM (Open Tip Match):</strong> Looks like a hollow point, but the hole is just a byproduct of the manufacturing process to make the bullet perfectly balanced for extreme long-range accuracy. Not designed to expand.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Ballistic Polymer Tip:</strong> Features a sleek plastic tip that makes the bullet fly straight. Upon impact, the plastic is driven violently back into the core, expanding it like a hollow point.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Frangible:</strong> Made of compressed copper dust. Disintegrates into powder upon hitting steel targets to prevent dangerous ricochets at close range.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Subsonic:</strong> Extra-heavy bullets loaded with less powder to travel slower than the speed of sound (under ~1,125 fps). Eliminates the supersonic "crack," making them incredibly quiet with a suppressor.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Armor Piercing (AP):</strong> Features a hardened steel or tungsten penetrator core instead of soft lead. Designed to punch through body armor. Highly restricted.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Tracer:</strong> The base of the bullet contains a pyrotechnic charge that burns brightly so the shooter can see the exact trajectory. Highly restricted at civilian ranges due to severe fire hazard.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Shotgun - Birdshot:</strong> Hundreds of tiny lead or steel BBs. Excellent for shooting clay pigeons or birds. Terrible for defense.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Shotgun - Buckshot:</strong> Contains 8 or 9 large lead balls. The absolute king of close-quarters home defense.</li>
-                <li><strong style={{color:'#fff'}}>Shotgun - Slugs:</strong> A single, massive chunk of lead (usually 1 ounce). Turns a close-range shotgun into a rifle capable of punching through engine blocks.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>FMJ (Full Metal Jacket):</strong> Lead core wrapped in copper. Does not expand. Over-penetrates in defense scenarios.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>JHP (Jacketed Hollow Point):</strong> The gold standard for defense. Tip expands instantly upon hitting liquid/tissue, transferring massive energy.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>OTM (Open Tip Match):</strong> Looks like a hollow point, but the hole is a byproduct of manufacturing to make the bullet perfectly balanced for extreme precision. Not designed to expand.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Frangible:</strong> Compressed copper dust. Disintegrates into powder upon hitting steel targets to prevent dangerous ricochets at close range.</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Subsonic:</strong> Extra-heavy bullets loaded to travel slower than the speed of sound (under ~1,125 fps). Eliminates the supersonic "crack."</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Armor Piercing (AP):</strong> Features a hardened steel or tungsten penetrator core. Highly restricted.</li>
               </ul>
             </div>
 
-            {/* 4. Safety & Storage */}
             <div style={{...cardStyle, borderLeft: '4px solid #14b8a6', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#14b8a6' }}>4. The 4 Universal Rules of Safety</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', fontStyle: 'italic', marginBottom: '15px' }}>These rules apply 100% of the time, with zero exceptions.</p>
+              <h3 style={{ margin: '0 0 10px 0', color: '#14b8a6' }}>3. The 4 Universal Rules of Safety</h3>
               <ol style={{ color: '#fff', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0, fontWeight: 'bold' }}>
                 <li style={{ marginBottom: '8px' }}>ALL GUNS ARE ALWAYS LOADED.</li>
                 <li style={{ marginBottom: '8px' }}>NEVER LET THE MUZZLE COVER ANYTHING YOU ARE NOT WILLING TO DESTROY.</li>
                 <li style={{ marginBottom: '8px' }}>KEEP YOUR FINGER OFF THE TRIGGER UNTIL YOUR SIGHTS ARE ON THE TARGET.</li>
                 <li>BE SURE OF YOUR TARGET AND WHAT IS BEYOND IT.</li>
               </ol>
-              <div style={{ borderTop: '1px dashed #333', marginTop: '15px', paddingTop: '15px' }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#14b8a6' }}>Storage & Protection</h4>
-                <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>Guns must be stored in a cool, dry place. A heavy steel gun safe is ideal, but a reinforced lockbox prevents unauthorized access. Always store ammunition in a separate, locked container. Throwing a few silica gel desiccant packs into your safe will suck moisture out of the air and prevent rust.</p>
-              </div>
             </div>
-
-            {/* 5. Cleaning & Caring */}
-            <div style={{...cardStyle, borderLeft: '4px solid #f97316', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#f97316' }}>5. Cleaning & Maintenance</h3>
-              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Field Stripping:</strong> Taking the weapon apart into its major component groups (slide, barrel, recoil spring, frame) without using specialized tools. Always visually and physically clear the chamber before stripping.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Bore Snake & Solvents:</strong> A carbon-cutting solvent combined with a brass brush or a pull-through "Bore Snake" will clear the lead and copper fouling out of the barrel's rifling to maintain accuracy.</li>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Internal Lubrication:</strong> Standard commercial CLP (Clean, Lubricate, Protect) is the go-to for keeping internal moving parts like the bolt carrier group and trigger sear running smoothly.</li>
-                <li><strong style={{color:'#fff'}}>External Protection:</strong> Bare metal will rust if exposed to skin oils and moisture. For wiping down blades, tools, and exterior gun metal, natural palm seed oil or coconut oil are exceptional, heavy-duty protectants against surface corrosion.</li>
-              </ul>
-            </div>
-
-            {/* 6. Legalities */}
-            <div style={{...cardStyle, borderLeft: '4px solid #ef4444', marginBottom: 0}}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>6. Federal NFA Regulations</h3>
-              <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
-                <li><strong>Title I:</strong> Rifles (16"+ barrel), shotguns (18"+ barrel), and handguns. Require an ATF Form 4473 check.</li>
-                <li><strong>Title II (NFA Items):</strong> Requires an ATF Form 1 or 4, a $200 tax stamp, fingerprints, and wait periods.</li>
-                <li><strong>SBRs & SBSs:</strong> Short-Barreled Rifles/Shotguns with a stock are highly restricted.</li>
-                <li><strong>Suppressors:</strong> Muffle the explosion; highly restricted NFA items.</li>
-                <li><strong>Machine Guns:</strong> Post-1986 fully automatic weapons are strictly illegal for civilians.</li>
-              </ul>
-            </div>
-
+            
           </div>
         )}
 
