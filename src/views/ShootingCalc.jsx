@@ -23,6 +23,17 @@ export default function ShootingCalc() {
   const [loadBVel, setLoadBVel] = useState('2550');
   const [loadBBc, setLoadBBc] = useState('0.505');
 
+  // --- STATE: RELOADING BENCH ---
+  const [brassCost, setBrassCost] = useState('0'); // Often reused
+  const [brassQty, setBrassQty] = useState('100');
+  const [primerCost, setPrimerCost] = useState('85.00');
+  const [primerQty, setPrimerQty] = useState('1000');
+  const [projCost, setProjCost] = useState('38.50');
+  const [projQty, setProjQty] = useState('100');
+  const [pwdCost, setPwdCost] = useState('45.00');
+  const [pwdLbs, setPwdLbs] = useState('1');
+  const [pwdCharge, setPwdCharge] = useState('44.0');
+
   const parse = (val) => parseFloat(val) || 0;
 
   // --- TAB 1: SOLUTION MATH ---
@@ -53,10 +64,25 @@ export default function ShootingCalc() {
   // --- TAB 3: DOPE CARD GENERATOR ---
   const dopeRanges = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 
+  // --- TAB 4: RELOADING MATH ---
+  const bCost = parse(brassQty) > 0 ? parse(brassCost) / parse(brassQty) : 0;
+  const pCost = parse(primerQty) > 0 ? parse(primerCost) / parse(primerQty) : 0;
+  const prCost = parse(projQty) > 0 ? parse(projCost) / parse(projQty) : 0;
+  
+  const totalPowderGrains = parse(pwdLbs) * 7000;
+  const pwdCostPerGrain = totalPowderGrains > 0 ? parse(pwdCost) / totalPowderGrains : 0;
+  const pwdCostPerRound = pwdCostPerGrain * parse(pwdCharge);
+  
+  const totalCpr = bCost + pCost + prCost + pwdCostPerRound;
+  const boxCost = totalCpr * 50;
+  const yieldPerJug = parse(pwdCharge) > 0 ? Math.floor(totalPowderGrains / parse(pwdCharge)) : 0;
+
   // --- STYLES ---
   const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.1em', marginTop: '6px' };
   const labelStyle = { color: '#00ffff', fontSize: '0.85em', fontWeight: 'bold' };
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '20px' };
+  const flexWrap = { display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '10px' };
+  const inputWrap = { flex: '1 1 120px', minWidth: '120px' };
 
   return (
     <div className="view-wrapper pb-safe" style={{ background: '#0a0a0a', minHeight: '100vh' }}>
@@ -67,7 +93,7 @@ export default function ShootingCalc() {
 
       {/* TOP TAB NAVIGATION */}
       <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-        {['Solution', 'Comparator', 'DOPE Card', 'Guide'].map(tab => (
+        {['Solution', 'Comparator', 'DOPE Card', 'Reloading', 'Guide'].map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -86,18 +112,18 @@ export default function ShootingCalc() {
           <>
             <div style={{...cardStyle, borderTop: '4px solid #ef4444'}}>
               <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🎯 Weapon & Load</h3>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Bullet (gr)<input type="number" value={bulletGr} onChange={e=>setBulletGr(e.target.value)} style={inputStyle} /></label></div>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Muzzle (fps)<input type="number" value={muzzleFps} onChange={e=>setMuzzleFps(e.target.value)} style={inputStyle} /></label></div>
-                <div style={{ flex: 1 }}><label style={labelStyle}>BC (G1)<input type="number" value={bc} onChange={e=>setBc(e.target.value)} style={inputStyle} /></label></div>
+              <div style={flexWrap}>
+                <div style={inputWrap}><label style={labelStyle}>Bullet (gr)<input type="number" value={bulletGr} onChange={e=>setBulletGr(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>Muzzle (fps)<input type="number" value={muzzleFps} onChange={e=>setMuzzleFps(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>BC (G1)<input type="number" value={bc} onChange={e=>setBc(e.target.value)} style={inputStyle} /></label></div>
               </div>
             </div>
 
             <div style={{...cardStyle, borderTop: '4px solid #00cc66'}}>
               <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🌍 Target Vector</h3>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Distance (Yds)<input type="number" value={distance} onChange={e=>setDistance(e.target.value)} style={{...inputStyle, border: '1px solid #00cc66'}} /></label></div>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Wind (mph)<input type="number" value={windSpd} onChange={e=>setWindSpd(e.target.value)} style={inputStyle} /></label></div>
+              <div style={flexWrap}>
+                <div style={inputWrap}><label style={labelStyle}>Distance (Yds)<input type="number" value={distance} onChange={e=>setDistance(e.target.value)} style={{...inputStyle, border: '1px solid #00cc66'}} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>Wind (mph)<input type="number" value={windSpd} onChange={e=>setWindSpd(e.target.value)} style={inputStyle} /></label></div>
               </div>
             </div>
 
@@ -124,13 +150,13 @@ export default function ShootingCalc() {
         {activeTab === 'Comparator' && (
           <>
             <p style={{ color: '#aaa', textAlign: 'center', marginBottom: '20px' }}>Compare kinetics out to 500 yards.</p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1, ...cardStyle, borderTop: '4px solid #ef4444' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 140px', ...cardStyle, borderTop: '4px solid #ef4444' }}>
                 <h3 style={{ margin: '0 0 15px 0', color: '#ef4444', textAlign: 'center' }}>Load A</h3>
                 <label style={{...labelStyle, color: '#fff'}}>Grains<input type="number" value={loadAGr} onChange={e=>setLoadAGr(e.target.value)} style={inputStyle} /></label>
                 <label style={{...labelStyle, color: '#fff', display: 'block', marginTop: '10px'}}>Muzzle FPS<input type="number" value={loadAVel} onChange={e=>setLoadAVel(e.target.value)} style={inputStyle} /></label>
               </div>
-              <div style={{ flex: 1, ...cardStyle, borderTop: '4px solid #3b82f6' }}>
+              <div style={{ flex: '1 1 140px', ...cardStyle, borderTop: '4px solid #3b82f6' }}>
                 <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6', textAlign: 'center' }}>Load B</h3>
                 <label style={{...labelStyle, color: '#fff'}}>Grains<input type="number" value={loadBGr} onChange={e=>setLoadBGr(e.target.value)} style={inputStyle} /></label>
                 <label style={{...labelStyle, color: '#fff', display: 'block', marginTop: '10px'}}>Muzzle FPS<input type="number" value={loadBVel} onChange={e=>setLoadBVel(e.target.value)} style={inputStyle} /></label>
@@ -188,7 +214,67 @@ export default function ShootingCalc() {
         )}
 
         {/* ========================================== */}
-        {/* TAB 4: ARMORY & LEGAL GUIDE                */}
+        {/* TAB 4: RELOADING BENCH                     */}
+        {/* ========================================== */}
+        {activeTab === 'Reloading' && (
+          <>
+            <p style={{ color: '#aaa', textAlign: 'center', marginBottom: '20px' }}>Calculate exact Cost Per Round (CPR) and powder yield.</p>
+            
+            <div style={{...cardStyle, borderLeft: '4px solid #a855f7'}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>1. Hardware Components</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Brass Cost ($)<input type="number" value={brassCost} onChange={e=>setBrassCost(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Brass Qty<input type="number" value={brassQty} onChange={e=>setBrassQty(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Primer Cost ($)<input type="number" value={primerCost} onChange={e=>setPrimerCost(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Primer Qty<input type="number" value={primerQty} onChange={e=>setPrimerQty(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Projectile Cost ($)<input type="number" value={projCost} onChange={e=>setProjCost(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Projectile Qty<input type="number" value={projQty} onChange={e=>setProjQty(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <p style={{ color: '#666', fontSize: '0.8em', marginTop: '10px', fontStyle: 'italic', marginBottom: 0 }}>*If you reuse fired brass, set Brass Cost to 0.</p>
+            </div>
+
+            <div style={{...cardStyle, borderLeft: '4px solid #f59e0b'}}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>2. Gunpowder Logic</h3>
+              <div style={flexWrap}>
+                <div style={inputWrap}><label style={labelStyle}>Powder Cost ($)<input type="number" value={pwdCost} onChange={e=>setPwdCost(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>Total Lbs<input type="number" value={pwdLbs} onChange={e=>setPwdLbs(e.target.value)} style={inputStyle} /></label></div>
+                <div style={inputWrap}><label style={labelStyle}>Charge (gr)<input type="number" value={pwdCharge} onChange={e=>setPwdCharge(e.target.value)} style={{...inputStyle, border: '1px solid #f59e0b'}} /></label></div>
+              </div>
+            </div>
+
+            <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.1em' }}>
+              <h3 style={{ color: '#00ffff', textAlign: 'center', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Reloading Yield</h3>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '12px' }}>
+                <span>Hardware CPR:</span> <span>${(bCost + pCost + prCost).toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px' }}>
+                <span>Powder CPR:</span> <span>${pwdCostPerRound.toFixed(3)}</span>
+              </div>
+              <div style={{ borderBottom: '1px dashed #444', margin: '10px 0' }}></div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00cc66', fontWeight: 'bold', fontSize: '1.2em', marginBottom: '15px' }}>
+                <span>Total CPR:</span> <span>${totalCpr.toFixed(3)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ffaa00', marginBottom: '15px' }}>
+                <span>Cost per Box (50):</span> <span>${boxCost.toFixed(2)}</span>
+              </div>
+              
+              <div style={{ borderBottom: '1px solid #333', margin: '15px 0' }}></div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#3b82f6', fontWeight: 'bold' }}>
+                <span>Rounds per Jug:</span> <span>{yieldPerJug} rds</span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ========================================== */}
+        {/* TAB 5: ARMORY & LEGAL GUIDE                */}
         {/* ========================================== */}
         {activeTab === 'Guide' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -228,7 +314,7 @@ export default function ShootingCalc() {
             <div style={{...cardStyle, borderLeft: '4px solid #a855f7', marginBottom: 0}}>
               <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>4. Optics & Sighting</h3>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.6', margin: 0 }}>
-                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Red Dots & Holographics:</strong> 1x magnification. Infinite eye relief. You shoot with both eyes open for rapid target acquisition. Excellent for CQB (Close Quarters Battle).</li>
+                <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Red Dots & Holographics:</strong> 1x magnification. Infinite eye relief. You shoot with both eyes open for rapid target acquisition. Excellent for CQB.</li>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>Prism Scopes:</strong> Fixed magnification (usually 3x or 4x). Uses an etched glass reticle, meaning it still works perfectly even if the battery dies. Great for shooters with astigmatism.</li>
                 <li style={{ marginBottom: '10px' }}><strong style={{color:'#fff'}}>LPVO (Low Power Variable Optic):</strong> Usually 1-6x or 1-8x magnification. The most versatile rifle optic. Can be used at 1x like a red dot, or dialed up to shoot at 500 yards.</li>
                 <li><strong style={{color:'#fff'}}>Precision Scopes (MPVO/HPVO):</strong> High magnification (e.g., 5-25x). Features exposed turrets so shooters can manually dial their Elevation and Windage DOPE for extreme long-range shots.</li>
@@ -254,9 +340,9 @@ export default function ShootingCalc() {
               <h3 style={{ margin: '0 0 10px 0', color: '#eab308' }}>6. State Laws & Reciprocity</h3>
               <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>State laws vary wildly. Crossing a border with a firearm legal in your state can be a felony in the next.</p>
               <ul style={{ color: '#aaa', fontSize: '0.9em', paddingLeft: '20px', lineHeight: '1.5' }}>
-                <li style={{ marginBottom: '10px' }}><strong>Constitutional Carry:</strong> States like Arizona allow any legal gun owner over 21 to carry a concealed handgun without needing a permit.</li>
+                <li style={{ marginBottom: '10px' }}><strong>Constitutional Carry:</strong> States that allow any legal gun owner over 21 to carry a concealed handgun without needing a permit.</li>
                 <li style={{ marginBottom: '10px' }}><strong>Shall-Issue:</strong> States that require a Concealed Carry Weapon (CCW) permit, but must issue it to you if you pass the background check and training.</li>
-                <li style={{ marginBottom: '10px' }}><strong>May-Issue / Strict States:</strong> States like California or New York heavily restrict permits, ban specific cosmetic rifle features (Assault Weapon Bans), and limit magazine capacities to 10 rounds.</li>
+                <li style={{ marginBottom: '10px' }}><strong>May-Issue / Strict States:</strong> States that heavily restrict permits, ban specific cosmetic rifle features (Assault Weapon Bans), and limit magazine capacities to 10 rounds.</li>
                 <li><strong>Reciprocity:</strong> Just because you have a CCW in your home state does not mean another state honors it. Always check a reciprocity map before traveling.</li>
               </ul>
             </div>
