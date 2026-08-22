@@ -5,11 +5,11 @@ export default function TimesheetCalc() {
   const navigate = useNavigate();
   
   // --- TOP-LEVEL NAVIGATION ---
-  const [activeTab, setActiveTab] = useState('Employee'); // 'Employee', 'Manager', 'Self-Employed', 'HR'
+  const [activeTab, setActiveTab] = useState('Manager'); // 'Employee', 'Manager', 'Self-Employed', 'HR'
 
   // --- SUB-NAVIGATION ---
   const [empTab, setEmpTab] = useState('Timecard');
-  const [mgrTab, setMgrTab] = useState('Roster');
+  const [mgrTab, setMgrTab] = useState('Report');
   const [seTab, setSeTab] = useState('Jobs');
 
   // --- EMPLOYEE STATE ---
@@ -20,6 +20,7 @@ export default function TimesheetCalc() {
 
   // --- MANAGER STATE ---
   const [mgrBudget, setMgrBudget] = useState('160'); 
+  const [mgrAvgRate, setMgrAvgRate] = useState('16.50'); // For estimating fleet payroll
   const [employees, setEmployees] = useState([
     { id: 1, name: 'Employee 1', shifts: { Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] } }
   ]);
@@ -84,6 +85,7 @@ export default function TimesheetCalc() {
   const addMgrShift = (day) => setEmployees(employees.map(e => e.id === activeEmpId ? { ...e, shifts: { ...e.shifts, [day]: [...e.shifts[day], { start: '', end: '', break: '' }] } } : e));
   const updateMgrShift = (day, idx, field, val) => setEmployees(employees.map(e => e.id === activeEmpId ? { ...e, shifts: { ...e.shifts, [day]: e.shifts[day].map((s, i) => i === idx ? { ...s, [field]: val } : s) } } : e));
   const deleteMgrShift = (day, idx) => setEmployees(employees.map(e => e.id === activeEmpId ? { ...e, shifts: { ...e.shifts, [day]: e.shifts[day].filter((_, i) => i !== idx) } } : e));
+  
   const getEmpTotalHours = (emp) => {
     let tHrs = 0;
     daysOfWeek.forEach(d => emp.shifts[d].forEach(s => tHrs += calcShiftHours(s.start, s.end, s.break)));
@@ -110,10 +112,19 @@ export default function TimesheetCalc() {
   const generateMgrReport = () => {
     let report = `WEEKLY MASTER SCHEDULE\n=======================\n\n`;
     let fleetHours = 0;
+    let fleetGross = 0;
+    const rate = parse(mgrAvgRate);
+
     employees.forEach(e => {
       const hrs = getEmpTotalHours(e);
+      const reg = Math.min(40, hrs);
+      const ot = Math.max(0, hrs - 40);
       fleetHours += hrs;
+      fleetGross += (reg * rate) + (ot * rate * 1.5);
+
       report += `[ ${e.name.toUpperCase()} ] - Total: ${hrs.toFixed(2)} hrs\n`;
+      if (ot > 0) report += `  ⚠️ Includes ${ot.toFixed(2)} hrs OVERTIME\n`;
+      
       daysOfWeek.forEach(d => {
         if (e.shifts[d].length > 0) {
           report += `  ${d}: ${e.shifts[d].map(s => `${s.start || '??:??'} to ${s.end || '??:??'}${s.break ? ` (-${s.break}m)` : ''}`).join(' | ')}\n`;
@@ -122,41 +133,33 @@ export default function TimesheetCalc() {
       report += `\n`;
     });
     report += `=======================\nTOTAL FLEET HOURS: ${fleetHours.toFixed(2)} hrs\n`;
+    report += `EST SCHEDULED PAYROLL: $${fleetGross.toFixed(2)}\n`;
     return report;
   };
 
-  const generateGigReport = () => {
-    let report = `FREELANCE & GIG INVOICE SUMMARY\n=======================\n\n`;
-    let tGross = 0, tExp = 0, tNet = 0, tHrs = 0;
-    gigs.forEach(g => {
-      const stats = getGigStats(g);
-      tGross += stats.gross; tExp += stats.exp; tNet += stats.net; tHrs += parse(g.hours);
-      report += `[ ${g.name.toUpperCase()} ]\n`;
-      report += `Gross Payout: $${stats.gross.toFixed(2)} | Expenses: -$${stats.exp.toFixed(2)}\n`;
-      report += `Labor: ${parse(g.hours).toFixed(1)} hrs | True Hourly ROI: $${stats.trueHourly.toFixed(2)}/hr\n`;
-      report += `Est. Net Take-Home: $${stats.net.toFixed(2)}\n\n`;
-    });
-    report += `=======================\n`;
-    report += `TOTAL GROSS: $${tGross.toFixed(2)}\n`;
-    report += `TOTAL EXPENSES: -$${tExp.toFixed(2)}\n`;
-    report += `TOTAL LABOR: ${tHrs.toFixed(1)} hrs\n`;
-    report += `TOTAL NET DISBURSED: $${tNet.toFixed(2)}\n`;
-    return report;
-  };
-
-  const handleCopyReport = (type) => {
-    navigator.clipboard.writeText(type === 'mgr' ? generateMgrReport() : generateGigReport());
+  const handleCopyReport = () => {
+    navigator.clipboard.writeText(generateMgrReport());
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
 
   // --- UI COMPONENTS ---
-  const HumanityCheck = () => (
-    <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(0, 255, 255, 0.05)', border: '1px dashed #00ffff', borderRadius: '12px', textAlign: 'center' }}>
+  const EmployeeHumanityCheck = () => (
+    <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(59, 130, 246, 0.05)', border: '1px dashed #3b82f6', borderRadius: '12px', textAlign: 'center' }}>
       <span style={{ fontSize: '1.5em', display: 'block', marginBottom: '8px' }}>💧 🧘‍♂️</span>
-      <strong style={{ color: '#00ffff', display: 'block', marginBottom: '4px' }}>Humanity Check</strong>
+      <strong style={{ color: '#3b82f6', display: 'block', marginBottom: '4px' }}>Humanity Check</strong>
       <span style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.4', display: 'block' }}>
         Drink a glass of water, fix your posture, and take a deep breath. No shift or gig is worth burning yourself out.
+      </span>
+    </div>
+  );
+
+  const ManagerHumanityCheck = () => (
+    <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(168, 85, 247, 0.05)', border: '1px dashed #a855f7', borderRadius: '12px', textAlign: 'center' }}>
+      <span style={{ fontSize: '1.5em', display: 'block', marginBottom: '8px' }}>👑 📋</span>
+      <strong style={{ color: '#a855f7', display: 'block', marginBottom: '4px' }}>Leadership Check</strong>
+      <span style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.4', display: 'block' }}>
+        Your crew feeds off your energy. If you are stressed and burnt out, they will be too. Step off the floor for 5 minutes, hydrate, and breathe. You manage the schedule, but you lead the people.
       </span>
     </div>
   );
@@ -167,7 +170,7 @@ export default function TimesheetCalc() {
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
 
   return (
-    <div className="view-wrapper pb-safe" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="header" style={{ borderBottom: '1px solid #222' }}>
         <button className="back-btn" onClick={() => navigate('/calculator')}>Hub</button>
         <h2>Timesheet Engine</h2>
@@ -193,7 +196,8 @@ export default function TimesheetCalc() {
         })}
       </div>
 
-      <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1 }}>
+      {/* ADDED massive paddingBottom to permanently clear the ad overlay */}
+      <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '160px' }}>
         
         {/* ========================================== */}
         {/* TAB 1: EMPLOYEE (SOLO PAY)                 */}
@@ -244,7 +248,7 @@ export default function TimesheetCalc() {
                     </div>
                   );
                 })}
-                <HumanityCheck />
+                <EmployeeHumanityCheck />
               </>
             )}
 
@@ -282,7 +286,10 @@ export default function TimesheetCalc() {
               <>
                 <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
                   <h4 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>Labor Control</h4>
-                  <label style={{...labelStyle, color: '#a855f7'}}>Weekly Target Budget (Hours)<input type="number" value={mgrBudget} onChange={e=>setMgrBudget(e.target.value)} style={inputStyle} /></label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#a855f7'}}>Target Budget (Hrs)<input type="number" value={mgrBudget} onChange={e=>setMgrBudget(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#a855f7'}}>Fleet Avg Rate ($/hr)<input type="number" step="0.5" value={mgrAvgRate} onChange={e=>setMgrAvgRate(e.target.value)} style={inputStyle} /></label></div>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', marginTop: '20px' }}>
                   <h3 style={{ color: '#fff', margin: 0 }}>Crew Members</h3>
@@ -336,61 +343,91 @@ export default function TimesheetCalc() {
                     </div>
                   );
                 })}
-                <HumanityCheck />
+                <ManagerHumanityCheck />
               </>
             )}
 
-            {mgrTab === 'Report' && (
-              <>
-                <div style={{ ...cardStyle, borderTop: employees.reduce((acc, emp) => acc + getEmpTotalHours(emp), 0) > parse(mgrBudget) ? '4px solid #ef4444' : '4px solid #00cc66' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <h4 style={{ margin: 0, color: '#fff' }}>Labor Budget Tracking</h4>
-                    <span style={{ color: employees.reduce((acc, emp) => acc + getEmpTotalHours(emp), 0) > parse(mgrBudget) ? '#ef4444' : '#00cc66', fontWeight: 'bold' }}>
-                      {employees.reduce((acc, emp) => acc + getEmpTotalHours(emp), 0).toFixed(1)} / {parse(mgrBudget).toFixed(1)} hrs
-                    </span>
-                  </div>
-                  <div style={{ height: '12px', background: '#222', borderRadius: '6px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${parse(mgrBudget) > 0 ? Math.min(100, (employees.reduce((acc, emp) => acc + getEmpTotalHours(emp), 0) / parse(mgrBudget)) * 100) : 0}%`, background: employees.reduce((acc, emp) => acc + getEmpTotalHours(emp), 0) > parse(mgrBudget) ? '#ef4444' : '#00cc66', transition: 'width 0.3s' }}></div>
-                  </div>
-                </div>
+            {mgrTab === 'Report' && (() => {
+              let totalFleetHours = 0;
+              let fleetGross = 0;
+              let hasOvertime = false;
+              const rate = parse(mgrAvgRate);
 
-                <button 
-                  onClick={() => handleCopyReport('mgr')}
-                  style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #a855f7', background: copied ? '#00cc66' : 'rgba(168, 85, 247, 0.1)', color: copied ? '#000' : '#a855f7', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px' }}>
-                  {copied ? '✅ Schedule Copied!' : '📋 Export Master Schedule'}
-                </button>
+              const mappedEmps = employees.map(e => {
+                const hrs = getEmpTotalHours(e);
+                const reg = Math.min(40, hrs);
+                const ot = Math.max(0, hrs - 40);
+                if (ot > 0) hasOvertime = true;
+                totalFleetHours += hrs;
+                fleetGross += (reg * rate) + (ot * rate * 1.5);
+                return { ...e, hrs, reg, ot };
+              });
 
-                <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.05em' }}>
-                  <h3 style={{ margin: '0 0 15px 0', color: '#a855f7', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>MASTER SCHEDULE</h3>
-                  {employees.map(e => {
-                    const hrs = getEmpTotalHours(e);
-                    return (
-                      <div key={e.id} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px dashed #222' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold', marginBottom: '8px' }}>
+              const bgt = parse(mgrBudget);
+              const isOverBudget = totalFleetHours > bgt;
+
+              return (
+                <>
+                  <div style={{ ...cardStyle, borderTop: isOverBudget ? '4px solid #ef4444' : '4px solid #00cc66' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <h4 style={{ margin: 0, color: '#fff' }}>Labor Budget Tracking</h4>
+                      <span style={{ color: isOverBudget ? '#ef4444' : '#00cc66', fontWeight: 'bold' }}>
+                        {totalFleetHours.toFixed(1)} / {bgt.toFixed(1)} hrs
+                      </span>
+                    </div>
+                    <div style={{ height: '12px', background: '#222', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${bgt > 0 ? Math.min(100, (totalFleetHours / bgt) * 100) : 0}%`, background: isOverBudget ? '#ef4444' : '#00cc66', transition: 'width 0.3s' }}></div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={handleCopyReport}
+                    style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #a855f7', background: copied ? '#00cc66' : 'rgba(168, 85, 247, 0.1)', color: copied ? '#000' : '#a855f7', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px' }}>
+                    {copied ? '✅ Schedule Copied!' : '📋 Export Master Schedule'}
+                  </button>
+
+                  <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.05em' }}>
+                    <h3 style={{ margin: '0 0 15px 0', color: '#a855f7', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>MASTER SCHEDULE</h3>
+                    
+                    {mappedEmps.map(e => (
+                      <div key={e.id} style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px dashed #222' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}>
                           <span style={{ color: '#a855f7' }}>{e.name}</span>
-                          <span>{hrs.toFixed(2)} hrs</span>
+                          <span>{e.hrs.toFixed(2)} hrs</span>
                         </div>
-                        {daysOfWeek.map(d => {
-                          if (e.shifts[d].length > 0) {
-                            return (
-                              <div key={d} style={{ display: 'flex', color: '#aaa', fontSize: '0.9em', marginLeft: '10px' }}>
-                                <span style={{ width: '40px', color: '#666' }}>{d}:</span>
-                                <span>{e.shifts[d].map(s => `${s.start || '??:??'} - ${s.end || '??:??'}${s.break ? ` (-${s.break}m)` : ''}`).join(', ')}</span>
-                              </div>
-                            )
-                          }
-                          return null;
-                        })}
+                        {e.ot > 0 ? (
+                          <div style={{ color: '#ef4444', fontSize: '0.85em', textAlign: 'right' }}>⚠️ Includes {e.ot.toFixed(2)} OT Hrs</div>
+                        ) : (
+                          <div style={{ color: '#888', fontSize: '0.85em', textAlign: 'right' }}>Reg: {e.reg.toFixed(2)} hrs</div>
+                        )}
+                        <div style={{ marginTop: '6px' }}>
+                          {daysOfWeek.map(d => {
+                            if (e.shifts[d].length > 0) {
+                              return (
+                                <div key={d} style={{ display: 'flex', color: '#aaa', fontSize: '0.9em', marginLeft: '10px' }}>
+                                  <span style={{ width: '40px', color: '#666' }}>{d}:</span>
+                                  <span>{e.shifts[d].map(s => `${s.start || '??:??'} - ${s.end || '??:??'}`).join(', ')}</span>
+                                </div>
+                              )
+                            }
+                            return null;
+                          })}
+                        </div>
                       </div>
-                    )
-                  })}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00cc66', fontWeight: 'bold', fontSize: '1.2em', marginTop: '10px' }}>
-                    <span>Total Fleet Hours:</span>
-                    <span>{employees.reduce((acc, e) => acc + getEmpTotalHours(e), 0).toFixed(2)}</span>
+                    ))}
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: isOverBudget ? '#ef4444' : '#00cc66', fontWeight: 'bold', fontSize: '1.2em', marginTop: '15px' }}>
+                      <span>Total Fleet Hours:</span>
+                      <span>{totalFleetHours.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b', fontSize: '1.1em', marginTop: '8px' }}>
+                      <span>Est. Scheduled Payroll:</span>
+                      <span>${fleetGross.toFixed(2)}</span>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              );
+            })()}
           </>
         )}
 
@@ -439,7 +476,7 @@ export default function TimesheetCalc() {
                     </div>
                   </div>
                 ))}
-                <HumanityCheck />
+                <EmployeeHumanityCheck />
               </>
             )}
 
@@ -447,7 +484,7 @@ export default function TimesheetCalc() {
               <>
                 <button 
                   onClick={() => handleCopyReport('gig')}
-                  style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #f59e0b', background: copied ? '#00cc66' : 'rgba(245, 158, 11, 0.1)', color: copied ? '#000' : '#f59e0b', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px' }}>
+                  style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #f59e0b', background: copied ? '#00cc66' : 'rgba(245, 158, 11, 0.1)', color: copied ? '#000' : '#f59e0b', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px', transition: 'all 0.2s' }}>
                   {copied ? '✅ Invoice Copied!' : '📋 Export Gig Summary'}
                 </button>
 
@@ -511,14 +548,6 @@ export default function TimesheetCalc() {
               <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
                 <strong>W-2 (Employees):</strong> The employer dictates schedules, provides tools, and withholds taxes. Minimum wage and FLSA overtime laws apply.<br/><br/>
                 <strong>1099 (Contractors):</strong> Contractors dictate how and when work gets done. They pay their own Self-Employment taxes, and FLSA overtime laws generally do not apply. Misclassifying an employee as a contractor is a severe IRS audit flag.
-              </p>
-            </div>
-
-            <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#00ffff' }}>HR Document Retention Rules</h3>
-              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
-                <strong>Payroll Records:</strong> The FLSA requires keeping payroll records (hours, wages, deductions) for at least 3 years. The IRS requires 4 years for employment tax records.<br/><br/>
-                <strong>Form I-9:</strong> Must be retained for 3 years after the date of hire, or 1 year after termination, whichever is later.
               </p>
             </div>
           </div>
