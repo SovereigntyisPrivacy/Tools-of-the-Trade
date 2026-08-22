@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function TaxCalc() {
@@ -36,7 +36,6 @@ export default function TaxCalc() {
   const fmt = (val) => '$' + val.toLocaleString('en-US', { maximumFractionDigits: 0 });
 
   const calculateFederalTax = (taxableIncome) => {
-    // 2026 Official Brackets
     const brackets = [
       { limit: 12400, rate: 0.10 }, { limit: 50400, rate: 0.12 },
       { limit: 105700, rate: 0.22 }, { limit: 201775, rate: 0.24 },
@@ -75,7 +74,6 @@ export default function TaxCalc() {
   const stateIncomeTaxEst = totalGrossIncome * (parseNum(stateTax) / 100);
   const itemized = Math.min(10000, parseNum(propertyTax) + stateIncomeTaxEst) + parseNum(mortgageInt);
 
-  // 2026 Standard Deductions
   let standardDed = 16100;
   if (filingStatus === 'Joint') standardDed = 32200;
   if (filingStatus === 'Head') standardDed = 24150; 
@@ -133,109 +131,59 @@ export default function TaxCalc() {
 
       <div className="calc-content" style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
         
-        {/* ========================================== */}
-        {/* STEP 1: PROFILE                            */}
-        {/* ========================================== */}
         {step === 1 && (
           <div style={{...cardStyle, borderTop: '4px solid #00cc66'}}>
             <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.4em' }}>1. Basic Profile</h3>
             <p style={{ color: '#aaa', fontSize: '0.9em', marginBottom: '20px' }}>Let's start with your standard income and demographics.</p>
-            
-            <label style={labelStyle}>Gross Annual Income ($)
-              <input type="number" placeholder="65000" value={gross} onChange={e => setGross(e.target.value)} style={{...inputStyle, border: '1px solid #00cc66', marginBottom: '15px'}} />
-            </label>
-            
+            <label style={labelStyle}>Gross Annual Income ($)<input type="number" placeholder="65000" value={gross} onChange={e => setGross(e.target.value)} style={{...inputStyle, border: '1px solid #00cc66', marginBottom: '15px'}} /></label>
             <div style={flexWrap}>
-              <div style={inputWrap}>
-                <label style={labelStyle}>Filing Status
-                  <select value={filingStatus} onChange={e => setFilingStatus(e.target.value)} style={inputStyle}>
-                    <option value="Single">Single</option>
-                    <option value="Head">Head of Household</option>
-                    <option value="Joint">Married Joint</option>
-                  </select>
-                </label>
-              </div>
-              <div style={inputWrap}>
-                <label style={labelStyle}>State Tax (%)
-                  <input type="number" value={stateTax} onChange={e => setStateTax(e.target.value)} style={inputStyle} />
-                </label>
-              </div>
+              <div style={inputWrap}><label style={labelStyle}>Filing Status<select value={filingStatus} onChange={e => setFilingStatus(e.target.value)} style={inputStyle}><option value="Single">Single</option><option value="Head">Head of Household</option><option value="Joint">Married Joint</option></select></label></div>
+              <div style={inputWrap}><label style={labelStyle}>State Tax (%)<input type="number" value={stateTax} onChange={e => setStateTax(e.target.value)} style={inputStyle} /></label></div>
             </div>
-
             <div style={flexWrap}>
-              <div style={inputWrap}>
-                <label style={labelStyle}>Dependents (Kids)
-                  <input type="number" placeholder="0" value={dependents} onChange={e => setDependents(e.target.value)} style={inputStyle} />
-                </label>
-              </div>
-              <div style={inputWrap}>
-                <label style={labelStyle}>Employment
-                  <select value={empType} onChange={e => setEmpType(e.target.value)} style={{...inputStyle, color: empType==='1099'?'#ffaa00':'#fff'}}>
-                    <option value="W2">W-2 Employee</option>
-                    <option value="1099">1099 Contractor</option>
-                  </select>
-                </label>
-              </div>
+              <div style={inputWrap}><label style={labelStyle}>Dependents (Kids)<input type="number" placeholder="0" value={dependents} onChange={e => setDependents(e.target.value)} style={inputStyle} /></label></div>
+              <div style={inputWrap}><label style={labelStyle}>Employment<select value={empType} onChange={e => setEmpType(e.target.value)} style={{...inputStyle, color: empType==='1099'?'#ffaa00':'#fff'}}><option value="W2">W-2 Employee</option><option value="1099">1099 Contractor</option></select></label></div>
             </div>
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* STEP 2: DEDUCTIONS                         */}
-        {/* ========================================== */}
         {step === 2 && (
           <div style={{...cardStyle, borderTop: '4px solid #3b82f6'}}>
             <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.4em' }}>2. Deductions</h3>
             <p style={{ color: '#aaa', fontSize: '0.9em', marginBottom: '20px' }}>These inputs lower your Adjusted Gross Income (AGI) before taxes are calculated.</p>
-
             {empType === '1099' && (
               <div style={{ padding: '15px', background: 'rgba(255,170,0,0.1)', border: '1px dashed #ffaa00', borderRadius: '8px', marginBottom: '20px' }}>
-                <label style={{...labelStyle, color: '#ffaa00'}}>Business Write-Offs ($)
-                  <input type="number" placeholder="Tools, mileage..." value={businessExpenses} onChange={e => setBusinessExpenses(e.target.value)} style={{...inputStyle, border: '1px solid #ffaa00'}} />
-                </label>
+                <label style={{...labelStyle, color: '#ffaa00'}}>Business Write-Offs ($)<input type="number" placeholder="Tools, mileage..." value={businessExpenses} onChange={e => setBusinessExpenses(e.target.value)} style={{...inputStyle, border: '1px solid #ffaa00'}} /></label>
                 <p style={{ color: '#ffaa00', fontSize: '0.8em', margin: '8px 0 0 0' }}>*This lowers your 15.3% Self-Employment tax burden.</p>
               </div>
             )}
-
             <div style={flexWrap}>
               <div style={inputWrap}><label style={labelStyle}>401(k) Deposits<input type="number" placeholder="$0" value={num401k} onChange={e => setNum401k(e.target.value)} style={inputStyle} /></label></div>
               <div style={inputWrap}><label style={labelStyle}>HSA / FSA<input type="number" placeholder="$0" value={numHsa} onChange={e => setNumHsa(e.target.value)} style={inputStyle} /></label></div>
             </div>
-            
-            <div style={inputWrap}>
-              <label style={labelStyle}>Student Loan Interest
-                <input type="number" placeholder="$0 (Capped at $2,500)" value={studentLoan} onChange={e => setStudentLoan(e.target.value)} style={inputStyle} />
-              </label>
-            </div>
+            <div style={inputWrap}><label style={labelStyle}>Student Loan Interest<input type="number" placeholder="$0 (Capped at $2,500)" value={studentLoan} onChange={e => setStudentLoan(e.target.value)} style={inputStyle} /></label></div>
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* STEP 3: ASSETS & ESCROW                    */}
-        {/* ========================================== */}
         {step === 3 && (
           <div style={{...cardStyle, borderTop: '4px solid #a855f7'}}>
             <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.4em' }}>3. Assets & Escrow</h3>
             <p style={{ color: '#aaa', fontSize: '0.9em', marginBottom: '20px' }}>Enter property escrow, high-value credits, and capital gains.</p>
-
             <div style={{ borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '15px' }}>
               <div style={flexWrap}>
                 <div style={inputWrap}><label style={labelStyle}>Property Tax<input type="number" placeholder="$0" value={propertyTax} onChange={e => setPropertyTax(e.target.value)} style={inputStyle} /></label></div>
                 <div style={inputWrap}><label style={labelStyle}>Mortgage Interest<input type="number" placeholder="$0" value={mortgageInt} onChange={e => setMortgageInt(e.target.value)} style={inputStyle} /></label></div>
               </div>
             </div>
-
             <div style={{ borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '15px' }}>
               <div style={flexWrap}>
                 <div style={inputWrap}><label style={labelStyle}>Solar Install Cost<input type="number" placeholder="$0" value={solarCost} onChange={e => setSolarCost(e.target.value)} style={inputStyle} /></label></div>
                 <div style={inputWrap}><label style={labelStyle}>Edu Credits<input type="number" placeholder="$0" value={eduCredits} onChange={e => setEduCredits(e.target.value)} style={inputStyle} /></label></div>
               </div>
             </div>
-
             <div>
               <h4 style={{ color: '#ef4444', margin: '0 0 10px 0' }}>Crypto & Investments</h4>
               <label style={{...labelStyle, color: '#aaa'}}>Mined Coins (FMV $)<input type="number" placeholder="$0" value={cryptoMined} onChange={e => setCryptoMined(e.target.value)} style={inputStyle} /></label>
-              
               <div style={{...flexWrap, marginTop: '15px'}}>
                 <div style={inputWrap}><label style={{...labelStyle, color: '#aaa'}}>Cost Basis<input type="number" placeholder="$0" value={costBasis} onChange={e => setCostBasis(e.target.value)} style={inputStyle} /></label></div>
                 <div style={inputWrap}><label style={{...labelStyle, color: '#aaa'}}>Sold For<input type="number" placeholder="$0" value={soldFor} onChange={e => setSoldFor(e.target.value)} style={inputStyle} /></label></div>
@@ -248,26 +196,18 @@ export default function TaxCalc() {
           </div>
         )}
 
-        {/* ========================================== */}
-        {/* STEP 4: FINAL 1040 SUMMARY                 */}
-        {/* ========================================== */}
         {step === 4 && (
           <>
             <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.1em', marginBottom: '20px' }}>
-              <h3 style={{ margin: '0 0 20px 0', color: '#00ffff', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px', textTransform: 'uppercase', letterSpacing: '2px' }}>Pro-FormA 1040 Summary</h3>
-              
+              <h3 style={{ margin: '0 0 20px 0', color: '#00ffff', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px', textTransform: 'uppercase', letterSpacing: '2px' }}>Pro-Forma 1040 Summary</h3>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa' }}><span>AGI:</span> <span>{fmt(agi)}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', margin: '8px 0' }}><span>[{deductionMethod}]:</span> <span>-{fmt(activeDeduction)}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00cc66' }}><span>Total Credits:</span> <span>-{fmt(totalCredits)}</span></div>
-              
               <div style={{ borderBottom: '1px dashed #444', margin: '15px 0' }}></div>
-              
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff4444' }}><span>Fed + Cap Gains:</span> <span>-{fmt(fedTaxAfterCredits)}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff4444', margin: '8px 0' }}><span>State Tax:</span> <span>-{fmt(stateIncomeTaxEst)}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff4444' }}><span>FICA / SE Tax:</span> <span>-{fmt(seTaxAmount + ficaAmount)}</span></div>
-              
               <div style={{ borderBottom: '1px solid #444', margin: '15px 0' }}></div>
-              
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00cc66', fontWeight: 'bold', fontSize: '1.3em' }}><span>Est. Take-Home:</span> <span>{fmt(netTakeHome)}</span></div>
               <div style={{ textAlign: 'center', marginTop: '15px', color: '#888' }}>Effective Rate: <strong style={{ color: '#fff' }}>{effectiveRate.toFixed(1)}%</strong></div>
             </div>
@@ -278,6 +218,23 @@ export default function TaxCalc() {
             </div>
           </>
         )}
+
+        {/* --- LAYMAN'S GUIDE ACCORDION (PERSISTENT) --- */}
+        <div style={{ background: '#1a1a1a', borderRadius: '12px', border: '1px solid #444', overflow: 'hidden', marginTop: '10px' }}>
+          <button onClick={() => setShowGuide(!showGuide)} style={{ width: '100%', padding: '15px', background: '#222', border: 'none', color: '#fff', fontSize: '1.1em', fontWeight: 'bold', textAlign: 'left', display: 'flex', justifyContent: 'space-between' }}>
+            📖 The Layman's Tax Guide <span>{showGuide ? '▲' : '▼'}</span>
+          </button>
+          {showGuide && (
+            <div style={{ padding: '20px', color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>
+              <h4 style={{ color: '#a855f7', margin: '0 0 5px 0' }}>Marginal vs. Effective</h4>
+              <p style={{ marginBottom: '15px' }}>Taxes fill up in "buckets." Just because you hit the 24% bracket doesn't mean all your money is taxed at 24%—only the money inside that specific bucket. Your <strong>Effective Rate</strong> (at the bottom) is the true average you actually paid.</p>
+              <h4 style={{ color: '#00ffff', margin: '0 0 5px 0' }}>The 1099 Pass-Through Loophole</h4>
+              <p style={{ marginBottom: '15px' }}>If you are a 1099 worker, you pay double the FICA tax (15.3%). However, the IRS lets you subtract 50% of that tax from your gross income, AND gives you a 20% Qualified Business Income (QBI) deduction on your profits.</p>
+              <h4 style={{ color: '#ef4444', margin: '0 0 5px 0' }}>Loss Harvesting</h4>
+              <p style={{ margin: 0 }}>If you sell crypto or stocks at a loss, the IRS allows you to deduct up to $3,000 of those losses against your regular paycheck income every single year.</p>
+            </div>
+          )}
+        </div>
 
       </div>
 
