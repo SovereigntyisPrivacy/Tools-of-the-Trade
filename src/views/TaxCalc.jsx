@@ -34,9 +34,9 @@ export default function TaxCalc() {
 
   const calculateFederalTax = (taxableIncome) => {
     const brackets = [
-      { limit: 11600, rate: 0.10 }, { limit: 47150, rate: 0.12 },
-      { limit: 100525, rate: 0.22 }, { limit: 191950, rate: 0.24 },
-      { limit: 243725, rate: 0.32 }, { limit: 609350, rate: 0.35 },
+      { limit: 12400, rate: 0.10 }, { limit: 50400, rate: 0.12 },
+      { limit: 105700, rate: 0.22 }, { limit: 201775, rate: 0.24 },
+      { limit: 256225, rate: 0.32 }, { limit: 640600, rate: 0.35 },
       { limit: Infinity, rate: 0.37 }
     ];
     let tax = 0, prevLimit = 0;
@@ -88,8 +88,8 @@ export default function TaxCalc() {
   } else {
     fedIncomeTax = calculateFederalTax(taxableIncome);
     if (taxableCapGains > 0) {
-      if (agi > 492300) capGainsTaxAmount = taxableCapGains * 0.20;
-      else if (agi > 47025) capGainsTaxAmount = taxableCapGains * 0.15;
+      if (agi > 545500) capGainsTaxAmount = taxableCapGains * 0.20;
+      else if (agi > 49450) capGainsTaxAmount = taxableCapGains * 0.15;
       if (agi > (filingStatus === 'Joint' ? 250000 : 200000)) niitAmount = taxableCapGains * 0.038; 
     }
   }
@@ -196,7 +196,7 @@ export default function TaxCalc() {
           {showGuide && (
             <div style={{ padding: '20px', color: '#aaa', fontSize: '0.9em', lineHeight: '1.5' }}>
               <h4 style={{ color: '#a855f7', margin: '0 0 5px 0' }}>Marginal vs. Effective</h4>
-              <p style={{ marginBottom: '15px' }}>Taxes fill up in "buckets." Just because you hit the 22% bracket doesn't mean all your money is taxed at 22%—only the money inside that specific bucket. Your <strong>Effective Rate</strong> (at the bottom) is the true average you actually paid.</p>
+              <p style={{ marginBottom: '15px' }}>Taxes fill up in "buckets." Just because you hit the 24% bracket doesn't mean all your money is taxed at 24%—only the money inside that specific bucket. Your <strong>Effective Rate</strong> (at the bottom) is the true average you actually paid.</p>
               
               <h4 style={{ color: '#00ffff', margin: '0 0 5px 0' }}>The 1099 Pass-Through Loophole</h4>
               <p style={{ marginBottom: '15px' }}>If you are a 1099 worker, you pay double the FICA tax (15.3%). However, the IRS lets you subtract 50% of that tax from your gross income, AND gives you a 20% Qualified Business Income (QBI) deduction on your profits.</p>
