@@ -4,26 +4,28 @@ import { useNavigate } from 'react-router-dom';
 export default function TimesheetCalc() {
   const navigate = useNavigate();
   
-  // --- MASTER MODE TOGGLE ---
-  const [appMode, setAppMode] = useState('Solo'); // 'Solo', 'Manager', or 'Freelance'
+  // --- TOP-LEVEL NAVIGATION ---
+  const [activeTab, setActiveTab] = useState('Employee'); // 'Employee', 'Manager', 'Self-Employed', 'HR'
 
-  // --- SOLO STATE ---
-  const [soloTab, setSoloTab] = useState('Timecard');
+  // --- SUB-NAVIGATION ---
+  const [empTab, setEmpTab] = useState('Timecard');
+  const [mgrTab, setMgrTab] = useState('Roster');
+  const [seTab, setSeTab] = useState('Jobs');
+
+  // --- EMPLOYEE STATE ---
   const [soloRate, setSoloRate] = useState('20.00');
   const [soloTax, setSoloTax] = useState('15');
   const [soloBonus, setSoloBonus] = useState(''); 
   const [soloShifts, setSoloShifts] = useState({ Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] });
 
   // --- MANAGER STATE ---
-  const [mgrTab, setMgrTab] = useState('Roster');
   const [mgrBudget, setMgrBudget] = useState('160'); 
   const [employees, setEmployees] = useState([
     { id: 1, name: 'Employee 1', shifts: { Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] } }
   ]);
   const [activeEmpId, setActiveEmpId] = useState(1);
 
-  // --- FREELANCE / GIG STATE ---
-  const [gigTab, setGigTab] = useState('Jobs');
+  // --- SELF-EMPLOYED STATE ---
   const [gigs, setGigs] = useState([
     { id: 1, name: 'Project Alpha', payout: '500', expenses: '50', hours: '12', taxPct: '15' }
   ]);
@@ -32,19 +34,19 @@ export default function TimesheetCalc() {
   const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const parse = (val) => parseFloat(val) || 0;
 
-  // --- ENGINE LOGIC ---
+  // --- CORE TIME LOGIC ---
   const calcShiftHours = (start, end, breakMins = 0) => {
     if (!start || !end) return 0;
     const [sH, sM] = start.split(':').map(Number);
     const [eH, eM] = end.split(':').map(Number);
     let sTime = sH + sM / 60;
     let eTime = eH + eM / 60;
-    if (eTime < sTime) eTime += 24; 
+    if (eTime < sTime) eTime += 24; // Handle overnights
     const totalWithBreak = (eTime - sTime) - (parse(breakMins) / 60);
     return Math.max(0, totalWithBreak); 
   };
 
-  // --- SOLO FUNCTIONS ---
+  // --- EMPLOYEE FUNCTIONS ---
   const addSoloShift = (day) => setSoloShifts({ ...soloShifts, [day]: [...soloShifts[day], { start: '', end: '', break: '' }] });
   const updateSoloShift = (day, idx, field, val) => {
     const newShifts = [...soloShifts[day]];
@@ -88,7 +90,7 @@ export default function TimesheetCalc() {
     return tHrs;
   };
 
-  // --- FREELANCE FUNCTIONS ---
+  // --- SELF-EMPLOYED FUNCTIONS ---
   const addGig = () => setGigs([...gigs, { id: Date.now(), name: `New Gig`, payout: '0', expenses: '0', hours: '0', taxPct: '15' }]);
   const updateGig = (id, field, val) => setGigs(gigs.map(g => g.id === id ? { ...g, [field]: val } : g));
   const deleteGig = (id) => { if (gigs.length > 1) setGigs(gigs.filter(g => g.id !== id)); };
@@ -159,45 +161,6 @@ export default function TimesheetCalc() {
     </div>
   );
 
-  const GuideTab = () => (
-    <div style={{ padding: '5px' }}>
-      <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
-        <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>⚠️ Official Disclaimer</h3>
-        <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
-          This module is an educational estimation tool. It does not replace certified HR payroll software or a licensed CPA. Always verify local state labor laws.
-        </p>
-      </div>
-
-      <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
-        <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>The "Daily Overtime" Trap</h3>
-        <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
-          Federal FLSA law requires 1.5x overtime pay for anything over 40 hours in a week. However, several states (like California, Nevada, and Colorado) enforce <strong>Daily Overtime</strong>. In these states, working more than 8 or 12 hours in a single day automatically triggers 1.5x or 2.0x overtime pay, regardless of your total weekly hours.
-        </p>
-      </div>
-
-      <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
-        <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>Unpaid Meal Breaks</h3>
-        <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
-          Federal law considers short breaks (5-20 mins) as paid work time. Genuine "meal periods" (30+ mins) are strictly unpaid, but <strong>only</strong> if the employee is completely relieved of all duties. If you are required to sit at your desk or watch a register while you eat, you must be paid for that time.
-        </p>
-      </div>
-
-      <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-        <h3 style={{ margin: '0 0 10px 0', color: '#00cc66' }}>Shift Differentials</h3>
-        <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
-          Employers are not legally required to pay extra for working nights, weekends, or holidays. However, standard industry practice provides a "Shift Differential" (e.g., an extra $1.50/hr) for employees working 2nd shift (evenings) or 3rd shift (overnights) to incentivize working unsociable hours.
-        </p>
-      </div>
-
-      <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
-        <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>Travel Time & "On-the-Clock"</h3>
-        <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
-          Standard commutes from your home to your primary workplace are strictly unpaid. However, if you are required to travel <em>between</em> job sites during the day, or if you are sent on a special 1-day assignment in another city, that travel time must be logged as paid working hours.
-        </p>
-      </div>
-    </div>
-  );
-
   // --- STYLES ---
   const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.05em', marginTop: '4px' };
   const labelStyle = { color: '#00ffff', fontSize: '0.8em', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' };
@@ -210,34 +173,47 @@ export default function TimesheetCalc() {
         <h2>Timesheet Engine</h2>
       </header>
 
-      {/* GLOBAL MODE TOGGLE */}
-      <div style={{ display: 'flex', background: '#151515', padding: '10px', borderBottom: '1px solid #333', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-        <button onClick={() => setAppMode('Solo')} style={{ flex: '1 0 110px', padding: '12px 10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: appMode === 'Solo' ? '#3b82f6' : '#222', color: appMode === 'Solo' ? '#fff' : '#888' }}>👤 Solo Pay</button>
-        <button onClick={() => setAppMode('Manager')} style={{ flex: '1 0 110px', padding: '12px 10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: appMode === 'Manager' ? '#a855f7' : '#222', color: appMode === 'Manager' ? '#fff' : '#888' }}>📋 Manager</button>
-        <button onClick={() => setAppMode('Freelance')} style={{ flex: '1 0 110px', padding: '12px 10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: appMode === 'Freelance' ? '#f59e0b' : '#222', color: appMode === 'Freelance' ? '#000' : '#888' }}>💼 Gig / Freelance</button>
+      {/* TOP-LEVEL TABS */}
+      <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {['Employee', 'Manager', 'Self-Employed', 'HR'].map(tab => {
+          let color = '#fff';
+          if (tab === 'Employee') color = '#3b82f6';
+          if (tab === 'Manager') color = '#a855f7';
+          if (tab === 'Self-Employed') color = '#f59e0b';
+          if (tab === 'HR') color = '#00cc66';
+
+          return (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{ padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: activeTab === tab ? color : '#222', color: activeTab === tab ? '#000' : '#aaa' }}>
+              {tab}
+            </button>
+          )
+        })}
       </div>
 
       <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1 }}>
         
         {/* ========================================== */}
-        {/* SOLO MODE                                  */}
+        {/* TAB 1: EMPLOYEE (SOLO PAY)                 */}
         {/* ========================================== */}
-        {appMode === 'Solo' && (
+        {activeTab === 'Employee' && (
           <>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-              {['Timecard', 'Pay Stub', 'Guide'].map(tab => (
-                <button key={tab} onClick={() => setSoloTab(tab)} style={{ flex: 1, padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: soloTab === tab ? '#00ffff' : '#222', color: soloTab === tab ? '#000' : '#888' }}>{tab}</button>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+              {['Timecard', 'Pay Stub'].map(tab => (
+                <button key={tab} onClick={() => setEmpTab(tab)} style={{ flex: 1, padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: empTab === tab ? 'rgba(59, 130, 246, 0.2)' : '#111', color: empTab === tab ? '#3b82f6' : '#888', border: empTab === tab ? '1px solid #3b82f6' : '1px solid #333' }}>{tab}</button>
               ))}
             </div>
 
-            {soloTab === 'Timecard' && (
+            {empTab === 'Timecard' && (
               <>
                 <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
                   <h4 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>Wage Profile</h4>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <div style={{ flex: '1 1 90px' }}><label style={labelStyle}>Rate ($)<input type="number" value={soloRate} onChange={e=>setSoloRate(e.target.value)} style={inputStyle} /></label></div>
-                    <div style={{ flex: '1 1 90px' }}><label style={labelStyle}>Tax (%)<input type="number" value={soloTax} onChange={e=>setSoloTax(e.target.value)} style={inputStyle} /></label></div>
-                    <div style={{ flex: '1 1 120px' }}><label style={labelStyle}>Tips/Bonus ($)<input type="number" value={soloBonus} onChange={e=>setSoloBonus(e.target.value)} placeholder="0.00" style={{...inputStyle, border: '1px solid #00ffff'}} /></label></div>
+                    <div style={{ flex: '1 1 90px' }}><label style={{...labelStyle, color: '#3b82f6'}}>Rate ($)<input type="number" value={soloRate} onChange={e=>setSoloRate(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={{ flex: '1 1 90px' }}><label style={{...labelStyle, color: '#3b82f6'}}>Tax (%)<input type="number" value={soloTax} onChange={e=>setSoloTax(e.target.value)} style={inputStyle} /></label></div>
+                    <div style={{ flex: '1 1 120px' }}><label style={{...labelStyle, color: '#3b82f6'}}>Tips/Bonus ($)<input type="number" value={soloBonus} onChange={e=>setSoloBonus(e.target.value)} placeholder="0.00" style={inputStyle} /></label></div>
                   </div>
                 </div>
 
@@ -272,14 +248,14 @@ export default function TimesheetCalc() {
               </>
             )}
 
-            {soloTab === 'Pay Stub' && (() => {
+            {empTab === 'Pay Stub' && (() => {
               const p = getSoloPayroll();
               return (
                 <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.1em' }}>
-                  <h3 style={{ margin: '0 0 15px 0', color: '#00ffff', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>WEEKLY PAY STUB</h3>
+                  <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>WEEKLY PAY STUB</h3>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Regular Hours:</span> <span style={{color:'#fff'}}>{p.regHours.toFixed(2)}</span></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Overtime (1.5x):</span> <span style={{color:'#ffaa00'}}>{p.otHours.toFixed(2)}</span></div>
-                  {p.bonus > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Tips / Bonus:</span> <span style={{color:'#00ffff'}}>+${p.bonus.toFixed(2)}</span></div>}
+                  {p.bonus > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Tips / Bonus:</span> <span style={{color:'#3b82f6'}}>+${p.bonus.toFixed(2)}</span></div>}
                   <div style={{ borderBottom: '1px dashed #444', margin: '10px 0' }}></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Gross Pay:</span> <span>${p.gross.toFixed(2)}</span></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444', marginBottom: '15px' }}><span>Est Taxes:</span> <span>-${p.tax.toFixed(2)}</span></div>
@@ -288,19 +264,17 @@ export default function TimesheetCalc() {
                 </div>
               );
             })()}
-
-            {soloTab === 'Guide' && <GuideTab />}
           </>
         )}
 
         {/* ========================================== */}
-        {/* MANAGER MODE                               */}
+        {/* TAB 2: MANAGER (CREW SCHEDULING)           */}
         {/* ========================================== */}
-        {appMode === 'Manager' && (
+        {activeTab === 'Manager' && (
           <>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Roster', 'Schedule', 'Report', 'Guide'].map(tab => (
-                <button key={tab} onClick={() => setMgrTab(tab)} style={{ flex: 1, padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: mgrTab === tab ? '#a855f7' : '#222', color: mgrTab === tab ? '#fff' : '#888' }}>{tab}</button>
+              {['Roster', 'Schedule', 'Report'].map(tab => (
+                <button key={tab} onClick={() => setMgrTab(tab)} style={{ flex: 1, padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: mgrTab === tab ? 'rgba(168, 85, 247, 0.2)' : '#111', color: mgrTab === tab ? '#a855f7' : '#888', border: mgrTab === tab ? '1px solid #a855f7' : '1px solid #333' }}>{tab}</button>
               ))}
             </div>
 
@@ -308,7 +282,7 @@ export default function TimesheetCalc() {
               <>
                 <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
                   <h4 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>Labor Control</h4>
-                  <label style={labelStyle}>Weekly Target Budget (Hours)<input type="number" value={mgrBudget} onChange={e=>setMgrBudget(e.target.value)} style={{...inputStyle, border: '1px solid #a855f7'}} /></label>
+                  <label style={{...labelStyle, color: '#a855f7'}}>Weekly Target Budget (Hours)<input type="number" value={mgrBudget} onChange={e=>setMgrBudget(e.target.value)} style={inputStyle} /></label>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', marginTop: '20px' }}>
                   <h3 style={{ color: '#fff', margin: 0 }}>Crew Members</h3>
@@ -368,7 +342,6 @@ export default function TimesheetCalc() {
 
             {mgrTab === 'Report' && (
               <>
-                {/* BUDGET TRACKER */}
                 <div style={{ ...cardStyle, borderTop: employees.reduce((acc, emp) => acc + getEmpTotalHours(emp), 0) > parse(mgrBudget) ? '4px solid #ef4444' : '4px solid #00cc66' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                     <h4 style={{ margin: 0, color: '#fff' }}>Labor Budget Tracking</h4>
@@ -388,7 +361,7 @@ export default function TimesheetCalc() {
                 </button>
 
                 <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.05em' }}>
-                  <h3 style={{ margin: '0 0 15px 0', color: '#00ffff', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>MASTER SCHEDULE</h3>
+                  <h3 style={{ margin: '0 0 15px 0', color: '#a855f7', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>MASTER SCHEDULE</h3>
                   {employees.map(e => {
                     const hrs = getEmpTotalHours(e);
                     return (
@@ -418,23 +391,21 @@ export default function TimesheetCalc() {
                 </div>
               </>
             )}
-
-            {mgrTab === 'Guide' && <GuideTab />}
           </>
         )}
 
         {/* ========================================== */}
-        {/* FREELANCE / GIG MODE                       */}
+        {/* TAB 3: SELF-EMPLOYED (GIG INVOICE)         */}
         {/* ========================================== */}
-        {appMode === 'Freelance' && (
+        {activeTab === 'Self-Employed' && (
           <>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Jobs', 'Invoice', 'Guide'].map(tab => (
-                <button key={tab} onClick={() => setGigTab(tab)} style={{ flex: 1, padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: gigTab === tab ? '#f59e0b' : '#222', color: gigTab === tab ? '#000' : '#888' }}>{tab}</button>
+              {['Jobs', 'Invoice'].map(tab => (
+                <button key={tab} onClick={() => setSeTab(tab)} style={{ flex: 1, padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: seTab === tab ? 'rgba(245, 158, 11, 0.2)' : '#111', color: seTab === tab ? '#f59e0b' : '#888', border: seTab === tab ? '1px solid #f59e0b' : '1px solid #333' }}>{tab}</button>
               ))}
             </div>
 
-            {gigTab === 'Jobs' && (
+            {seTab === 'Jobs' && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                   <h3 style={{ color: '#fff', margin: 0 }}>Active Projects</h3>
@@ -451,16 +422,15 @@ export default function TimesheetCalc() {
                       {gigs.length > 1 && <button onClick={() => deleteGig(g.id)} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '6px', padding: '6px 12px', fontWeight: 'bold' }}>X</button>}
                     </div>
 
-                    <div style={flexWrap}>
-                      <div style={inputWrap}><label style={labelStyle}>Flat Payout ($)<input type="number" value={g.payout} onChange={e => updateGig(g.id, 'payout', e.target.value)} style={{...inputStyle, border: '1px solid #00cc66'}} /></label></div>
-                      <div style={inputWrap}><label style={labelStyle}>Expenses ($)<input type="number" value={g.expenses} onChange={e => updateGig(g.id, 'expenses', e.target.value)} style={{...inputStyle, border: '1px solid #ef4444'}} /></label></div>
+                    <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                      <div style={{ flex: '1 1 120px' }}><label style={{...labelStyle, color: '#f59e0b'}}>Flat Payout ($)<input type="number" value={g.payout} onChange={e => updateGig(g.id, 'payout', e.target.value)} style={inputStyle} /></label></div>
+                      <div style={{ flex: '1 1 120px' }}><label style={{...labelStyle, color: '#f59e0b'}}>Expenses ($)<input type="number" value={g.expenses} onChange={e => updateGig(g.id, 'expenses', e.target.value)} style={inputStyle} /></label></div>
                     </div>
-                    <div style={flexWrap}>
-                      <div style={inputWrap}><label style={labelStyle}>Est. Labor (hrs)<input type="number" value={g.hours} onChange={e => updateGig(g.id, 'hours', e.target.value)} style={inputStyle} /></label></div>
-                      <div style={inputWrap}><label style={labelStyle}>Tax Est (%)<input type="number" value={g.taxPct} onChange={e => updateGig(g.id, 'taxPct', e.target.value)} style={inputStyle} /></label></div>
+                    <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                      <div style={{ flex: '1 1 120px' }}><label style={{...labelStyle, color: '#f59e0b'}}>Est. Labor (hrs)<input type="number" value={g.hours} onChange={e => updateGig(g.id, 'hours', e.target.value)} style={inputStyle} /></label></div>
+                      <div style={{ flex: '1 1 120px' }}><label style={{...labelStyle, color: '#f59e0b'}}>Tax Est (%)<input type="number" value={g.taxPct} onChange={e => updateGig(g.id, 'taxPct', e.target.value)} style={inputStyle} /></label></div>
                     </div>
 
-                    {/* LIVE ROI READOUT */}
                     <div style={{ marginTop: '15px', background: '#000', padding: '12px', borderRadius: '8px', border: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ color: '#aaa', fontSize: '0.9em', textTransform: 'uppercase', fontWeight: 'bold' }}>True Hourly ROI:</span>
                       <strong style={{ color: getGigStats(g).trueHourly < 15 ? '#ef4444' : '#00cc66', fontSize: '1.3em' }}>
@@ -473,17 +443,16 @@ export default function TimesheetCalc() {
               </>
             )}
 
-            {gigTab === 'Invoice' && (
+            {seTab === 'Invoice' && (
               <>
                 <button 
                   onClick={() => handleCopyReport('gig')}
-                  style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #f59e0b', background: copied ? '#00cc66' : 'rgba(245, 158, 11, 0.1)', color: copied ? '#000' : '#f59e0b', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px', transition: 'all 0.2s' }}>
+                  style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #f59e0b', background: copied ? '#00cc66' : 'rgba(245, 158, 11, 0.1)', color: copied ? '#000' : '#f59e0b', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px' }}>
                   {copied ? '✅ Invoice Copied!' : '📋 Export Gig Summary'}
                 </button>
 
                 <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.1em' }}>
                   <h3 style={{ margin: '0 0 15px 0', color: '#f59e0b', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>INVOICE LEDGER</h3>
-                  
                   {(() => {
                     let tGross = 0, tExp = 0, tNet = 0, tHrs = 0;
                     gigs.forEach(g => {
@@ -506,9 +475,53 @@ export default function TimesheetCalc() {
                 </div>
               </>
             )}
-
-            {gigTab === 'Guide' && <GuideTab />}
           </>
+        )}
+
+        {/* ========================================== */}
+        {/* TAB 4: HR & LEGAL COMPLIANCE               */}
+        {/* ========================================== */}
+        {activeTab === 'HR' && (
+          <div style={{ padding: '5px' }}>
+            <h3 style={{ color: '#00cc66', marginBottom: '20px', textAlign: 'center' }}>Labor Law & Compliance</h3>
+            
+            <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>⚠️ Official Disclaimer</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
+                This module is an educational estimation tool. It does not replace certified HR payroll software or a licensed CPA. Always verify local state labor laws with your legal counsel.
+              </p>
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>Federal Overtime & The "Daily" Trap</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
+                Federal FLSA law requires 1.5x overtime pay for anything over 40 hours in a week. However, states like California, Nevada, and Colorado enforce <strong>Daily Overtime</strong>. In these states, working more than 8 or 12 hours in a single day automatically triggers 1.5x or 2.0x overtime pay, regardless of weekly hours.
+              </p>
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>Unpaid Meal Breaks</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
+                Federal law considers short breaks (5-20 mins) as paid work time. Genuine "meal periods" (30+ mins) are strictly unpaid, but <strong>only</strong> if the employee is completely relieved of all duties. If an employee must watch a register or stay at a desk while eating, they must be paid for that time.
+              </p>
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>W-2 vs 1099 Workers</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
+                <strong>W-2 (Employees):</strong> The employer dictates schedules, provides tools, and withholds taxes. Minimum wage and FLSA overtime laws apply.<br/><br/>
+                <strong>1099 (Contractors):</strong> Contractors dictate how and when work gets done. They pay their own Self-Employment taxes, and FLSA overtime laws generally do not apply. Misclassifying an employee as a contractor is a severe IRS audit flag.
+              </p>
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#00ffff' }}>HR Document Retention Rules</h3>
+              <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>
+                <strong>Payroll Records:</strong> The FLSA requires keeping payroll records (hours, wages, deductions) for at least 3 years. The IRS requires 4 years for employment tax records.<br/><br/>
+                <strong>Form I-9:</strong> Must be retained for 3 years after the date of hire, or 1 year after termination, whichever is later.
+              </p>
+            </div>
+          </div>
         )}
 
       </div>
