@@ -5,7 +5,7 @@ export default function TimesheetCalc() {
   const navigate = useNavigate();
   
   // --- TOP-LEVEL NAVIGATION ---
-  const [activeTab, setActiveTab] = useState('Manager'); 
+  const [activeTab, setActiveTab] = useState('Employee'); 
 
   // --- SUB-NAVIGATION ---
   const [empTab, setEmpTab] = useState('Timecard');
@@ -17,6 +17,7 @@ export default function TimesheetCalc() {
   const [soloTax, setSoloTax] = useState('15');
   const [soloBonus, setSoloBonus] = useState(''); 
   const [soloShifts, setSoloShifts] = useState({ Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] });
+  const [saveStatus, setSaveStatus] = useState('');
 
   // --- MANAGER STATE ---
   const [mgrBudget, setMgrBudget] = useState('160'); 
@@ -68,6 +69,33 @@ export default function TimesheetCalc() {
     return { tHrs, reg, ot, bonus, gross, tax, net: gross - tax };
   };
 
+  // --- EMPLOYEE SAVE / LOAD ---
+  const saveTimecard = () => {
+    localStorage.setItem('tot_solo_shifts', JSON.stringify(soloShifts));
+    localStorage.setItem('tot_solo_rate', soloRate);
+    localStorage.setItem('tot_solo_tax', soloTax);
+    setSaveStatus('Saved');
+    setTimeout(() => setSaveStatus(''), 2000);
+  };
+
+  const loadTimecard = () => {
+    const saved = localStorage.getItem('tot_solo_shifts');
+    if (saved) setSoloShifts(JSON.parse(saved));
+    const r = localStorage.getItem('tot_solo_rate');
+    if (r) setSoloRate(r);
+    const t = localStorage.getItem('tot_solo_tax');
+    if (t) setSoloTax(t);
+    setSaveStatus('Loaded');
+    setTimeout(() => setSaveStatus(''), 2000);
+  };
+
+  const clearTimecard = () => {
+    if(window.confirm('Clear all shifts for the week?')) {
+      setSoloShifts({ Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] });
+      setSoloBonus('');
+    }
+  };
+
   // --- MANAGER FUNCTIONS ---
   const activeEmp = employees.find(e => e.id === activeEmpId) || employees[0];
   const addEmployee = () => {
@@ -93,7 +121,6 @@ export default function TimesheetCalc() {
       emp.shifts[d].forEach(s => {
         const hrs = calcShiftHours(s.start, s.end, s.break);
         tHrs += hrs;
-        // Flag shifts over 6 hours with less than 30 min break
         if (hrs > 6 && parse(s.break) < 30) missingBreaks++;
       });
     });
@@ -177,7 +204,7 @@ export default function TimesheetCalc() {
 
   // --- UI COMPONENTS ---
   const EmployeeHumanityCheck = () => (
-    <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(59, 130, 246, 0.05)', border: '1px dashed #3b82f6', borderRadius: '12px', textAlign: 'center' }}>
+    <div style={{ padding: '15px', background: 'rgba(59, 130, 246, 0.05)', border: '1px dashed #3b82f6', borderRadius: '12px', textAlign: 'center' }}>
       <span style={{ fontSize: '1.5em', display: 'block', marginBottom: '8px' }}>💧 🧘‍♂️</span>
       <strong style={{ color: '#3b82f6', display: 'block', marginBottom: '4px' }}>Humanity Check</strong>
       <span style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.4', display: 'block' }}>
@@ -228,7 +255,8 @@ export default function TimesheetCalc() {
         })}
       </div>
 
-      {/* Removed massive paddingBottom to allow ad overlay */}
+      <div>
+
       <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1 }}>
         
         {/* ========================================== */}
@@ -280,7 +308,22 @@ export default function TimesheetCalc() {
                     </div>
                   );
                 })}
-                <EmployeeHumanityCheck />
+
+                {/* SAVE CONTROLS & HUMANITY CHECK */}
+                <div style={{ marginBottom: '80px' }}>
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                    <button onClick={saveTimecard} style={{ flex: 1, padding: '12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', transition: 'background 0.2s' }}>
+                      {saveStatus === 'Saved' ? '✅ Saved!' : '💾 Save'}
+                    </button>
+                    <button onClick={loadTimecard} style={{ flex: 1, padding: '12px', background: '#222', color: '#fff', border: '1px solid #3b82f6', borderRadius: '8px', fontWeight: 'bold', transition: 'background 0.2s' }}>
+                      {saveStatus === 'Loaded' ? '✅ Loaded!' : '📂 Load'}
+                    </button>
+                    <button onClick={clearTimecard} style={{ padding: '12px 15px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', fontWeight: 'bold' }}>
+                      🗑️ Clear
+                    </button>
+                  </div>
+                  <EmployeeHumanityCheck />
+                </div>
               </>
             )}
 
@@ -289,8 +332,8 @@ export default function TimesheetCalc() {
               return (
                 <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #444', padding: '20px', fontFamily: 'monospace', fontSize: '1.1em' }}>
                   <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>WEEKLY PAY STUB</h3>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Regular Hours:</span> <span style={{color:'#fff'}}>{p.regHours.toFixed(2)}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Overtime (1.5x):</span> <span style={{color:'#ffaa00'}}>{p.otHours.toFixed(2)}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Regular Hours:</span> <span style={{color:'#fff'}}>{p.reg.toFixed(2)}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Overtime (1.5x):</span> <span style={{color:'#ffaa00'}}>{p.ot.toFixed(2)}</span></div>
                   {p.bonus > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Tips / Bonus:</span> <span style={{color:'#3b82f6'}}>+${p.bonus.toFixed(2)}</span></div>}
                   <div style={{ borderBottom: '1px dashed #444', margin: '10px 0' }}></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Gross Pay:</span> <span>${p.gross.toFixed(2)}</span></div>
@@ -384,7 +427,9 @@ export default function TimesheetCalc() {
                     </div>
                   );
                 })}
-                <ManagerHumanityCheck />
+                <div style={{ marginBottom: '80px' }}>
+                  <ManagerHumanityCheck />
+                </div>
               </>
             )}
 
@@ -397,7 +442,7 @@ export default function TimesheetCalc() {
                 const stats = getEmpStats(e);
                 totalFleetHours += stats.tHrs;
                 fleetGross += stats.totalCost;
-                fleetOTCost += (stats.otCost - (stats.ot * parse(mgrAvgRate))); // Just the premium portion
+                fleetOTCost += (stats.otCost - (stats.ot * parse(mgrAvgRate))); 
                 return { ...e, ...stats };
               });
 
@@ -405,7 +450,7 @@ export default function TimesheetCalc() {
               const isOverBudget = totalFleetHours > bgt;
 
               return (
-                <>
+                <div style={{ marginBottom: '80px' }}>
                   <div style={{ ...cardStyle, borderTop: isOverBudget ? '4px solid #ef4444' : '4px solid #00cc66' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                       <h4 style={{ margin: 0, color: '#fff' }}>Labor Budget Tracking</h4>
@@ -480,7 +525,7 @@ export default function TimesheetCalc() {
                       <span>${fleetGross.toFixed(2)}</span>
                     </div>
                   </div>
-                </>
+                </div>
               );
             })()}
           </>
@@ -531,12 +576,14 @@ export default function TimesheetCalc() {
                     </div>
                   </div>
                 ))}
-                <EmployeeHumanityCheck />
+                <div style={{ marginBottom: '80px' }}>
+                  <EmployeeHumanityCheck />
+                </div>
               </>
             )}
 
             {seTab === 'Invoice' && (
-              <>
+              <div style={{ marginBottom: '80px' }}>
                 <button 
                   onClick={() => handleCopyReport('gig')}
                   style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #f59e0b', background: copied ? '#00cc66' : 'rgba(245, 158, 11, 0.1)', color: copied ? '#000' : '#f59e0b', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px', transition: 'all 0.2s' }}>
@@ -565,7 +612,7 @@ export default function TimesheetCalc() {
                     )
                   })()}
                 </div>
-              </>
+              </div>
             )}
           </>
         )}
@@ -574,7 +621,7 @@ export default function TimesheetCalc() {
         {/* TAB 4: HR & LEGAL COMPLIANCE               */}
         {/* ========================================== */}
         {activeTab === 'HR' && (
-          <div style={{ padding: '5px' }}>
+          <div style={{ padding: '5px', paddingBottom: '80px' }}>
             <h3 style={{ color: '#00cc66', marginBottom: '20px', textAlign: 'center' }}>Labor Law & Compliance</h3>
             
             <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
