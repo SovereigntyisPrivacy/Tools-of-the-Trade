@@ -20,8 +20,8 @@ class ErrorBoundary extends Component {
 
 function AgronomyUI() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Extract'); // Set to Extract by default to show you!
-  const [guideTab, setGuideTab] = useState('Terpenes');
+  const [activeTab, setActiveTab] = useState('Guide');
+  const [guideTab, setGuideTab] = useState('Compliance');
 
   const [tempF, setTempF] = useState('78');
   const [rh, setRh] = useState('55');
@@ -176,6 +176,7 @@ function AgronomyUI() {
             </div>
           </>
         )}
+
         {activeTab === 'Extract' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
@@ -223,54 +224,62 @@ function AgronomyUI() {
             </div>
           </>
         )}
-
         {activeTab === 'Guide' && (
           <>
             <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Terpenes', 'Lighting', 'Pro Tips', 'Climate', 'Harvest', 'IPM'].map(sub => (
+              {['Compliance', 'Terpenes', 'Lighting', 'Pro Tips', 'Climate', 'Soil & NPK', 'Deficiencies', 'Cloning', 'Training', 'Flowering', 'Harvest', 'IPM'].map(sub => (
                 <button key={sub} onClick={() => setGuideTab(sub)} style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: guideTab === sub ? 'rgba(0, 204, 102, 0.2)' : '#151515', color: guideTab === sub ? '#00cc66' : '#888' }}>{sub}</button>
               ))}
             </div>
+
+            {guideTab === 'Compliance' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Legal Framework & Processing Laws</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>Hemp Threshold:</strong> Federal 2018 Farm Bill limits dry-weight Δ9-THC to 0.3%. Extraction concentrates cannabinoids, which can elevate crude extract above statutory limits during processing.<br/>• <strong>Volatile Solvents:</strong> Residential open-blast or closed-loop butane/propane extractions are criminalized in most jurisdictions. Mechanical heat/pressure (rosin) and ice water separation are legally distinct non-volatile methods.<br/>• <strong>Enclosed Space & Plant Caps:</strong> State-regulated home cultivation universally requires locked, fully enclosed spaces shielded from public view with strict household plant limits.</p>
+                </div>
+              </div>
+            )}
 
             {guideTab === 'Terpenes' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, background: 'rgba(168, 85, 247, 0.05)', borderLeft: '4px solid #a855f7' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>What is a Terpene?</h3>
                   <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.5' }}>
-                    Terpenes are highly volatile aromatic compounds produced in resin glands. They dictate unique smells and flavors. More importantly, they work synergistically with cannabinoids (the "Entourage Effect") to steer the physical and psychoactive effects. They boil off quickly under high heat or improper curing.
+                    Terpenes are highly volatile aromatic compounds produced in resin glands. They dictate unique smells and flavors. More importantly, they work synergistically with cannabinoids (the "Entourage Effect") to steer physical and psychoactive effects.
                   </p>
                 </div>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#f59e0b' }}>Myrcene (Boiling Pt: 332°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Earthy, herbal, clove, musky.<br/><strong>Effects:</strong> Heavy sedative, "couch-lock", muscle relaxation. Enhances THC blood-brain barrier permeability.</p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Earthy, herbal, clove.<br/><strong>Effects:</strong> Heavy sedative, "couch-lock", muscle relaxation. Enhances THC blood-brain barrier permeability.</p>
                 </div>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#00ffff' }}>Limonene (Boiling Pt: 349°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Sharp citrus, lemon, orange peel.<br/><strong>Effects:</strong> Uplifting, mood elevation, anxiety relief, gastric reflux suppression.</p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Sharp citrus, lemon.<br/><strong>Effects:</strong> Uplifting, mood elevation, anxiety relief.</p>
                 </div>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#ef4444' }}>β-Caryophyllene (Boiling Pt: 266°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Black pepper, spicy, woody.<br/><strong>Effects:</strong> The only terpene that binds directly to CB2 peripheral receptors. Powerful anti-inflammatory and pain relief.</p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Black pepper, spicy.<br/><strong>Effects:</strong> Binds directly to CB2 peripheral receptors. Powerful anti-inflammatory and pain relief.</p>
                 </div>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#3b82f6' }}>Linalool (Boiling Pt: 388°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Floral, lavender, fresh spice.<br/><strong>Effects:</strong> Strong sedative, calming, anticonvulsant, stress and pain mitigation.</p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Floral, lavender.<br/><strong>Effects:</strong> Strong sedative, calming, anticonvulsant.</p>
                 </div>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#00cc66' }}>Pinene (Boiling Pt: 311°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Pine needles, fresh forest, rosemary.<br/><strong>Effects:</strong> Alertness, memory retention (counteracts short-term memory loss), bronchodilator (opens airways).</p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Pine needles, fresh forest.<br/><strong>Effects:</strong> Alertness, memory retention, bronchodilator.</p>
                 </div>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #a3e635' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#a3e635' }}>Humulene (Boiling Pt: 223°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Earthy, woody, hops.<br/><strong>Effects:</strong> Appetite suppressant (rare for cannabis), antibacterial, anti-inflammatory.</p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Earthy, woody, hops.<br/><strong>Effects:</strong> Appetite suppressant, antibacterial.</p>
                 </div>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #fbbf24' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#fbbf24' }}>Terpinolene (Boiling Pt: 366°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Piney, floral, herbal, slightly citrus.<br/><strong>Effects:</strong> Sedating (in contrast to its uplifting smell), antioxidant, antibacterial.</p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Piney, floral, herbal.<br/><strong>Effects:</strong> Sedating, antioxidant.</p>
                 </div>
               </div>
             )}
-            
+
             {guideTab === 'Lighting' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
@@ -297,7 +306,67 @@ function AgronomyUI() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>Humidity Targets</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>Veg:</strong> 50–65% RH<br/>• <strong>Bloom:</strong> 35–45% RH</p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>Veg:</strong> 50–65% RH<br/>• <strong>Bloom:</strong> 35–45% RH<br/>• <strong>Day/Night Swing:</strong> Maximum 15°F drop to prevent condensation and Botrytis spores.</p>
+                </div>
+              </div>
+            )}
+
+            {guideTab === 'Soil & NPK' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#00cc66' }}>The Mixing Order</h3>
+                  <ol style={{ color: '#fff', fontSize: '0.85em', paddingLeft: '16px', lineHeight: '1.5', margin: 0 }}>
+                    <li>Silica (Stem rigidity)</li>
+                    <li>Cal / Mag</li>
+                    <li>Base Nutrients (Micro ➔ Grow ➔ Bloom)</li>
+                    <li>PK Boosters & Additives</li>
+                    <li>pH Correction (5.8 coco / 6.3 soil)</li>
+                    <li>Beneficial Microbes</li>
+                  </ol>
+                </div>
+              </div>
+            )}
+
+            {guideTab === 'Deficiencies' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#f59e0b' }}>Nitrogen (N)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Lower mature leaves yellowing and dropping off. Mobile element.</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#a855f7' }}>Phosphorus (P)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Dark purple petioles, bronze necrotic patches, stunted bloom growth.</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Potassium (K)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Scorched leaf margins, curling edges, brown necrosis.</p>
+                </div>
+              </div>
+            )}
+
+            {guideTab === 'Cloning' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#3b82f6' }}>Cloning & Propagation</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Make razor cuts at a 45° angle, dip immediately in IBA rooting hormone, and maintain 80%+ humidity inside a dome under low PPFD (100–150).</p>
+                </div>
+              </div>
+            )}
+
+            {guideTab === 'Training' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Canopy Management</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Top main stem above the 5th node. Soft-pinch stems (supercropping) into horizontal trellis grids to create an even light canopy and maximize yield.</p>
+                </div>
+              </div>
+            )}
+
+            {guideTab === 'Flowering' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#a855f7' }}>The 12/12 Flip</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Transition light timers to 12 hours ON / 12 hours OFF. Ensure absolutely zero light leaks during the dark cycle to eliminate hermaphroditic stress.</p>
                 </div>
               </div>
             )}
