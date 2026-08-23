@@ -1,439 +1,296 @@
-import React, { useState } from 'react';
+import React, { useState, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function LifestyleCalc() {
-  const navigate = useNavigate();
-
-  // --- Recipe & Oven State ---
-  const [origYield, setOrigYield] = useState('4');
-  const [targetYield, setTargetYield] = useState('10');
-  
-  const [recipe, setRecipe] = useState([
-    { id: 1, name: 'Garlic', amount: '3', unit: 'cloves' },
-    { id: 2, name: 'Honey', amount: '2', unit: 'tbsp' },
-    { id: 3, name: 'Soy Sauce', amount: '1/4', unit: 'cup' },
-    { id: 4, name: 'Pork / Chicken', amount: '1.5', unit: 'lbs' }
-  ]);
-
-  const [origTime, setOrigTime] = useState('45');
-  const [origBakeTemp, setOrigBakeTemp] = useState('350');
-  const [targetBakeTemp, setTargetBakeTemp] = useState('400');
-
-  // --- Brine State ---
-  const [meatGrams, setMeatGrams] = useState('1500');
-  const [waterGrams, setWaterGrams] = useState('1000');
-  const [salinity, setSalinity] = useState('1.5');
-  const [includeSugar, setIncludeSugar] = useState(false);
-
-  // --- Baker's Percentages State ---
-  const [flourGrams, setFlourGrams] = useState('1000');
-  const [waterPct, setWaterPct] = useState('70');
-  const [saltPct, setSaltPct] = useState('2');
-  const [yeastPct, setYeastPct] = useState('1');
-
-  // --- Strength / 1RM State ---
-  const [liftWeight, setLiftWeight] = useState('225');
-  const [liftReps, setLiftReps] = useState('5');
-
-  // --- Health, Diet & Metabolic State ---
-  const [bodyWeight, setBodyWeight] = useState('185');
-  const [heightInches, setHeightInches] = useState('71');
-  const [ageYears, setAgeYears] = useState('30');
-  const [gender, setGender] = useState('M');
-  const [activityLevel, setActivityLevel] = useState('1.55');
-  const [dietGoal, setDietGoal] = useState('maintain');
-
-  // --- Circadian Shift State ---
-  const [wakeTime, setWakeTime] = useState('');
-
-  // --- Converter State ---
-  const [convAmt, setConvAmt] = useState('1 1/2');
-  const [convUnit, setConvUnit] = useState('cup');
-
-  // --- HELPER: Fraction Parser ---
-  const parseFraction = (val) => {
-    if (!val) return 0;
-    let str = val.toString().trim();
-    if (str.includes('/')) {
-      const parts = str.split(' ');
-      if (parts.length === 2) {
-        const [whole, frac] = parts;
-        const [num, den] = frac.split('/');
-        return parseFloat(whole) + (parseFloat(num) / parseFloat(den));
-      } else {
-        const [num, den] = str.split('/');
-        return parseFloat(num) / parseFloat(den);
-      }
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', color: '#ff4444', background: '#0a0a0a', minHeight: '100vh' }}>
+          <h2>⚠️ Module Crashed</h2>
+          <p style={{ fontFamily: 'monospace', background: '#111', padding: '10px' }}>{this.state.error?.toString()}</p>
+          <button onClick={() => window.history.back()} style={{ padding: '10px', background: '#333', color: '#fff', border: 'none', borderRadius: '8px' }}>Go Back</button>
+        </div>
+      );
     }
-    return parseFloat(str) || 0;
+    return this.props.children;
+  }
+}
+
+function LifestyleUI() {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('Culinary');
+
+  // --- CULINARY STATE ---
+  const [origY, setOrigY] = useState('2');
+  const [targetY, setTargetY] = useState('1');
+  
+  // Seeded with a default glaze baseline
+  const [ingredients, setIngredients] = useState([
+    { id: 1, qty: '1/2', unit: 'cup', name: 'Soy Sauce' },
+    { id: 2, qty: '1/4', unit: 'cup', name: 'Honey' },
+    { id: 3, qty: '4', unit: 'cloves', name: 'Garlic' }
+  ]);
+  
+  const addIng = () => setIngredients([...ingredients, { id: Date.now(), qty: '', unit: 'tsp', name: '' }]);
+  const updateIng = (id, field, val) => setIngredients(ingredients.map(i => i.id === id ? { ...i, [field]: val } : i));
+  const removeIng = id => setIngredients(ingredients.filter(i => i.id !== id));
+
+  // The Fraction Translation Engine
+  const parseFraction = (str) => {
+    if (!str) return 0;
+    let total = 0;
+    str.toString().trim().split(' ').forEach(p => {
+      if (p.includes('/')) {
+        const [n, d] = p.split('/');
+        total += (parseFloat(n) / parseFloat(d)) || 0;
+      } else { total += parseFloat(p) || 0; }
+    });
+    return total;
   };
 
-  // --- CALCULATIONS ---
-  
-  // Recipe Multiplier
-  const origYNum = parseFloat(origYield) || 0;
-  const targetYNum = parseFloat(targetYield) || 0;
-  const multiplier = origYNum > 0 && targetYNum > 0 ? (targetYNum / origYNum) : 0;
-
-  const addIngredient = () => setRecipe([...recipe, { id: Date.now(), name: '', amount: '', unit: '' }]);
-  const updateIngredient = (id, field, value) => setRecipe(recipe.map(ing => ing.id === id ? { ...ing, [field]: value } : ing));
-  const removeIngredient = (id) => setRecipe(recipe.filter(ing => ing.id !== id));
-
-  const oTime = parseFloat(origTime) || 0;
-  const oTemp = parseFloat(origBakeTemp) || 0;
-  const tTemp = parseFloat(targetBakeTemp) || 0;
-  const adjustedTime = (oTemp > 0 && tTemp > 0) ? (oTime * (oTemp / tTemp)).toFixed(1) : 0;
-  const tempC = oTemp ? ((oTemp - 32) * (5 / 9)).toFixed(1) : '0.0';
-  const tempFanC = oTemp ? (((oTemp - 32) * (5 / 9)) - 20).toFixed(1) : '0.0';
-
-  const totalMass = (parseFloat(meatGrams) || 0) + (parseFloat(waterGrams) || 0);
-  const saltRequired = ((totalMass * (parseFloat(salinity) || 0)) / 100).toFixed(1);
-
-  const fGrams = parseFloat(flourGrams) || 0;
-  const wGrams = (fGrams * (parseFloat(waterPct) || 0) / 100).toFixed(1);
-  const sGrams = (fGrams * (parseFloat(saltPct) || 0) / 100).toFixed(1);
-  const yGrams = (fGrams * (parseFloat(yeastPct) || 0) / 100).toFixed(1);
-  const totalDough = (fGrams + parseFloat(wGrams) + parseFloat(sGrams) + parseFloat(yGrams)).toFixed(1);
-
-  // Converter Engine
-  const volRates = { ml: 1, L: 1000, tsp: 4.9289, tbsp: 14.7868, floz: 29.5735, cup: 236.588, pint: 473.176, quart: 946.353, gal: 3785.41 };
-  const wtRates = { g: 1, kg: 1000, oz: 28.3495, lb: 453.592 };
-  
-  const amtNum = parseFraction(convAmt);
-  const isVol = Object.keys(volRates).includes(convUnit);
-  const baseValue = isVol ? amtNum * volRates[convUnit] : amtNum * wtRates[convUnit];
-  
-  const formatConv = (val) => {
-    if (val === 0) return "0";
-    if (val < 0.1) return val.toFixed(3);
-    if (val < 10) return val.toFixed(2);
-    if (val < 100) return val.toFixed(1);
-    return Math.round(val);
+  const decimalToFraction = (decimal) => {
+    if (!decimal || isNaN(decimal)) return '';
+    const w = Math.floor(decimal);
+    const f = decimal - w;
+    if (f < 0.05) return w > 0 ? w.toString() : '';
+    if (f > 0.95) return (w + 1).toString();
+    const fracs = [
+        { v: 1/8, s: '1/8' }, { v: 1/4, s: '1/4' }, { v: 1/3, s: '1/3' },
+        { v: 3/8, s: '3/8' }, { v: 1/2, s: '1/2' }, { v: 5/8, s: '5/8' },
+        { v: 2/3, s: '2/3' }, { v: 3/4, s: '3/4' }, { v: 7/8, s: '7/8' }
+    ];
+    let closest = fracs[0], min = Math.abs(f - closest.v);
+    for (let i=1; i<fracs.length; i++) {
+        let diff = Math.abs(f - fracs[i].v);
+        if (diff < min) { min = diff; closest = fracs[i]; }
+    }
+    return w === 0 ? closest.s : `${w} ${closest.s}`;
   };
 
-  // Extensive Ingredient Density Database (Grams per 1 Cup / 236.59ml)
-  const culinaryDensities = [
-    { label: 'Water/Liquids', gpc: 237, color: '#00e5ff' },
-    { label: 'Flour (AP)', gpc: 120, color: '#ccc' },
-    { label: 'White Sugar', gpc: 200, color: '#ccc' },
-    { label: 'Brown Sugar (Packed)', gpc: 220, color: '#ffb703' },
-    { label: 'Butter', gpc: 227, color: '#ffb703' },
-    { label: 'Oil (Olive/Veg)', gpc: 216, color: '#ffb703' },
-    { label: 'Honey / Syrup', gpc: 340, color: '#ffb703' },
-    { label: 'Dry Noodles', gpc: 90, color: '#ccc' },
-    { label: 'Rice (Uncooked)', gpc: 185, color: '#ccc' },
-    { label: 'Oats (Rolled)', gpc: 90, color: '#ccc' },
-    { label: 'Table Salt', gpc: 290, color: '#d00000' },
-    { label: 'Morton Kosher', gpc: 250, color: '#d00000' },
-    { label: 'Diamond Crystal', gpc: 135, color: '#00cc66' }
-  ];
+  const multiplier = (parseFloat(targetY) || 1) / (parseFloat(origY) || 1);
 
-  const weightNum = parseFloat(liftWeight) || 0;
-  const repsNum = parseFloat(liftReps) || 0;
-  const oneRepMax = repsNum > 0 && weightNum > 0 ? Math.round(weightNum * (1 + repsNum / 30)) : 0;
-
-  const wtLbs = parseFloat(bodyWeight) || 0;
-  const htIn = parseFloat(heightInches) || 0;
-  const aYrs = parseFloat(ageYears) || 0;
-  const wKg = wtLbs / 2.205;
-  const hCm = htIn * 2.54;
+  // Bake Adjuster
+  const [origTime, setOrigTime] = useState('45');
+  const [origTemp, setOrigTemp] = useState('350');
+  const [newTemp, setNewTemp] = useState('400');
+  const adjTime = (parseFloat(origTime)||0) * ((parseFloat(origTemp)||0) / (parseFloat(newTemp)||1));
   
-  const bmi = htIn > 0 ? ((wtLbs * 703) / (htIn * htIn)).toFixed(1) : '0.0';
-  let bmiClass = '#aaa';
-  if (bmi > 0) {
-    if (bmi < 18.5) bmiClass = '#00e5ff';
-    else if (bmi < 25) bmiClass = '#00cc66';
-    else if (bmi < 30) bmiClass = '#ffb703';
-    else bmiClass = '#d00000';
-  }
+  // Equilibrium Brine
+  const [meatWt, setMeatWt] = useState('1500');
+  const [liqWt, setLiqWt] = useState('1000');
+  const [saltPct, setSaltPct] = useState('1.25');
+  const brineSalt = ((parseFloat(meatWt)||0) + (parseFloat(liqWt)||0)) * ((parseFloat(saltPct)||0) / 100);
 
-  let bmr = 0;
-  if (wKg && hCm && aYrs) {
-    bmr = (10 * wKg) + (6.25 * hCm) - (5 * aYrs);
-    bmr += gender === 'M' ? 5 : -161;
-  }
-  const tdee = Math.round(bmr * parseFloat(activityLevel || 1.2));
+  // Baker's Percentages
+  const [flour, setFlour] = useState('1000');
+  const [wPct, setWPct] = useState('70');
+  const [sPct, setSPct] = useState('2');
+  const [yPct, setYPct] = useState('1');
+  const bFlour = parseFloat(flour)||0;
+  const bWater = bFlour * ((parseFloat(wPct)||0)/100);
+  const bSalt = bFlour * ((parseFloat(sPct)||0)/100);
+  const bYeast = bFlour * ((parseFloat(yPct)||0)/100);
+  const bYield = bFlour + bWater + bSalt + bYeast;
+
+  // --- FITNESS & HEALTH STATE ---
+  const [liftWt, setLiftWt] = useState('225');
+  const [liftReps, setLiftReps] = useState('5');
+  const oneRM = (parseFloat(liftWt)||0) * (1 + ((parseFloat(liftReps)||0) / 30));
+
+  const [bw, setBw] = useState('185');
+  const [bh, setBh] = useState('71');
+  const [ba, setBa] = useState('30');
   
-  let targetKcal = tdee;
-  if (dietGoal === 'cut') targetKcal -= 500;
-  if (dietGoal === 'bulk') targetKcal += 500;
-
-  const proGrams = Math.round(wtLbs);
-  const fatGrams = Math.round((targetKcal * 0.25) / 9);
-  const carbGrams = Math.round((targetKcal - (proGrams * 4) - (fatGrams * 9)) / 4);
-  const maxHR = aYrs > 0 ? 220 - aYrs : 0;
-
-  const sleepTimes = (!wakeTime) ? [] : [6, 5, 4, 3].map(c => {
-    const [h, m] = wakeTime.split(':').map(Number);
-    const d = new Date(); d.setHours(h, m, 0, 0);
-    return {
-      time: new Date(d.getTime() - (c * 90 * 60000) - 900000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-      hours: (c * 90) / 60
-    };
-  });
-
+  // Styles
+  const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff' };
+  const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
+  
   return (
-    <div className="view-wrapper pb-safe">
-      <header className="header">
-        <button className="back-btn" onClick={() => navigate('/calculator')}>← Hub</button>
-        <h2>Lifestyle & Health</h2>
+    <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px' }}>← Hub</button>
+        <h2 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>Lifestyle & Health</h2>
       </header>
 
-      <div className="calc-content" style={{ padding: '16px', overflowY: 'auto', height: '100%', paddingBottom: '20px' }}>
+      <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {['Culinary', 'Fitness', 'Health', 'Reference'].map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: activeTab === tab ? '#00cc66' : '#222', color: activeTab === tab ? '#000' : '#aaa' }}>{tab}</button>
+        ))}
+      </div>
 
-        {/* --- Card 1: Full Recipe Scaler --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #00e5ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>🍳 Master Recipe Scaler</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-            <div>
-              <label style={{ color: '#00e5ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Original Yield</label>
-              <input type="number" value={origYield} onChange={(e) => setOrigYield(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
-            </div>
-            <div>
-              <label style={{ color: '#00e5ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Target Yield</label>
-              <input type="number" value={targetYield} onChange={(e) => setTargetYield(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', padding: '8px', background: '#0d0d0d', borderRadius: '8px', border: '1px solid #222' }}>
-            <span style={{ color: '#aaa' }}>Multiplier:</span><span style={{ color: '#00e5ff', fontWeight: 'bold' }}>{multiplier.toFixed(2)}x</span>
-          </div>
-          <div style={{ borderTop: '1px solid #333', paddingTop: '12px' }}>
-            {recipe.map((ing) => (
-              <div key={ing.id} style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: '8px', padding: '10px', marginBottom: '10px' }}>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <input type="text" placeholder="Ingredient Name" value={ing.name} onChange={(e) => updateIngredient(ing.id, 'name', e.target.value)} style={{ flex: 1, background: '#121212', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} />
-                  <button onClick={() => removeIngredient(ing.id)} style={{ width: '36px', background: '#d00000', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>X</button>
-                </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input type="text" placeholder="Amt" value={ing.amount} onChange={(e) => updateIngredient(ing.id, 'amount', e.target.value)} style={{ width: '65px', background: '#121212', border: '1px solid #333', color: '#fff', padding: '8px', borderRadius: '6px' }} />
-                  <select value={ing.unit} onChange={(e) => updateIngredient(ing.id, 'unit', e.target.value)} style={{ flex: 1, background: '#121212', border: '1px solid #333', color: '#ccc', padding: '8px', borderRadius: '6px' }}>
-                    <option value="">- Unit -</option><option value="g">g</option><option value="kg">kg</option><option value="oz">oz</option><option value="lbs">lbs</option><option value="tsp">tsp</option><option value="tbsp">tbsp</option><option value="cup">cup</option><option value="ml">ml</option><option value="L">L</option><option value="cloves">cloves</option><option value="pinch">pinch</option><option value="pcs">pcs</option>
-                  </select>
-                  <span style={{ color: '#666' }}>→</span>
-                  <div style={{ minWidth: '90px', background: '#00e5ff11', border: '1px solid #00e5ff55', padding: '8px', borderRadius: '6px', color: '#00e5ff', fontWeight: 'bold', textAlign: 'center' }}>
-                    {ing.amount ? `${(parseFraction(ing.amount) * multiplier).toFixed(1)} ${ing.unit}` : '--'}
-                  </div>
-                </div>
+      <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '95px' }}>
+        {activeTab === 'Culinary' && (
+          <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🍳 Master Recipe Scaler</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{ color: '#00ffff', fontSize: '0.8em', fontWeight: 'bold' }}>Original Yield</label><input type="number" value={origY} onChange={e=>setOrigY(e.target.value)} style={inputStyle} /></div>
+                <div style={{ flex: 1 }}><label style={{ color: '#00ffff', fontSize: '0.8em', fontWeight: 'bold' }}>Target Yield</label><input type="number" value={targetY} onChange={e=>setTargetY(e.target.value)} style={inputStyle} /></div>
               </div>
-            ))}
-            <button onClick={addIngredient} style={{ width: '100%', padding: '10px', background: '#222', color: '#fff', border: '1px dashed #444', borderRadius: '8px', marginTop: '4px' }}>+ Add Ingredient</button>
-          </div>
-        </div>
-
-        {/* --- Card 2: Bake Time & Temp Adjuster --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #ffb703', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>⏱️ Bake Time Adjuster</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
-            <div><label style={{ color: '#aaa', fontSize: '0.75rem' }}>Orig Time (m)</label><input type="number" value={origTime} onChange={(e) => setOrigTime(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#aaa', fontSize: '0.75rem' }}>Orig Temp (°F)</label><input type="number" value={origBakeTemp} onChange={(e) => setOrigBakeTemp(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#ffb703', fontSize: '0.75rem', fontWeight: 'bold' }}>New Temp (°F)</label><input type="number" value={targetBakeTemp} onChange={(e) => setTargetBakeTemp(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-          </div>
-          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Adjusted Bake Time:</span><span style={{ color: '#ffb703', fontWeight: 'bold', fontSize: '1.1rem' }}>{adjustedTime} min</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '8px' }}><span style={{ color: '#777', fontSize: '0.8rem' }}>Orig Temp Celsius:</span><span style={{ color: '#888', fontSize: '0.8rem' }}>{tempC}°C (Fan: {tempFanC}°C)</span></div>
-          </div>
-        </div>
-
-        {/* --- Card 3: Equilibrium Brine --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #fb8500', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🥩 Equilibrium Brine</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-            <div><label style={{ color: '#fb8500', fontSize: '0.8rem', fontWeight: 'bold' }}>Meat (grams)</label><input type="number" value={meatGrams} onChange={(e) => setMeatGrams(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#00e5ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Liquid (grams)</label><input type="number" value={waterGrams} onChange={(e) => setWaterGrams(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-          </div>
-          <div style={{ marginBottom: '14px' }}>
-            <select value={salinity} onChange={(e) => setSalinity(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }}>
-              <option value="1.25">1.25% (Mild - Fish, Poultry Breast)</option><option value="1.50">1.5% (Standard Pork / Chicken)</option><option value="1.80">1.8% (Bold - Thick Beef Roasts)</option>
-            </select>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-            <input type="checkbox" id="sugarCheck" checked={includeSugar} onChange={(e) => setIncludeSugar(e.target.checked)} />
-            <label htmlFor="sugarCheck" style={{ color: '#ccc', fontSize: '0.8rem' }}>Add balancing sweetener (+0.75%)</label>
-          </div>
-          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span style={{ color: '#aaa', fontWeight: 'bold' }}>Required Salt:</span><span style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '1.2rem' }}>{saltRequired} grams</span></div>
-          </div>
-        </div>
-
-        {/* --- Card 4: Meat Done-ness --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontSize: '1.1rem' }}>🌡️ Pull Temps (Field Guide)</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.75rem' }}>
-            <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #222' }}><div style={{ color: '#00cc66', fontWeight: 'bold' }}>Poultry (Dark/Bone)</div><div style={{ color: '#fff' }}>Pull: 170°F - 175°F</div></div>
-            <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #222' }}><div style={{ color: '#00cc66', fontWeight: 'bold' }}>Poultry (Breast)</div><div style={{ color: '#fff' }}>Pull: 155°F (Rest 165°F)</div></div>
-            <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #222' }}><div style={{ color: '#00cc66', fontWeight: 'bold' }}>Pork Loin / Chops</div><div style={{ color: '#fff' }}>Pull: 140°F (Rest 145°F)</div></div>
-            <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #222' }}><div style={{ color: '#00cc66', fontWeight: 'bold' }}>Beef (Med-Rare)</div><div style={{ color: '#fff' }}>Pull: 125°F (Rest 135°F)</div></div>
-          </div>
-        </div>
-
-        {/* --- Card 5: Baker's Percentages --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #ffb703', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>🍞 Baker's Percentages</h3>
-          <label style={{ color: '#ffb703', fontSize: '0.8rem', fontWeight: 'bold' }}>Total Flour (grams)</label>
-          <input type="number" value={flourGrams} onChange={(e) => setFlourGrams(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginBottom: '14px' }} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
-            <div><label style={{ color: '#00e5ff', fontSize: '0.8rem' }}>Water (%)</label><input type="number" value={waterPct} onChange={(e) => setWaterPct(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#aaa', fontSize: '0.8rem' }}>Salt (%)</label><input type="number" value={saltPct} onChange={(e) => setSaltPct(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#ffb703', fontSize: '0.8rem' }}>Yeast (%)</label><input type="number" value={yeastPct} onChange={(e) => setYeastPct(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-          </div>
-          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Water:</span><span style={{ color: '#00e5ff', fontWeight: 'bold' }}>{wGrams} g</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '8px 0' }}><span style={{ color: '#aaa' }}>Salt:</span><span style={{ color: '#fff', fontWeight: 'bold' }}>{sGrams} g</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}><span style={{ color: '#aaa' }}>Yeast:</span><span style={{ color: '#ffb703', fontWeight: 'bold' }}>{yGrams} g</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '10px' }}><span style={{ color: '#aaa', fontWeight: 'bold' }}>Dough Yield:</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{totalDough} g</span></div>
-          </div>
-        </div>
-
-        {/* --- Card 6: Master Culinary Converter --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #fff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>⚖️ Master Converter</h3>
-          <p style={{ color: '#888', fontSize: '0.75rem', margin: '0 0 14px 0' }}>Supports fractions (e.g., 1 1/2). Instantly bridges volume to weight.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-            <div>
-              <label style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>Amount</label>
-              <input type="text" placeholder="1 1/2" value={convAmt} onChange={(e) => setConvAmt(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px dashed #333' }}>
+                <span style={{ color: '#aaa' }}>Multiplier:</span><strong style={{ color: '#00ffff' }}>{multiplier.toFixed(2)}x</strong>
+              </div>
+              
+              {ingredients.map(ing => {
+                const baseVal = parseFraction(ing.qty);
+                const scaledVal = baseVal * multiplier;
+                const fractionStr = decimalToFraction(scaledVal);
+                
+                return (
+                  <div key={ing.id} style={{ background: '#000', padding: '10px', borderRadius: '8px', border: '1px solid #222', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', gap: '5px', marginBottom: '8px' }}>
+                      <input type="text" placeholder="Ingredient Name" value={ing.name} onChange={e=>updateIng(ing.id, 'name', e.target.value)} style={{ ...inputStyle, flex: 1, padding: '8px' }} />
+                      <button onClick={() => removeIng(ing.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', width: '35px', fontWeight: 'bold' }}>X</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                      <input type="text" placeholder="Qty (e.g. 1 1/2)" value={ing.qty} onChange={e=>updateIng(ing.id, 'qty', e.target.value)} style={{ ...inputStyle, width: '90px', padding: '8px' }} />
+                      <input type="text" placeholder="Unit" value={ing.unit} onChange={e=>updateIng(ing.id, 'unit', e.target.value)} style={{ ...inputStyle, width: '70px', padding: '8px' }} />
+                      <span style={{ color: '#555', margin: '0 5px' }}>→</span>
+                      <div style={{ color: '#00ffff', fontWeight: 'bold', flex: 1, textAlign: 'right' }}>
+                        {scaledVal > 0 ? `${scaledVal.toFixed(2)} ${ing.unit}` : '-'}
+                        {fractionStr && scaledVal > 0 && <span style={{ color: '#aaa', fontSize: '0.85em', display: 'block' }}>(~{fractionStr} {ing.unit})</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <button onClick={addIng} style={{ width: '100%', padding: '12px', background: '#222', color: '#fff', border: '1px dashed #555', borderRadius: '8px', marginTop: '10px' }}>+ Add Ingredient</button>
             </div>
-            <div>
-              <label style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>Unit</label>
-              <select value={convUnit} onChange={(e) => setConvUnit(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }}>
-                <optgroup label="Volume"><option value="tsp">Teaspoons</option><option value="tbsp">Tablespoons</option><option value="floz">Fluid Ounces</option><option value="cup">Cups (US)</option><option value="pint">Pints (US)</option><option value="quart">Quarts (US)</option><option value="gal">Gallons (US)</option><option value="ml">Milliliters</option><option value="L">Liters</option></optgroup>
-                <optgroup label="Weight"><option value="g">Grams</option><option value="kg">Kilograms</option><option value="oz">Ounces (oz)</option><option value="lb">Pounds (lb)</option></optgroup>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>⏱️ Bake Time Adjuster</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{ color: '#aaa', fontSize: '0.75em' }}>Orig Time (m)</label><input type="number" value={origTime} onChange={e=>setOrigTime(e.target.value)} style={inputStyle} /></div>
+                <div style={{ flex: 1 }}><label style={{ color: '#aaa', fontSize: '0.75em' }}>Orig Temp (°F)</label><input type="number" value={origTemp} onChange={e=>setOrigTemp(e.target.value)} style={inputStyle} /></div>
+                <div style={{ flex: 1 }}><label style={{ color: '#f59e0b', fontSize: '0.75em', fontWeight: 'bold' }}>New Temp (°F)</label><input type="number" value={newTemp} onChange={e=>setNewTemp(e.target.value)} style={inputStyle} /></div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#aaa' }}>Adjusted Bake Time:</span><strong style={{ color: '#f59e0b', fontSize: '1.2em' }}>{adjTime.toFixed(1)} min</strong>
+              </div>
+            </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🥩 Equilibrium Brine</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{ color: '#ef4444', fontSize: '0.75em', fontWeight: 'bold' }}>Meat (grams)</label><input type="number" value={meatWt} onChange={e=>setMeatWt(e.target.value)} style={inputStyle} /></div>
+                <div style={{ flex: 1 }}><label style={{ color: '#00ffff', fontSize: '0.75em', fontWeight: 'bold' }}>Liquid (grams)</label><input type="number" value={liqWt} onChange={e=>setLiqWt(e.target.value)} style={inputStyle} /></div>
+              </div>
+              <select value={saltPct} onChange={e=>setSaltPct(e.target.value)} style={{ ...inputStyle, marginBottom: '15px' }}>
+                <option value="1.25">1.25% (Mild - Fish, Poultry Breast)</option>
+                <option value="1.5">1.50% (Standard - Pork, Chicken)</option>
+                <option value="2.0">2.00% (Heavy - Large Roasts)</option>
               </select>
-            </div>
-          </div>
-          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
-            {isVol ? (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.85rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>tsp:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.tsp)}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>tbsp:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.tbsp)}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>fl oz:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.floz)}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>cups:</span><span style={{ color: '#00e5ff' }}>{formatConv(baseValue / volRates.cup)}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '4px', gridColumn: 'span 2' }}><span style={{ color: '#aaa' }}>ml / Liters:</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{Math.round(baseValue)} ml / {(baseValue/1000).toFixed(3)} L</span></div>
-                </div>
-                
-                {/* Master Volume to Weight Bridge */}
-                <div style={{ borderTop: '1px solid #333', marginTop: '10px', paddingTop: '10px' }}>
-                  <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px' }}>Estimated Weights:</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.75rem' }}>
-                    {culinaryDensities.map((item, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', background: '#121212', padding: '4px 6px', borderRadius: '4px', border: '1px solid #222' }}>
-                        <span style={{ color: '#aaa' }}>{item.label}:</span>
-                        <span style={{ color: item.color, fontWeight: 'bold' }}>{Math.round((baseValue / volRates.cup) * item.gpc)}g</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', fontSize: '0.9rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Ounces (oz):</span><span style={{ color: '#ffb703' }}>{formatConv(baseValue / wtRates.oz)}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Pounds (lbs):</span><span style={{ color: '#ffb703' }}>{formatConv(baseValue / wtRates.lb)}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Grams (g):</span><span style={{ color: '#00cc66' }}>{Math.round(baseValue)}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Kilograms (kg):</span><span style={{ color: '#00cc66' }}>{formatConv(baseValue / wtRates.kg)}</span></div>
-                </div>
-                
-                {/* Master Weight to Volume Bridge */}
-                <div style={{ borderTop: '1px solid #333', marginTop: '10px', paddingTop: '10px' }}>
-                  <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px' }}>Estimated Volume (Cups):</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.75rem' }}>
-                    {culinaryDensities.map((item, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', background: '#121212', padding: '4px 6px', borderRadius: '4px', border: '1px solid #222' }}>
-                        <span style={{ color: '#aaa' }}>{item.label}:</span>
-                        <span style={{ color: item.color, fontWeight: 'bold' }}>{((baseValue / item.gpc)).toFixed(2)}c</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* --- Card 7: Kinetic Strength (1RM) --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #d00000', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>🏋️ Kinetic Strength (1RM)</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-            <div><label style={{ color: '#00e5ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Weight Lifted (lbs)</label><input type="number" value={liftWeight} onChange={(e) => setLiftWeight(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#d00000', fontSize: '0.8rem', fontWeight: 'bold' }}>Reps</label><input type="number" value={liftReps} onChange={(e) => setLiftReps(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-          </div>
-          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '10px' }}><span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>1-Rep Max:</span><span style={{ color: '#d00000', fontWeight: 'bold', fontSize: '1.2rem' }}>{oneRepMax}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}><span style={{ color: '#aaa' }}>90% (Heavy Double):</span><span style={{ color: '#00e5ff', fontWeight: 'bold' }}>{Math.round(oneRepMax * 0.9)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}><span style={{ color: '#aaa' }}>80% (5x5 Working):</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{Math.round(oneRepMax * 0.8)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>70% (Speed):</span><span style={{ color: '#ffb703', fontWeight: 'bold' }}>{Math.round(oneRepMax * 0.7)}</span></div>
-          </div>
-        </div>
-
-        {/* --- Card 8: Metabolic, BMI & Diet Macros --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #00cc66', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🔥 Metabolic, BMI & Diet</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
-            <div><label style={{ color: '#00e5ff', fontSize: '0.8rem' }}>Weight (lbs)</label><input type="number" value={bodyWeight} onChange={(e) => setBodyWeight(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#00e5ff', fontSize: '0.8rem' }}>Height (in)</label><input type="number" value={heightInches} onChange={(e) => setHeightInches(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-            <div><label style={{ color: '#00e5ff', fontSize: '0.8rem' }}>Age</label><input type="number" value={ageYears} onChange={(e) => setAgeYears(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }} /></div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-            <select value={gender} onChange={(e) => setGender(e.target.value)} style={{ background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }}>
-              <option value="M">Male</option><option value="F">Female</option>
-            </select>
-            <select value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)} style={{ background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px' }}>
-              <option value="1.2">Sedentary</option><option value="1.375">Light (1-3 days)</option><option value="1.55">Moderate (3-5 days)</option><option value="1.725">Heavy (6-7 days)</option>
-            </select>
-          </div>
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ color: '#ffb703', fontSize: '0.8rem', fontWeight: 'bold' }}>Diet Goal</label>
-            <select value={dietGoal} onChange={(e) => setDietGoal(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '4px' }}>
-              <option value="cut">Cut (Caloric Deficit -500)</option><option value="maintain">Maintain Current Weight</option><option value="bulk">Bulk (Caloric Surplus +500)</option>
-            </select>
-          </div>
-          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>BMI Score:</span><span style={{ color: bmiClass, fontWeight: 'bold' }}>{bmi}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><span style={{ color: '#aaa' }}>Resting BMR:</span><span style={{ color: '#00e5ff' }}>{Math.round(bmr)} kcal</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}><span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>Target Intake:</span><span style={{ color: '#ffb703', fontWeight: 'bold', fontSize: '1.1rem' }}>{targetKcal} kcal</span></div>
-            <div style={{ borderTop: '1px solid #333', paddingTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', textAlign: 'center' }}>
-              <div><div style={{ color: '#aaa', fontSize: '0.7rem' }}>Protein</div><div style={{ color: '#00cc66', fontWeight: 'bold' }}>{proGrams}g</div></div>
-              <div><div style={{ color: '#aaa', fontSize: '0.7rem' }}>Carbs</div><div style={{ color: '#00e5ff', fontWeight: 'bold' }}>{carbGrams}g</div></div>
-              <div><div style={{ color: '#aaa', fontSize: '0.7rem' }}>Fat</div><div style={{ color: '#ffb703', fontWeight: 'bold' }}>{fatGrams}g</div></div>
-            </div>
-          </div>
-        </div>
-
-        {/* --- Card 9: Cardio & Target Heart Rate Zones --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #ff0055', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 12px 0', color: '#fff', fontSize: '1.1rem' }}>❤️ Cardio & Heart Rate</h3>
-          <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '10px' }}><span style={{ color: '#aaa' }}>Absolute Max HR:</span><span style={{ color: '#ff0055', fontWeight: 'bold' }}>{maxHR} BPM</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}><span style={{ color: '#aaa', fontSize: '0.85rem' }}>Zone 2 (Fat Burn / Endurance):</span><span style={{ color: '#00cc66', fontWeight: 'bold' }}>{Math.round(maxHR * 0.6)} - {Math.round(maxHR * 0.7)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}><span style={{ color: '#aaa', fontSize: '0.85rem' }}>Zone 3 (Aerobic Cardio):</span><span style={{ color: '#ffb703', fontWeight: 'bold' }}>{Math.round(maxHR * 0.7)} - {Math.round(maxHR * 0.8)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa', fontSize: '0.85rem' }}>Zone 5 (VO2 Max / Sprints):</span><span style={{ color: '#d00000', fontWeight: 'bold' }}>{Math.round(maxHR * 0.9)} - {maxHR}</span></div>
-          </div>
-        </div>
-
-        {/* --- Card 10: Circadian Shift Optimizer --- */}
-        <div style={{ background: '#181818', borderTop: '4px solid #a600ff', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.1rem' }}>🌙 Circadian Shift</h3>
-          <label style={{ color: '#a600ff', fontSize: '0.8rem', fontWeight: 'bold' }}>Target Wake Up Time</label>
-          <input type="time" value={wakeTime} onChange={(e) => setWakeTime(e.target.value)} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', padding: '10px', borderRadius: '8px', marginTop: '6px', marginBottom: '14px' }} />
-          {sleepTimes.length > 0 && (
-            <div style={{ background: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '14px' }}>
-              <div style={{ color: '#fff', fontSize: '0.85rem', marginBottom: '10px', textAlign: 'center' }}>Fall asleep at one of these times:</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                {sleepTimes.map((st, i) => (
-                  <div key={i} style={{ background: '#1a1a1a', padding: '10px', borderRadius: '6px', textAlign: 'center', border: '1px solid #333' }}>
-                    <div style={{ color: '#a600ff', fontWeight: 'bold', fontSize: '1.1rem' }}>{st.time}</div>
-                    <div style={{ color: '#666', fontSize: '0.7rem' }}>{st.hours} hours sleep</div>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222' }}>
+                <span style={{ color: '#aaa' }}>Required Salt:</span><strong style={{ color: '#00cc66', fontSize: '1.2em' }}>{brineSalt.toFixed(1)} grams</strong>
               </div>
             </div>
-          )}
-        </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🍞 Baker's Percentages</h3>
+              <label style={{ color: '#f59e0b', fontSize: '0.8em', fontWeight: 'bold' }}>Total Flour (grams)</label>
+              <input type="number" value={flour} onChange={e=>setFlour(e.target.value)} style={{ ...inputStyle, marginBottom: '15px' }} />
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{ color: '#00ffff', fontSize: '0.75em' }}>Water (%)</label><input type="number" value={wPct} onChange={e=>setWPct(e.target.value)} style={inputStyle} /></div>
+                <div style={{ flex: 1 }}><label style={{ color: '#aaa', fontSize: '0.75em' }}>Salt (%)</label><input type="number" value={sPct} onChange={e=>setSPct(e.target.value)} style={inputStyle} /></div>
+                <div style={{ flex: 1 }}><label style={{ color: '#f59e0b', fontSize: '0.75em' }}>Yeast (%)</label><input type="number" value={yPct} onChange={e=>setYPct(e.target.value)} style={inputStyle} /></div>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Water:</span> <span style={{ color: '#00ffff' }}>{bWater.toFixed(1)} g</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}><span>Salt:</span> <span>{bSalt.toFixed(1)} g</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px dashed #333' }}><span>Yeast:</span> <span style={{ color: '#f59e0b' }}>{bYeast.toFixed(1)} g</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><strong style={{ color: '#fff' }}>Dough Yield:</strong> <strong style={{ color: '#00cc66' }}>{bYield.toFixed(1)} g</strong></div>
+              </div>
+            </div>
+          </>
+        )}
+        {activeTab === 'Fitness' && (
+          <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🏋️ Kinetic Strength (1RM)</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{ color: '#00ffff', fontSize: '0.8em', fontWeight: 'bold' }}>Weight Lifted (lbs)</label><input type="number" value={liftWt} onChange={e=>setLiftWt(e.target.value)} style={inputStyle} /></div>
+                <div style={{ flex: 1 }}><label style={{ color: '#ef4444', fontSize: '0.8em', fontWeight: 'bold' }}>Reps</label><input type="number" value={liftReps} onChange={e=>setLiftReps(e.target.value)} style={inputStyle} /></div>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #333' }}>
+                  <strong style={{ color: '#fff', fontSize: '1.2em' }}>1-Rep Max:</strong>
+                  <strong style={{ color: '#ef4444', fontSize: '1.5em' }}>{oneRM.toFixed(0)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px' }}><span>90% (Heavy Double):</span> <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>{(oneRM*0.9).toFixed(0)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px' }}><span>80% (5x5 Working):</span> <span style={{ color: '#00cc66', fontWeight: 'bold' }}>{(oneRM*0.8).toFixed(0)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa' }}><span>70% (Speed):</span> <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>{(oneRM*0.7).toFixed(0)}</span></div>
+              </div>
+            </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #ec4899' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>💓 Cardio & Heart Rate</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', background: '#000', padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
+                <span style={{ color: '#aaa' }}>Absolute Max HR (Est):</span>
+                <strong style={{ color: '#ec4899' }}>{220 - (parseFloat(ba)||30)} BPM</strong>
+              </div>
+              <div style={{ padding: '15px', background: '#000', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px' }}><span>Zone 2 (Fat Burn):</span> <span style={{ color: '#00cc66', fontWeight: 'bold' }}>{Math.round((220-(parseFloat(ba)||30))*0.6)} - {Math.round((220-(parseFloat(ba)||30))*0.7)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px' }}><span>Zone 3 (Aerobic):</span> <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>{Math.round((220-(parseFloat(ba)||30))*0.7)} - {Math.round((220-(parseFloat(ba)||30))*0.8)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa' }}><span>Zone 5 (VO2 Max):</span> <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{Math.round((220-(parseFloat(ba)||30))*0.9)} - {220-(parseFloat(ba)||30)}</span></div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'Health' && (
+          <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #00cc66' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🔥 Metabolic, BMI & Diet</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{ color: '#00ffff', fontSize: '0.8em', fontWeight: 'bold' }}>Weight (lbs)</label><input type="number" value={bw} onChange={e=>setBw(e.target.value)} style={inputStyle} /></div>
+                <div style={{ flex: 1 }}><label style={{ color: '#00ffff', fontSize: '0.8em', fontWeight: 'bold' }}>Height (in)</label><input type="number" value={bh} onChange={e=>setBh(e.target.value)} style={inputStyle} /></div>
+                <div style={{ flex: 1 }}><label style={{ color: '#3b82f6', fontSize: '0.8em', fontWeight: 'bold' }}>Age</label><input type="number" value={ba} onChange={e=>setBa(e.target.value)} style={inputStyle} /></div>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px' }}><span>BMI Score:</span> <strong style={{ color: '#f59e0b' }}>{((parseFloat(bw)||0) / Math.pow(parseFloat(bh)||1, 2) * 703).toFixed(1)}</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px dashed #333' }}><span>Resting BMR:</span> <strong style={{ color: '#00ffff' }}>{Math.round(10 * ((parseFloat(bw)||0)*0.453592) + 6.25 * ((parseFloat(bh)||0)*2.54) - 5 * (parseFloat(ba)||30) + 5)} kcal</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong style={{ color: '#fff' }}>Target Intake (Maint):</strong>
+                  <strong style={{ color: '#f59e0b', fontSize: '1.2em' }}>{Math.round((10 * ((parseFloat(bw)||0)*0.453592) + 6.25 * ((parseFloat(bh)||0)*2.54) - 5 * (parseFloat(ba)||30) + 5) * 1.55)} kcal</strong>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'Reference' && (
+          <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #00cc66' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>🌡️ Pull Temps (Field Guide)</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ background: '#000', padding: '15px', borderRadius: '8px', textAlign: 'center', border: '1px solid #222' }}>
+                  <div style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '0.85em', marginBottom: '8px' }}>Poultry (Dark/Bone)</div>
+                  <div style={{ color: '#aaa', fontSize: '0.8em' }}>Pull: 170°F - 175°F</div>
+                </div>
+                <div style={{ background: '#000', padding: '15px', borderRadius: '8px', textAlign: 'center', border: '1px solid #222' }}>
+                  <div style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '0.85em', marginBottom: '8px' }}>Poultry (Breast)</div>
+                  <div style={{ color: '#aaa', fontSize: '0.8em' }}>Pull: 155°F (Rest 165°F)</div>
+                </div>
+                <div style={{ background: '#000', padding: '15px', borderRadius: '8px', textAlign: 'center', border: '1px solid #222' }}>
+                  <div style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '0.85em', marginBottom: '8px' }}>Pork Loin / Chops</div>
+                  <div style={{ color: '#aaa', fontSize: '0.8em' }}>Pull: 140°F (Rest 145°F)</div>
+                </div>
+                <div style={{ background: '#000', padding: '15px', borderRadius: '8px', textAlign: 'center', border: '1px solid #222' }}>
+                  <div style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '0.85em', marginBottom: '8px' }}>Beef (Med-Rare)</div>
+                  <div style={{ color: '#aaa', fontSize: '0.8em' }}>Pull: 125°F (Rest 135°F)</div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
 
       </div>
     </div>
   );
 }
 
-export default LifestyleCalc;
+export default function LifestyleCalc() {
+  return <ErrorBoundary><LifestyleUI /></ErrorBoundary>;
+}
