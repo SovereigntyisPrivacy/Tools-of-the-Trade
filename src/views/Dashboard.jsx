@@ -1,9 +1,29 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
 
 function Dashboard() {
   const navigate = useNavigate();
+
+  const [time, setTime] = useState(new Date());
+  const [clockConfig, setClockConfig] = useState({ 
+    tz: Intl.DateTimeFormat().resolvedOptions().timeZone, 
+    color: '#00ffff', 
+    opacity: '1.0' 
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    const loadConfig = () => {
+      setClockConfig({
+        tz: localStorage.getItem('clock_tz') || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        color: localStorage.getItem('clock_color') || '#00ffff',
+        opacity: localStorage.getItem('clock_opacity') || '1.0'
+      });
+    };
+    loadConfig();
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const showBanner = async () => {
@@ -43,7 +63,18 @@ function Dashboard() {
         ⚙️
       </button>
       
-      <header className="header" style={{ paddingTop: '40px' }}>
+      <header className="header"
+      <div 
+        onClick={() => navigate('/worldclock')}
+        style={{
+          position: 'absolute', top: '15px', left: '50%', transform: 'translateX(-50%)',
+          color: clockConfig.color, opacity: parseFloat(clockConfig.opacity),
+          fontSize: '1.1rem', fontWeight: '900', letterSpacing: '2px', cursor: 'pointer',
+          textShadow: `0 0 10px ${clockConfig.color}`, zIndex: 100
+        }}
+      >
+        {time.toLocaleTimeString('en-US', { timeZone: clockConfig.tz, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+      </div> style={{ paddingTop: '40px' }}>
         <h1 className="friendly-title" style={{ lineHeight: '1.2', paddingBottom: '10px' }}>T⚙️⚙️ls of the Trade</h1>
       </header>
 

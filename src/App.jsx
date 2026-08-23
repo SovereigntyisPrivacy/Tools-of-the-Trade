@@ -21,6 +21,7 @@ const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
 const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 
 // --- Standalone Modules ---
+const WorldClock = lazy(() => import('./views/WorldClock'));
 const QuickCalc = lazy(() => import('./views/QuickCalc'));
 const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
 const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
@@ -98,6 +99,7 @@ function App() {
 
               <Route path="/support" element={<Support />} />
               <Route path="/quick" element={<QuickCalc />} />
+          <Route path="/worldclock" element={<WorldClock />} />
         </Routes>
           </Suspense>
         </Router>
