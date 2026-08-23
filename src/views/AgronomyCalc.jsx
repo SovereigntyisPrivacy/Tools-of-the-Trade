@@ -227,7 +227,7 @@ function AgronomyUI() {
         {activeTab === 'Guide' && (
           <>
             <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Compliance', 'Terpenes', 'Lighting', 'Pro Tips', 'Climate', 'Soil & NPK', 'Deficiencies', 'Cloning', 'Training', 'Flowering', 'Harvest', 'IPM'].map(sub => (
+              {['Compliance', 'Terpenes', 'Lighting', 'Pro Tips', 'VPD Targets', 'Climate', 'pH Lockout', 'Soil & NPK', 'Deficiencies', 'Cloning', 'Training', 'Flowering', 'Harvest', 'IPM', 'Rosin Curing'].map(sub => (
                 <button key={sub} onClick={() => setGuideTab(sub)} style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: guideTab === sub ? 'rgba(0, 204, 102, 0.2)' : '#151515', color: guideTab === sub ? '#00cc66' : '#888' }}>{sub}</button>
               ))}
             </div>
