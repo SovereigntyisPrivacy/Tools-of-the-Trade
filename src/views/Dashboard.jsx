@@ -63,7 +63,8 @@ function Dashboard() {
         ⚙️
       </button>
       
-      <header className="header"
+      <header className="header" style={{ paddingTop: '40px' }}>
+        
       <div 
         onClick={() => navigate('/worldclock')}
         style={{
@@ -74,7 +75,7 @@ function Dashboard() {
         }}
       >
         {time.toLocaleTimeString('en-US', { timeZone: clockConfig.tz, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-      </div> style={{ paddingTop: '40px' }}>
+      </div>
         <h1 className="friendly-title" style={{ lineHeight: '1.2', paddingBottom: '10px' }}>T⚙️⚙️ls of the Trade</h1>
       </header>
 
