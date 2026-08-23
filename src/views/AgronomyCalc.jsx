@@ -25,7 +25,7 @@ const labelStyle={color:'#00ffff',fontSize:'0.8em',fontWeight:'bold',textTransfo
 const cardStyle={background:'#111',borderRadius:'12px',border:'1px solid #333',padding:'15px',marginBottom:'15px'};
 const infoBlockStyle={background:'rgba(255,255,255,0.03)',border:'1px solid #222',borderRadius:'8px',padding:'10px',marginBottom:'12px',fontSize:'0.82em',lineHeight:'1.4'};
 return (<div className="view-wrapper" style={{background:'#0a0a0a',minHeight:'100vh',display:'flex',flexDirection:'column'}}>
-<header className="header" style={{borderBottom:'1px solid #222'}}><button className="back-btn" onClick={()=>navigate('/calculator')}>← Hub</button><h2>Agronomy & Extract</h2></header>
+<header className="header" style={{borderBottom:'1px solid #222'}}><button className="back-btn" onClick={()=>navigate('/')}>← Hub</button><h2>Agronomy & Extract</h2></header>
 <div style={{display:'flex',background:'#111',padding:'10px',borderBottom:'1px solid #333',gap:'6px',overflowX:'auto',scrollbarWidth:'none'}}>
 {['Environment','Nutrients','Extract','Guide'].map(tab=>(<button key={tab} onClick={()=>setActiveTab(tab)} style={{flex:1,padding:'8px 10px',borderRadius:'8px',fontWeight:'bold',border:'none',whiteSpace:'nowrap',background:activeTab===tab?'#00cc66':'#222',color:activeTab===tab?'#000':'#aaa'}}>{tab}</button>))}</div>
 <div className="calc-content" style={{padding:'15px',overflowY:'auto',flex:1,paddingBottom:'95px'}}>

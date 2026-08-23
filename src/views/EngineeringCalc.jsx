@@ -62,7 +62,7 @@ export default function EngineeringCalc() {
   return (
     <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="header" style={{ borderBottom: '1px solid #222' }}>
-        <button className="back-btn" onClick={() => navigate('/calculator')}>Hub</button>
+        <button className="back-btn" onClick={() => navigate('/')}>Hub</button>
         <h2>Engineering & Mechanics</h2>
       </header>
 
