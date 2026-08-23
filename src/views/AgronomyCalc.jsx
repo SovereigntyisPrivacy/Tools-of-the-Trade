@@ -7,10 +7,10 @@ export default function AgronomyCalc() {
   const [guideTab, setGuideTab] = useState('Pro Tips'); 
 
   // --- ENVIRONMENT STATE ---
-  const [ppfd, setPpfd] = useState('900');
-  const [lightHours, setLightHours] = useState('12');
   const [tempF, setTempF] = useState('78');
   const [rh, setRh] = useState('55');
+  const [ppfd, setPpfd] = useState('900');
+  const [lightHours, setLightHours] = useState('12');
   const [tentL, setTentL] = useState('4');
   const [tentW, setTentW] = useState('4');
   const [tentH, setTentH] = useState('6.5');
@@ -27,9 +27,11 @@ export default function AgronomyCalc() {
 
   // --- EXTRACTION STATE ---
   const [wetWeight, setWetWeight] = useState('1000');
-  const [rawAcidMass, setRawAcidMass] = useState('100');
   const [rosinInput, setRosinInput] = useState('28');
   const [rosinOutput, setRosinOutput] = useState('5.6');
+  const [rawAcidMass, setRawAcidMass] = useState('100');
+  const [inputBiomass, setInputBiomass] = useState('454');
+  const [targetYield, setTargetYield] = useState('15');
   const [crudeMass, setCrudeMass] = useState('10');
   const [crudePurity, setCrudePurity] = useState('75');
   const [carrierVol, setCarrierVol] = useState('30');
@@ -38,7 +40,6 @@ export default function AgronomyCalc() {
 
   // --- MATH ENGINES ---
   const dli = (parse(ppfd) * parse(lightHours) * 3600) / 1000000;
-  
   const tC = (parse(tempF) - 32) * (5/9);
   const svp = 0.61078 * Math.exp((17.27 * tC) / (tC + 237.3));
   const vpd = svp * (1 - (parse(rh) / 100));
@@ -60,15 +61,16 @@ export default function AgronomyCalc() {
   const flushGal = parse(potSizeGal) * 3;
 
   const ppmDelta = parse(runoffPpm) - parse(feedPpm);
-  let runoffStatus = { text: "Optimal Nutrient Consumption", color: "#00cc66" };
-  if (ppmDelta > 300) runoffStatus = { text: "Salt Accumulation (Flush Medium)", color: "#ef4444" };
-  if (ppmDelta < -100) runoffStatus = { text: "Underfed (Increase Baseline PPM)", color: "#f59e0b" };
+  let runoffStatus = { text: "Optimal Consumption", color: "#00cc66" };
+  if (ppmDelta > 300) runoffStatus = { text: "Salt Accumulation (Flush)", color: "#ef4444" };
+  if (ppmDelta < -100) runoffStatus = { text: "Underfed (Increase PPM)", color: "#f59e0b" };
 
   const estDryYield = parse(wetWeight) * 0.22;
-  const postDecarbActive = parse(rawAcidMass) * 0.877;
   const rosinYieldPct = parse(rosinInput) > 0 ? (parse(rosinOutput) / parse(rosinInput)) * 100 : 0;
+  const postDecarbActive = parse(rawAcidMass) * 0.877;
+  const estCrude = parse(inputBiomass) * (parse(targetYield) / 100);
   const totalActive = parse(crudeMass) * 1000 * (parse(crudePurity) / 100);
-  const concentration = totalActive / (parse(carrierVol) || 1);
+  const concentration = parse(carrierVol) > 0 ? (totalActive / parse(carrierVol)) : 0;
 
   // --- STYLES ---
   const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.05em', marginTop: '4px' };
@@ -79,7 +81,7 @@ export default function AgronomyCalc() {
   return (
     <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="header" style={{ borderBottom: '1px solid #222' }}>
-        <button className="back-btn" onClick={() => navigate('/calculator')}>Hub</button>
+        <button className="back-btn" onClick={() => navigate('/calculator')}>← Hub</button>
         <h2>Agronomy & Extract</h2>
       </header>
 
@@ -103,10 +105,6 @@ export default function AgronomyCalc() {
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Vapor Pressure Deficit (VPD)</h3>
-              <div style={infoBlockStyle}>
-                <div style={{ color: '#00ffff', fontWeight: 'bold' }}>What it does:</div>
-                <div style={{ color: '#ccc' }}>Measures drying potential between moisture inside leaf stomata and room air.</div>
-              </div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#ef4444'}}>Temp (°F)<input type="number" value={tempF} onChange={e=>setTempF(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#ef4444'}}>Humidity (%)<input type="number" value={rh} onChange={e=>setRh(e.target.value)} style={inputStyle} /></label></div>
@@ -122,17 +120,36 @@ export default function AgronomyCalc() {
               </div>
             </div>
 
-            <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Ventilation & Exhaust CFM Sizer</h3>
-              <div style={infoBlockStyle}>
-                <div style={{ color: '#00ffff', fontWeight: 'bold' }}>What it does:</div>
-                <div style={{ color: '#ccc' }}>Calculates minimum inline fan CFM required for complete air exchange with static pressure drag.</div>
+            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Photobiology (DLI)</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>PPFD (µmol/m²/s)<input type="number" value={ppfd} onChange={e=>setPpfd(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>Light Hours/Day<input type="number" value={lightHours} onChange={e=>setLightHours(e.target.value)} style={inputStyle} /></label></div>
               </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
+                <strong style={{ color: '#fff', fontSize: '1.1em' }}>Total Daily Light Integral:</strong>
+                <strong style={{ color: dli >= 40 ? '#ef4444' : '#00cc66', fontSize: '1.4em' }}>{dli.toFixed(1)} <span style={{fontSize: '0.6em', color: '#888'}}>mol/m²/d</span></strong>
+              </div>
+            </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>CO2 Tent Injection Engine</h3>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>L (ft)<input type="number" value={tentL} onChange={e=>setTentL(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>W (ft)<input type="number" value={tentW} onChange={e=>setTentW(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>H (ft)<input type="number" value={tentH} onChange={e=>setTentH(e.target.value)} style={inputStyle} /></label></div>
               </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={labelStyle}>Target CO2 (PPM)<input type="number" value={targetCo2} onChange={e=>setTargetCo2(e.target.value)} style={inputStyle} /></label>
+              </div>
+              <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
+                <span style={{ color: '#aaa', fontSize: '0.9em' }}>Tent Volume: <strong>{tentCuFt.toFixed(1)} cu ft</strong></span>
+                <strong style={{ color: '#00ffff', fontSize: '1.2em' }}>+{co2NeededCuFt.toFixed(3)} cu ft CO2</strong>
+              </div>
+            </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Ventilation & Exhaust CFM Sizer</h3>
               <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input type="checkbox" checked={hasFilter} onChange={e=>setHasFilter(e.target.checked)} style={{ width: '20px', height: '20px' }} />
                 <span style={{ color: '#aaa', fontSize: '0.9em' }}>Carbon Filter / Ducting Restriction (+35% drag)</span>
@@ -143,11 +160,11 @@ export default function AgronomyCalc() {
               </div>
             </div>
 
-            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Electrical Operating Cost</h3>
+            <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Electrical Operating Cost</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>Total Watts<input type="number" value={powerWatts} onChange={e=>setPowerWatts(e.target.value)} style={inputStyle} /></label></div>
-                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>Cost / kWh ($)<input type="number" step="0.01" value={kwhRate} onChange={e=>setKwhRate(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#a855f7'}}>Total Watts<input type="number" value={powerWatts} onChange={e=>setPowerWatts(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#a855f7'}}>Cost / kWh ($)<input type="number" step="0.01" value={kwhRate} onChange={e=>setKwhRate(e.target.value)} style={inputStyle} /></label></div>
               </div>
               <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
                 <span style={{ color: '#aaa' }}>Est. Monthly Draw:</span>
@@ -179,12 +196,27 @@ export default function AgronomyCalc() {
               </div>
             </div>
 
+            <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>EC to PPM Dual-Scale Bridge</h3>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={labelStyle}>Electrical Conductivity (EC / mS/cm)
+                  <input type="number" step="0.1" value={inputEc} onChange={e=>setInputEc(e.target.value)} style={{...inputStyle, borderColor: '#00ffff'}} />
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ flex: 1, background: '#000', padding: '12px', borderRadius: '8px', border: '1px solid #222', textAlign: 'center' }}>
+                  <span style={{ color: '#888', fontSize: '0.75em', display: 'block', textTransform: 'uppercase' }}>500 Scale (Hanna)</span>
+                  <strong style={{ color: '#00cc66', fontSize: '1.3em' }}>{ppm500.toFixed(0)} PPM</strong>
+                </div>
+                <div style={{ flex: 1, background: '#000', padding: '12px', borderRadius: '8px', border: '1px solid #222', textAlign: 'center' }}>
+                  <span style={{ color: '#888', fontSize: '0.75em', display: 'block', textTransform: 'uppercase' }}>700 Scale (Truncheon)</span>
+                  <strong style={{ color: '#f59e0b', fontSize: '1.3em' }}>{ppm700.toFixed(0)} PPM</strong>
+                </div>
+              </div>
+            </div>
+
             <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Leach & Flush Volume Sizer</h3>
-              <div style={infoBlockStyle}>
-                <div style={{ color: '#00ffff', fontWeight: 'bold' }}>What it does:</div>
-                <div style={{ color: '#ccc' }}>Calculates 3x container volume of pure RO water needed to leach excess mineral salts from root zones.</div>
-              </div>
               <div style={{ marginBottom: '12px' }}>
                 <label style={labelStyle}>Container / Pot Size (Gal)
                   <input type="number" value={potSizeGal} onChange={e=>setPotSizeGal(e.target.value)} style={inputStyle} />
@@ -199,14 +231,27 @@ export default function AgronomyCalc() {
         )}
 
         {/* ========================================== */}
-        {/* TAB 3: EXTRACTION                          */}
+        {/* TAB 3: EXTRACTION (RESTORED!)              */}
         {/* ========================================== */}
         {activeTab === 'Extract' && (
           <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Wet-to-Dry Estimator</h3>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{...labelStyle, color: '#3b82f6'}}>Fresh Chopped Wet Weight (g)
+                  <input type="number" value={wetWeight} onChange={e=>setWetWeight(e.target.value)} style={{...inputStyle, borderColor: '#3b82f6'}} />
+                </label>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
+                <strong style={{ color: '#fff', fontSize: '1.1em' }}>Est. Cured Yield (22%):</strong>
+                <strong style={{ color: '#3b82f6', fontSize: '1.4em' }}>{estDryYield.toFixed(1)} g</strong>
+              </div>
+            </div>
+
             <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Solventless Rosin Press Yield</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>Starting Flower/Hash (g)<input type="number" value={rosinInput} onChange={e=>setRosinInput(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>Flower/Hash (g)<input type="number" value={rosinInput} onChange={e=>setRosinInput(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>Rosin Output (g)<input type="number" value={rosinOutput} onChange={e=>setRosinOutput(e.target.value)} style={inputStyle} /></label></div>
               </div>
               <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
@@ -215,16 +260,47 @@ export default function AgronomyCalc() {
               </div>
             </div>
 
-            <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Decarboxylation Loss Engine</h3>
+            <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Decarboxylation Loss Engine</h3>
               <div style={{ marginBottom: '12px' }}>
-                <label style={{...labelStyle, color: '#a855f7'}}>Raw Acid Form Mass (THCA/CBDA g)
+                <label style={{...labelStyle, color: '#ef4444'}}>Raw Acid Form Mass (THCA/CBDA g)
                   <input type="number" value={rawAcidMass} onChange={e=>setRawAcidMass(e.target.value)} style={inputStyle} />
                 </label>
               </div>
               <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
-                <span style={{ color: '#aaa' }}>Activated Neutral Compound:</span>
-                <strong style={{ color: '#a855f7', fontSize: '1.2em' }}>{postDecarbActive.toFixed(2)} g</strong>
+                <span style={{ color: '#aaa' }}>Activated Neutral Yield:</span>
+                <strong style={{ color: '#ef4444', fontSize: '1.2em' }}>{postDecarbActive.toFixed(2)} g</strong>
+              </div>
+            </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #00cc66' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>Biomass Extraction Yield</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#00cc66'}}>Input Mass (g)<input type="number" value={inputBiomass} onChange={e=>setInputBiomass(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#00cc66'}}>Target Yield (%)<input type="number" value={targetYield} onChange={e=>setTargetYield(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
+                <strong style={{ color: '#fff', fontSize: '1.1em' }}>Est. Crude:</strong>
+                <strong style={{ color: '#00cc66', fontSize: '1.4em' }}>{estCrude.toFixed(1)} g</strong>
+              </div>
+            </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Volumetric Concentration</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#a855f7'}}>Crude Mass (g)<input type="number" value={crudeMass} onChange={e=>setCrudeMass(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#a855f7'}}>Purity (%)<input type="number" value={crudePurity} onChange={e=>setCrudePurity(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ marginBottom: '15px' }}><label style={{...labelStyle, color: '#00ffff'}}>Carrier Volume (mL)<input type="number" value={carrierVol} onChange={e=>setCarrierVol(e.target.value)} style={{...inputStyle, borderColor: '#00ffff'}} /></label></div>
+              
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px', borderBottom: '1px dashed #333', paddingBottom: '10px' }}>
+                  <span>Total Active:</span> <span>{totalActive.toFixed(0)} mg</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong style={{ color: '#fff', fontSize: '1.1em' }}>Concentration:</strong>
+                  <strong style={{ color: '#a855f7', fontSize: '1.4em' }}>{concentration.toFixed(1)} mg / mL</strong>
+                </div>
               </div>
             </div>
           </>
@@ -249,31 +325,19 @@ export default function AgronomyCalc() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>Leaf Surface Temperature (LST) Offset</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    Air sensors do not measure leaf temperature. Active transpiration cools leaves <strong>2°F to 5°F below ambient air</strong>. Measure canopy tops with an IR thermometer to calibrate precision VPD targets.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Air sensors do not measure leaf temperature. Active transpiration cools leaves <strong>2°F to 5°F below ambient air</strong>. Measure canopy tops with an IR thermometer to calibrate precision VPD targets.</p>
                 </div>
-
                 <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Dissolved Oxygen & Reservoir Temp</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    Maintain nutrient water strictly at <strong>65°F to 68°F</strong>. Water above 72°F loses dissolved oxygen and breeds anaerobic <em>Pythium</em> (root rot). Water below 60°F induces thermal root shock and halts phosphorus uptake.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Maintain nutrient water strictly at <strong>65°F to 68°F</strong>. Water above 72°F loses dissolved oxygen and breeds anaerobic <em>Pythium</em> (root rot). Water below 60°F induces thermal root shock and halts phosphorus uptake.</p>
                 </div>
-
                 <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Canopy Saturation Thresholds</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    Without CO2 enrichment, leaves hit light saturation around <strong>40–45 DLI (~900–1000 PPFD)</strong>. Pushing higher light without &gt;1200 PPM CO2 and elevated temps bleaches colas instead of increasing yield.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Without CO2 enrichment, leaves hit light saturation around <strong>40–45 DLI (~900–1000 PPFD)</strong>. Pushing higher light without &gt;1200 PPM CO2 and elevated temps bleaches colas instead of increasing yield.</p>
                 </div>
-
                 <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Rosin Extraction Micron Sizing</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    • <strong>Flower Rosin:</strong> 90µm or 120µm mesh at 180°F–210°F (balances yield and terpene preservation).<br/>
-                    • <strong>Bubble Hash / Sift:</strong> 25µm or 37µm mesh at 150°F–170°F (high-purity concentrate).
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>Flower Rosin:</strong> 90µm or 120µm mesh at 180°F–210°F (balances yield and terpene preservation).<br/>• <strong>Bubble Hash / Sift:</strong> 25µm or 37µm mesh at 150°F–170°F (high-purity concentrate).</p>
                 </div>
               </div>
             )}
@@ -282,18 +346,11 @@ export default function AgronomyCalc() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Legal Framework & Processing Laws</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    • <strong>Hemp Threshold:</strong> Federal 2018 Farm Bill limits dry-weight Δ9-THC to 0.3%. Extraction concentrates cannabinoids, which can elevate crude extract above statutory limits during processing.<br/>
-                    • <strong>Volatile Solvents:</strong> Residential open-blast or closed-loop butane/propane extractions are criminalized in most jurisdictions. Mechanical heat/pressure (rosin) and ice water separation are legally distinct non-volatile methods.<br/>
-                    • <strong>Enclosed Space & Plant Caps:</strong> State-regulated home cultivation universally requires locked, fully enclosed spaces shielded from public view with strict household plant limits.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>Hemp Threshold:</strong> Federal 2018 Farm Bill limits dry-weight Δ9-THC to 0.3%. Extraction concentrates cannabinoids, which can elevate crude extract above statutory limits during processing.<br/>• <strong>Volatile Solvents:</strong> Residential open-blast or closed-loop butane/propane extractions are criminalized in most jurisdictions. Mechanical heat/pressure (rosin) and ice water separation are legally distinct non-volatile methods.<br/>• <strong>Enclosed Space & Plant Caps:</strong> State-regulated home cultivation universally requires locked, fully enclosed spaces shielded from public view with strict household plant limits.</p>
                 </div>
-
                 <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>Educational & Simulation Notice</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    This module is designed strictly for educational, scientific research, and mathematical simulation purposes. Calculations use standard physical constants and peer-reviewed horticultural baselines. Users remain solely responsible for adhering to all applicable municipal, state, and federal agricultural codes.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>This module is designed strictly for educational, scientific research, and mathematical simulation purposes. Calculations use standard physical constants and peer-reviewed horticultural baselines. Users remain solely responsible for adhering to all applicable municipal, state, and federal agricultural codes.</p>
                 </div>
               </div>
             )}
@@ -302,34 +359,19 @@ export default function AgronomyCalc() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#f59e0b' }}>Myrcene (Boiling: 332°F / 167°C)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    <strong>Aroma:</strong> Earthy, herbal, clove, mango.<br/>
-                    <strong>Effects:</strong> Sedating ("couch-lock"), muscle relaxation, increases blood-brain barrier permeability.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Earthy, herbal, clove, mango.<br/><strong>Effects:</strong> Sedating ("couch-lock"), muscle relaxation, increases blood-brain barrier permeability.</p>
                 </div>
-
                 <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#00ffff' }}>Limonene (Boiling: 349°F / 176°C)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    <strong>Aroma:</strong> Sharp citrus, lemon, orange peel.<br/>
-                    <strong>Effects:</strong> Mood elevation, anxiety relief, gastric reflux suppression.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Sharp citrus, lemon, orange peel.<br/><strong>Effects:</strong> Mood elevation, anxiety relief, gastric reflux suppression.</p>
                 </div>
-
                 <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#ef4444' }}>β-Caryophyllene (Boiling: 266°F / 130°C)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    <strong>Aroma:</strong> Black pepper, spice, wood.<br/>
-                    <strong>Effects:</strong> Binds directly to CB2 peripheral cannabinoid receptors. Powerful anti-inflammatory.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Black pepper, spice, wood.<br/><strong>Effects:</strong> Binds directly to CB2 peripheral cannabinoid receptors. Powerful anti-inflammatory.</p>
                 </div>
-
                 <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#a855f7' }}>Linalool (Boiling: 388°F / 198°C)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    <strong>Aroma:</strong> Floral, lavender, fresh spice.<br/>
-                    <strong>Effects:</strong> Strong sedative, anticonvulsant, stress mitigation.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Floral, lavender, fresh spice.<br/><strong>Effects:</strong> Strong sedative, anticonvulsant, stress mitigation.</p>
                 </div>
               </div>
             )}
@@ -346,9 +388,7 @@ export default function AgronomyCalc() {
                 </div>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
                   <h3 style={{ margin: '0 0 8px 0', color: '#3b82f6' }}>The "60 / 60" Dry SOP</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>
-                    Dry hanging branches in total darkness at <strong>60°F and 60% RH</strong> for 10–14 days until smaller stems snap rather than bend.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Dry hanging branches in total darkness at <strong>60°F and 60% RH</strong> for 10–14 days until smaller stems snap rather than bend.</p>
                 </div>
               </div>
             )}
@@ -371,74 +411,51 @@ export default function AgronomyCalc() {
             )}
 
             {guideTab === 'Soil & NPK' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#00cc66' }}>The Mixing Order</h3>
-                  <ol style={{ color: '#fff', fontSize: '0.85em', paddingLeft: '16px', lineHeight: '1.5', margin: 0 }}>
-                    <li>Silica (Stem rigidity)</li>
-                    <li>Cal / Mag</li>
-                    <li>Base Nutrients (Micro ➔ Grow ➔ Bloom)</li>
-                    <li>PK Boosters & Additives</li>
-                    <li>pH Correction (5.8 coco / 6.3 soil)</li>
-                    <li>Beneficial Microbes</li>
-                  </ol>
-                </div>
+              <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+                <h3 style={{ margin: '0 0 8px 0', color: '#00cc66' }}>The Mixing Order</h3>
+                <ol style={{ color: '#fff', fontSize: '0.85em', paddingLeft: '16px', lineHeight: '1.5', margin: 0 }}>
+                  <li>Silica (Stem rigidity)</li>
+                  <li>Cal / Mag</li>
+                  <li>Base Nutrients (Micro ➔ Grow ➔ Bloom)</li>
+                  <li>PK Boosters & Additives</li>
+                  <li>pH Correction (5.8 coco / 6.3 soil)</li>
+                  <li>Beneficial Microbes</li>
+                </ol>
               </div>
             )}
 
             {guideTab === 'Climate' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#00ffff' }}>Climate Parameters</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.5' }}>
-                    • <strong>Seedling RH:</strong> 65–80% | <strong>Veg RH:</strong> 50–65% | <strong>Bloom RH:</strong> 35–45%<br/>
-                    • <strong>Day/Night Swing:</strong> Maximum 15°F drop to prevent condensation and Botrytis spores.
-                  </p>
-                </div>
+              <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
+                <h3 style={{ margin: '0 0 8px 0', color: '#00ffff' }}>Climate Parameters</h3>
+                <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.5' }}>• <strong>Seedling RH:</strong> 65–80% | <strong>Veg RH:</strong> 50–65% | <strong>Bloom RH:</strong> 35–45%<br/>• <strong>Day/Night Swing:</strong> Maximum 15°F drop to prevent condensation and Botrytis spores.</p>
               </div>
             )}
 
             {guideTab === 'Propagation' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#3b82f6' }}>Cloning & Propagation</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>
-                    Make razor cuts at 45° angle, dip immediately in IBA rooting hormone, and maintain 80%+ humidity inside a dome under low PPFD (100–150).
-                  </p>
-                </div>
+              <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+                <h3 style={{ margin: '0 0 8px 0', color: '#3b82f6' }}>Cloning & Propagation</h3>
+                <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Make razor cuts at 45° angle, dip immediately in IBA rooting hormone, and maintain 80%+ humidity inside a dome under low PPFD (100–150).</p>
               </div>
             )}
 
             {guideTab === 'Training' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Canopy Management</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>
-                    Top main stem above the 5th node. Soft-pinch stems (supercropping) into horizontal trellis grids to create an even light canopy.
-                  </p>
-                </div>
+              <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Canopy Management</h3>
+                <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Top main stem above the 5th node. Soft-pinch stems (supercropping) into horizontal trellis grids to create an even light canopy.</p>
               </div>
             )}
 
             {guideTab === 'Flowering' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#a855f7' }}>The 12/12 Flip</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>
-                    Transition light timers to 12 hours ON / 12 hours OFF. Zero light leaks during dark cycle to eliminate hermaphroditic stress.
-                  </p>
-                </div>
+              <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
+                <h3 style={{ margin: '0 0 8px 0', color: '#a855f7' }}>The 12/12 Flip</h3>
+                <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Transition light timers to 12 hours ON / 12 hours OFF. Zero light leaks during dark cycle to eliminate hermaphroditic stress.</p>
               </div>
             )}
 
             {guideTab === 'IPM' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Integrated Pest Management</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>
-                    Apply Diatomaceous Earth to dry topsoil for gnat larvae. Rotate cold-pressed Neem and botanical soaps weekly during veg. Never spray flowers.
-                  </p>
-                </div>
+              <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Integrated Pest Management</h3>
+                <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Apply Diatomaceous Earth to dry topsoil for gnat larvae. Rotate cold-pressed Neem and botanical soaps weekly during veg. Never spray flowers.</p>
               </div>
             )}
           </>
