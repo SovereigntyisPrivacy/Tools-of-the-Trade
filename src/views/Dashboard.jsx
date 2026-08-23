@@ -28,7 +28,7 @@ function Dashboard() {
     { id: "cacher", name: "Zero-Signal Cacher", path: "/cacher", icon: "📡", badge: "COMING SOON", badgeColor: "#ffb703" },
     { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮" },
     { id: "ledger", name: "Asset Ledger", path: "/ledger", icon: "📋" },
-    { id: "civics", name: "Civics path: "/ledger", icon: "📋" } Rights", path: "/civics", icon: "⚖️" },
+    { id: "civics", name: "Civics & Rights", path: "/civics", icon: "⚖️" }
   ];
 
   return (
