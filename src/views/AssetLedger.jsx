@@ -18,7 +18,7 @@ export default function AssetLedger() {
   const [showForm, setShowForm] = useState(false);
   
   const [newItem, setNewItem] = useState({ 
-    name: '', category: 'Tools & Hardware', serial: '', value: '', date: '', photo: null 
+    name: '', category: 'Tools & Hardware', serial: '', value: '', date: '', photos: [] 
   });
 
   // --- LOGIC ---
@@ -26,42 +26,56 @@ export default function AssetLedger() {
     try {
       localStorage.setItem('tot_asset_ledger', JSON.stringify(assets));
     } catch (e) {
-      alert("Local storage is full! Please delete some older assets or photos before saving more.");
+      alert("Local storage is full! Please export your ledger and delete older assets/photos to free up space.");
     }
   }, [assets]);
 
-  // Canvas Image Compression (Keeps base64 string tiny to fit in offline localStorage)
+  // Multi-Image Canvas Compression
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files).slice(0, 3); // Limit to 3 files max
+    if (!files.length) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 500; // Aggressive downscale for offline storage
-        const scaleSize = MAX_WIDTH / img.width;
-        
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        // Convert to highly compressed JPEG base64
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
-        setNewItem({ ...newItem, photo: compressedBase64 });
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400; // Aggressive downscale to allow multiple photos
+          const scaleSize = MAX_WIDTH / img.width;
+          
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          // Convert to highly compressed JPEG base64 (40% quality)
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.4);
+          
+          setNewItem(prev => {
+            const currentPhotos = prev.photos || [];
+            if (currentPhotos.length >= 3) return prev; // Hard cap at 3
+            return { ...prev, photos: [...currentPhotos, compressedBase64] };
+          });
+        };
+        img.src = event.target.result;
       };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removePhoto = (index) => {
+    setNewItem(prev => ({
+      ...prev,
+      photos: prev.photos.filter((_, i) => i !== index)
+    }));
   };
 
   const handleAdd = () => {
     if (!newItem.name) return alert('Asset name is required.');
-    setAssets([{ ...newItem, id: Date.now() }, ...assets]); // Add to top of list
-    setNewItem({ name: '', category: 'Tools & Hardware', serial: '', value: '', date: '', photo: null });
+    setAssets([{ ...newItem, id: Date.now() }, ...assets]);
+    setNewItem({ name: '', category: 'Tools & Hardware', serial: '', value: '', date: '', photos: [] });
     setShowForm(false);
   };
 
@@ -72,9 +86,10 @@ export default function AssetLedger() {
   };
 
   const exportCSV = () => {
-    let csv = "Category,Item Name,Serial/VIN,Est. Value,Acquisition Date,Has Photo\n";
+    let csv = "Category,Item Name,Serial/VIN,Est. Value,Acquisition Date,Photos Attached\n";
     assets.forEach(a => {
-      csv += `"${a.category}","${a.name}","${a.serial}","$${parseFloat(a.value||0).toFixed(2)}","${a.date}","${a.photo ? 'Yes' : 'No'}"\n`;
+      const photoCount = a.photos ? a.photos.length : 0;
+      csv += `"${a.category}","${a.name}","${a.serial}","$${parseFloat(a.value||0).toFixed(2)}","${a.date}","${photoCount}"\n`;
     });
     navigator.clipboard.writeText(csv);
     setCopied(true);
@@ -114,14 +129,12 @@ export default function AssetLedger() {
         {/* ========================================== */}
         {activeMainTab === 'Ledger' && (
           <>
-            {/* DASHBOARD SUMMARY */}
             <div style={{ ...cardStyle, borderTop: '4px solid #00cc66', textAlign: 'center' }}>
               <span style={{ color: '#aaa', fontSize: '0.9em', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Fleet Value</span>
               <h2 style={{ color: '#00cc66', fontSize: '2.5em', margin: '5px 0' }}>${totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h2>
               <span style={{ color: '#888', fontSize: '0.85em' }}>{assets.length} Tracked Assets</span>
             </div>
 
-            {/* CONTROLS */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
               <button onClick={() => setShowForm(!showForm)} style={{ flex: 1, padding: '12px', background: showForm ? '#333' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>
                 {showForm ? 'Cancel Entry' : '+ Log New Asset'}
@@ -158,14 +171,27 @@ export default function AssetLedger() {
                   </div>
                 </div>
 
-                <label style={{...labelStyle, color: '#a855f7'}}>Proof of Ownership (Photo)</label>
+                {/* MULTI-PHOTO UPLOAD AREA */}
+                <label style={{...labelStyle, color: '#a855f7'}}>Proof of Ownership (Max 3 Photos)</label>
                 <div style={{ background: '#000', border: '1px dashed #444', borderRadius: '8px', padding: '10px', marginTop: '4px', textAlign: 'center' }}>
-                  {newItem.photo ? (
-                    <img src={newItem.photo} alt="Preview" style={{ maxHeight: '100px', borderRadius: '4px', marginBottom: '10px' }} />
-                  ) : (
-                    <span style={{ display: 'block', color: '#666', marginBottom: '10px', fontSize: '0.85em' }}>Capture receipt or S/N plate</span>
+                  <span style={{ display: 'block', color: '#888', marginBottom: '10px', fontSize: '0.85em' }}>
+                    Capture: (1) Front/Sides, (2) Serial Plate, (3) Receipt
+                  </span>
+                  
+                  {newItem.photos && newItem.photos.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
+                      {newItem.photos.map((p, i) => (
+                        <div key={i} style={{ position: 'relative' }}>
+                          <img src={p} alt={`Preview ${i}`} style={{ height: '70px', borderRadius: '6px', border: '1px solid #333' }} />
+                          <button onClick={() => removePhoto(i)} style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '22px', height: '22px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>X</button>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  <input type="file" accept="image/*" capture="environment" onChange={handleImageUpload} style={{ width: '100%', color: '#aaa', fontSize: '0.9em' }} />
+
+                  {(!newItem.photos || newItem.photos.length < 3) && (
+                    <input type="file" accept="image/*" multiple onChange={handleImageUpload} style={{ width: '100%', color: '#aaa', fontSize: '0.9em' }} />
+                  )}
                 </div>
 
                 <button onClick={handleAdd} style={{ width: '100%', padding: '12px', background: '#00cc66', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginTop: '15px' }}>
@@ -193,9 +219,16 @@ export default function AssetLedger() {
                 <div key={asset.id} style={{ ...cardStyle, display: 'flex', gap: '15px', alignItems: 'center' }}>
                   
                   {/* Photo Thumbnail */}
-                  <div style={{ width: '70px', height: '70px', background: '#000', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #333', flexShrink: 0 }}>
-                    {asset.photo ? (
-                      <img src={asset.photo} alt="Asset" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ width: '70px', height: '70px', background: '#000', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #333', flexShrink: 0, position: 'relative' }}>
+                    {asset.photos && asset.photos.length > 0 ? (
+                      <>
+                        <img src={asset.photos[0]} alt="Asset" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {asset.photos.length > 1 && (
+                          <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'rgba(0,0,0,0.8)', color: '#fff', fontSize: '0.75em', padding: '2px 6px', borderTopLeftRadius: '6px', fontWeight: 'bold' }}>
+                            +{asset.photos.length - 1}
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <span style={{ fontSize: '1.5em' }}>📷</span>
                     )}
@@ -232,7 +265,7 @@ export default function AssetLedger() {
         {activeMainTab === 'Guide' && (
           <>
             <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Insurance Tactics', 'Pro Tips', 'Disclaimer'].map(sub => (
+              {['The 3-Photo Rule', 'Insurance Tactics', 'Disclaimer'].map(sub => (
                 <button
                   key={sub} onClick={() => setGuideTab(sub)}
                   style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontSize: '0.85em', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: guideTab === sub ? 'rgba(245, 158, 11, 0.2)' : '#151515', color: guideTab === sub ? '#f59e0b' : '#888', border: guideTab === sub ? '1px solid #f59e0b' : '1px solid #222' }}>
@@ -240,6 +273,20 @@ export default function AssetLedger() {
                 </button>
               ))}
             </div>
+
+            {guideTab === 'The 3-Photo Rule' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>Bulletproof Evidence</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
+                    Adjusters require irrefutable proof to pay full claims. Always maximize your ledger by attaching three specific photos to high-value assets:<br/><br/>
+                    <strong>1. The Wide Shot:</strong> Front/side angles showing the overall condition of the item.<br/>
+                    <strong>2. The Data Plate:</strong> A macro close-up of the manufacturer's plate showing the precise Model Number and Serial Number.<br/>
+                    <strong>3. The Receipt:</strong> The original store receipt or digital invoice proving the purchase price and date.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {guideTab === 'Insurance Tactics' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -253,24 +300,7 @@ export default function AssetLedger() {
                 <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>The Burden of Proof</h3>
                   <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    Adjusters will default to the cheapest possible replacement brand if you just write "Drill" on a claim. To force them to pay for professional-grade gear, your photo must clearly show the brand, model number, and the serial plate.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'Pro Tips' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>The Receipt Shot</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    The ultimate proof of ownership is a photo of the tool sitting physically right next to the printed store receipt. Upload that combined image into the Ledger photo slot for absolute bulletproof verification.
-                  </p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Offline Storage Warning</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-                    Because this app maintains your privacy by never talking to a cloud server, your photos are compressed and saved to your browser's local storage. This storage has limits. Export your CSV ledger periodically and keep a backup of it in a secure location.
+                    Adjusters will default to the cheapest possible replacement brand if you just write "Drill" on a claim. To force them to pay for professional-grade gear, your photos must clearly show the brand and model number.
                   </p>
                 </div>
               </div>
@@ -279,9 +309,10 @@ export default function AssetLedger() {
             {guideTab === 'Disclaimer' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.5)', borderLeft: '4px solid #ef4444' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>⚠️ Notice</h3>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>⚠️ Notice & Offline Storage Limits</h3>
                   <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.5' }}>
-                    This ledger is a local utility tool. The developer does not guarantee data retention against device failure, browser cache clearing, or physical loss. This guide does not constitute licensed legal or insurance advice. Always read your specific policy declarations page.
+                    Because this app operates entirely offline with zero cloud servers, photos are compressed and stored locally on your device. Storage quotas are strictly limited by your browser. Export your CSV ledger periodically and back it up.<br/><br/>
+                    The developer does not guarantee data retention against device failure or browser cache clearing. This guide does not constitute licensed insurance advice.
                   </p>
                 </div>
               </div>
