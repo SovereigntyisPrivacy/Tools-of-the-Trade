@@ -90,8 +90,8 @@ function App() {
               <Route path="/calculator/finance" element={<FinanceCalc />} />
 
               {/* Standalone Hub Modules */}
-              <Route path="/vehicle" element={<VehicleCalc />} />
-              <Route path="/agronomy" element={<AgronomyCalc />} />
+              <Route path="/calculator/vehicle" element={<VehicleCalc />} />
+              <Route path="/calculator/agronomy" element={<AgronomyCalc />} />
               <Route path="/ledger" element={<AssetLedger />} />
               <Route path="/civics" element={<CivicsRights />} />
 
