@@ -45,16 +45,34 @@ function LifestyleUI() {
     return total;
   };
 
-  const decimalToFraction = (decimal) => {
+  const decimalToFraction = (decimal, unit) => {
     if (!decimal || isNaN(decimal)) return '';
     const w = Math.floor(decimal);
     const f = decimal - w;
     if (f < 0.05) return w > 0 ? w.toString() : '';
     if (f > 0.95) return (w + 1).toString();
+    
+    const u = (unit || '').toLowerCase();
+    
+    // Smart Cup Breakdowns (No more 3/8 or 5/8 cups!)
+    if (u.includes('cup')) {
+      if (Math.abs(f - 1/8) < 0.05) return w === 0 ? '2 tbsp' : `${w} cup + 2 tbsp`;
+      if (Math.abs(f - 3/8) < 0.05) return w === 0 ? '1/4 cup + 2 tbsp' : `${w} 1/4 cup + 2 tbsp`;
+      if (Math.abs(f - 5/8) < 0.05) return w === 0 ? '1/2 cup + 2 tbsp' : `${w} 1/2 cup + 2 tbsp`;
+      if (Math.abs(f - 7/8) < 0.05) return w === 0 ? '3/4 cup + 2 tbsp' : `${w} 3/4 cup + 2 tbsp`;
+    }
+    
+    // Smart Tablespoon Breakdowns (1 tbsp = 3 tsp)
+    if (u.includes('tbsp') || u.includes('tablespoon')) {
+      if (Math.abs(f - 1/3) < 0.08 || Math.abs(f - 3/8) < 0.08) return w === 0 ? '1 tsp' : `${w} tbsp + 1 tsp`;
+      if (Math.abs(f - 1/2) < 0.08 || Math.abs(f - 5/8) < 0.08) return w === 0 ? '1 1/2 tsp' : `${w} tbsp + 1 1/2 tsp`;
+      if (Math.abs(f - 2/3) < 0.08 || Math.abs(f - 3/4) < 0.08) return w === 0 ? '2 tsp' : `${w} tbsp + 2 tsp`;
+    }
+
+    // Default strictly to standard kitchen measuring spoon/cup sizes
     const fracs = [
-        { v: 1/8, s: '1/8' }, { v: 1/4, s: '1/4' }, { v: 1/3, s: '1/3' },
-        { v: 3/8, s: '3/8' }, { v: 1/2, s: '1/2' }, { v: 5/8, s: '5/8' },
-        { v: 2/3, s: '2/3' }, { v: 3/4, s: '3/4' }, { v: 7/8, s: '7/8' }
+        { v: 1/4, s: '1/4' }, { v: 1/3, s: '1/3' },
+        { v: 1/2, s: '1/2' }, { v: 2/3, s: '2/3' }, { v: 3/4, s: '3/4' }
     ];
     let closest = fracs[0], min = Math.abs(f - closest.v);
     for (let i=1; i<fracs.length; i++) {
@@ -236,7 +254,7 @@ function LifestyleUI() {
               <div style={{ color: '#aaa', marginBottom: '15px' }}>Multiplier: <strong style={{ color: '#a855f7' }}>{multiplier.toFixed(2)}x</strong></div>
               {ingredients.map(ing => {
                 const scaledVal = parseFraction(ing.qty) * multiplier;
-                const fractionStr = decimalToFraction(scaledVal);
+                const fractionStr = decimalToFraction(scaledVal, ing.unit);
                 return (
                   <div key={ing.id} style={{ background: '#000', padding: '10px', borderRadius: '8px', border: '1px solid #222', marginBottom: '10px' }}>
                     <div style={{ display: 'flex', gap: '5px', marginBottom: '8px' }}>
@@ -249,7 +267,7 @@ function LifestyleUI() {
                       <span style={{ color: '#555', margin: '0 5px' }}>→</span>
                       <div style={{ color: '#a855f7', fontWeight: 'bold', flex: 1, textAlign: 'right' }}>
                         {scaledVal > 0 ? `${scaledVal.toFixed(2)}` : '-'}
-                        {fractionStr && scaledVal > 0 && <span style={{ color: '#aaa', fontSize: '0.85em', display: 'block' }}>(~{fractionStr} {ing.unit})</span>}
+                        {fractionStr && scaledVal > 0 && <span style={{ color: '#aaa', fontSize: '0.85em', display: 'block' }}>(~{fractionStr}{fractionStr.includes('tbsp') || fractionStr.includes('tsp') ? '' : ' ' + ing.unit})</span>}
                       </div>
                     </div>
                   </div>
