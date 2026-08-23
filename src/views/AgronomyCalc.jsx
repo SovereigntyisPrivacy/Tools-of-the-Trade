@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 export default function AgronomyCalc() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Environment'); 
-  const [guideTab, setGuideTab] = useState('Pro Tips'); 
+  const [guideTab, setGuideTab] = useState('Lighting Guide'); 
 
   // --- ENVIRONMENT STATE ---
   const [tempF, setTempF] = useState('78');
@@ -40,6 +40,7 @@ export default function AgronomyCalc() {
 
   // --- MATH ENGINES ---
   const dli = (parse(ppfd) * parse(lightHours) * 3600) / 1000000;
+  
   const tC = (parse(tempF) - 32) * (5/9);
   const svp = 0.61078 * Math.exp((17.27 * tC) / (tC + 237.3));
   const vpd = svp * (1 - (parse(rh) / 100));
@@ -61,7 +62,7 @@ export default function AgronomyCalc() {
   const flushGal = parse(potSizeGal) * 3;
 
   const ppmDelta = parse(runoffPpm) - parse(feedPpm);
-  let runoffStatus = { text: "Optimal Consumption", color: "#00cc66" };
+  let runoffStatus = { text: "Optimal Nutrient Consumption", color: "#00cc66" };
   if (ppmDelta > 300) runoffStatus = { text: "Salt Accumulation (Flush)", color: "#ef4444" };
   if (ppmDelta < -100) runoffStatus = { text: "Underfed (Increase PPM)", color: "#f59e0b" };
 
@@ -81,7 +82,7 @@ export default function AgronomyCalc() {
   return (
     <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="header" style={{ borderBottom: '1px solid #222' }}>
-        <button className="back-btn" onClick={() => navigate('/calculator')}>← Hub</button>
+        <button className="back-btn" onClick={() => navigate(-1)}>← Hub</button>
         <h2>Agronomy & Extract</h2>
       </header>
 
@@ -105,6 +106,10 @@ export default function AgronomyCalc() {
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Vapor Pressure Deficit (VPD)</h3>
+              <div style={infoBlockStyle}>
+                <div style={{ color: '#00ffff', fontWeight: 'bold' }}>What it does:</div>
+                <div style={{ color: '#ccc' }}>Measures atmospheric drying potential between leaf stomata and room air.</div>
+              </div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#ef4444'}}>Temp (°F)<input type="number" value={tempF} onChange={e=>setTempF(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#ef4444'}}>Humidity (%)<input type="number" value={rh} onChange={e=>setRh(e.target.value)} style={inputStyle} /></label></div>
@@ -122,12 +127,16 @@ export default function AgronomyCalc() {
 
             <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Photobiology (DLI)</h3>
+              <div style={infoBlockStyle}>
+                <div style={{ color: '#00ffff', fontWeight: 'bold' }}>What it does:</div>
+                <div style={{ color: '#ccc' }}>Converts continuous PPFD intensity into cumulative photons delivered over 24 hours.</div>
+              </div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>PPFD (µmol/m²/s)<input type="number" value={ppfd} onChange={e=>setPpfd(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>Light Hours/Day<input type="number" value={lightHours} onChange={e=>setLightHours(e.target.value)} style={inputStyle} /></label></div>
               </div>
               <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
-                <strong style={{ color: '#fff', fontSize: '1.1em' }}>Total Daily Light Integral:</strong>
+                <strong style={{ color: '#fff', fontSize: '1.1em' }}>Total DLI:</strong>
                 <strong style={{ color: dli >= 40 ? '#ef4444' : '#00cc66', fontSize: '1.4em' }}>{dli.toFixed(1)} <span style={{fontSize: '0.6em', color: '#888'}}>mol/m²/d</span></strong>
               </div>
             </div>
@@ -181,6 +190,10 @@ export default function AgronomyCalc() {
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Runoff Delta Tracker</h3>
+              <div style={infoBlockStyle}>
+                <div style={{ color: '#00ffff', fontWeight: 'bold' }}>What it does:</div>
+                <div style={{ color: '#ccc' }}>Measures the difference between input feed minerals and drainage to detect salt lockout.</div>
+              </div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#3b82f6'}}>Feed PPM<input type="number" value={feedPpm} onChange={e=>setFeedPpm(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#3b82f6'}}>Runoff PPM<input type="number" value={runoffPpm} onChange={e=>setRunoffPpm(e.target.value)} style={inputStyle} /></label></div>
@@ -231,12 +244,16 @@ export default function AgronomyCalc() {
         )}
 
         {/* ========================================== */}
-        {/* TAB 3: EXTRACTION (RESTORED!)              */}
+        {/* TAB 3: EXTRACTION                          */}
         {/* ========================================== */}
         {activeTab === 'Extract' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Wet-to-Dry Estimator</h3>
+              <div style={infoBlockStyle}>
+                <div style={{ color: '#00ffff', fontWeight: 'bold' }}>What it does:</div>
+                <div style={{ color: '#ccc' }}>Projects cured flower mass from wet harvest weight based on 78% moisture dissipation.</div>
+              </div>
               <div style={{ marginBottom: '15px' }}>
                 <label style={{...labelStyle, color: '#3b82f6'}}>Fresh Chopped Wet Weight (g)
                   <input type="number" value={wetWeight} onChange={e=>setWetWeight(e.target.value)} style={{...inputStyle, borderColor: '#3b82f6'}} />
@@ -262,6 +279,10 @@ export default function AgronomyCalc() {
 
             <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Decarboxylation Loss Engine</h3>
+              <div style={infoBlockStyle}>
+                <div style={{ color: '#00ffff', fontWeight: 'bold' }}>What it does:</div>
+                <div style={{ color: '#ccc' }}>Calculates true active yield after thermal CO2 carboxyl group detachment.</div>
+              </div>
               <div style={{ marginBottom: '12px' }}>
                 <label style={{...labelStyle, color: '#ef4444'}}>Raw Acid Form Mass (THCA/CBDA g)
                   <input type="number" value={rawAcidMass} onChange={e=>setRawAcidMass(e.target.value)} style={inputStyle} />
@@ -312,7 +333,7 @@ export default function AgronomyCalc() {
         {activeTab === 'Guide' && (
           <>
             <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Pro Tips', 'Compliance', 'Terpenes', 'Harvest & Cure', 'Deficiencies', 'Soil & NPK', 'Climate', 'Propagation', 'Training', 'Flowering', 'IPM'].map(sub => (
+              {['Lighting Guide', 'Pro Tips', 'Compliance', 'Terpenes', 'Harvest & Cure', 'Deficiencies', 'Soil & NPK', 'Climate', 'Propagation', 'Training', 'Flowering', 'IPM'].map(sub => (
                 <button
                   key={sub} onClick={() => setGuideTab(sub)}
                   style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontSize: '0.82em', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: guideTab === sub ? 'rgba(0, 204, 102, 0.2)' : '#151515', color: guideTab === sub ? '#00cc66' : '#888', border: guideTab === sub ? '1px solid #00cc66' : '1px solid #222' }}>
@@ -320,6 +341,27 @@ export default function AgronomyCalc() {
                 </button>
               ))}
             </div>
+
+            {guideTab === 'Lighting Guide' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Grow Light Technologies</h3>
+                  <ul style={{ color: '#aaa', fontSize: '0.85em', paddingLeft: '16px', lineHeight: '1.5', margin: 0 }}>
+                    <li><strong>LED (Light Emitting Diode):</strong> The gold standard. Highly efficient, low heat, full-spectrum. Best for strict electrical budgets.</li>
+                    <li><strong>CMH (Ceramic Metal Halide):</strong> Excellent broad spectrum and penetration, running cooler than HPS.</li>
+                    <li><strong>HPS (High-Pressure Sodium):</strong> Traditional heavy-yield flowering light (red-dominant). Draws heavy power and requires serious active cooling.</li>
+                  </ul>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>Key Lighting Metrics</h3>
+                  <ul style={{ color: '#aaa', fontSize: '0.85em', paddingLeft: '16px', lineHeight: '1.5', margin: 0 }}>
+                    <li><strong>Actual Wattage:</strong> The true power drawn from the wall, NOT the "equivalent" marketing number.</li>
+                    <li><strong>Spectrum (Kelvin):</strong> 5000K–6500K (blue) for veg, 2000K–3000K (red) for flowering.</li>
+                    <li><strong>PPFD (µmol/m²/s):</strong> Measures usable light hitting the canopy. Target 300-500 for Veg, 800-1000 for Flower.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
 
             {guideTab === 'Pro Tips' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
