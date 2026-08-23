@@ -39,36 +39,49 @@ export default function CivicsRights() {
       <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '95px' }}>
         
         {/* ========================================== */}
-        {/* TAB 1: THE AMENDMENTS                      */}
+        {/* TAB 1: THE AMENDMENTS (Bill of Rights)     */}
         {/* ========================================== */}
         {activeTab === 'Amendments' && (
           <>
             <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
               <h3 style={{ ...titleStyle, color: '#ef4444' }}>I. First Amendment</h3>
-              <p style={textStyle}>
-                Congress shall make no law respecting an establishment of religion, or prohibiting the free exercise thereof; or abridging the freedom of speech, or of the press; or the right of the people peaceably to assemble, and to petition the Government for a redress of grievances.
-              </p>
+              <p style={textStyle}>Congress shall make no law respecting an establishment of religion, or prohibiting the free exercise thereof; or abridging the freedom of speech, or of the press; or the right of the people peaceably to assemble, and to petition the Government for a redress of grievances.</p>
             </div>
-
             <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
               <h3 style={{ ...titleStyle, color: '#ef4444' }}>II. Second Amendment</h3>
-              <p style={textStyle}>
-                A well regulated Militia, being necessary to the security of a free State, the right of the people to keep and bear Arms, shall not be infringed.
-              </p>
+              <p style={textStyle}>A well regulated Militia, being necessary to the security of a free State, the right of the people to keep and bear Arms, shall not be infringed.</p>
             </div>
-
+            <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+              <h3 style={{ ...titleStyle, color: '#ef4444' }}>III. Third Amendment</h3>
+              <p style={textStyle}>No Soldier shall, in time of peace be quartered in any house, without the consent of the Owner, nor in time of war, but in a manner to be prescribed by law.</p>
+            </div>
             <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
               <h3 style={{ ...titleStyle, color: '#ef4444' }}>IV. Fourth Amendment</h3>
-              <p style={textStyle}>
-                The right of the people to be secure in their persons, houses, papers, and effects, against unreasonable searches and seizures, shall not be violated, and no Warrants shall issue, but upon probable cause, supported by Oath or affirmation, and particularly describing the place to be searched, and the persons or things to be seized.
-              </p>
+              <p style={textStyle}>The right of the people to be secure in their persons, houses, papers, and effects, against unreasonable searches and seizures, shall not be violated, and no Warrants shall issue, but upon probable cause, supported by Oath or affirmation, and particularly describing the place to be searched, and the persons or things to be seized.</p>
             </div>
-
             <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
               <h3 style={{ ...titleStyle, color: '#ef4444' }}>V. Fifth Amendment</h3>
-              <p style={textStyle}>
-                No person shall be held to answer for a capital, or otherwise infamous crime, unless on a presentment or indictment of a Grand Jury... nor shall be compelled in any criminal case to be a witness against himself, nor be deprived of life, liberty, or property, without due process of law; nor shall private property be taken for public use, without just compensation.
-              </p>
+              <p style={textStyle}>No person shall be held to answer for a capital, or otherwise infamous crime, unless on a presentment or indictment of a Grand Jury... nor shall be compelled in any criminal case to be a witness against himself, nor be deprived of life, liberty, or property, without due process of law; nor shall private property be taken for public use, without just compensation.</p>
+            </div>
+            <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+              <h3 style={{ ...titleStyle, color: '#ef4444' }}>VI. Sixth Amendment</h3>
+              <p style={textStyle}>In all criminal prosecutions, the accused shall enjoy the right to a speedy and public trial, by an impartial jury of the State and district wherein the crime shall have been committed... and to be informed of the nature and cause of the accusation; to be confronted with the witnesses against him; to have compulsory process for obtaining witnesses in his favor, and to have the Assistance of Counsel for his defence.</p>
+            </div>
+            <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+              <h3 style={{ ...titleStyle, color: '#ef4444' }}>VII. Seventh Amendment</h3>
+              <p style={textStyle}>In Suits at common law, where the value in controversy shall exceed twenty dollars, the right of trial by jury shall be preserved, and no fact tried by a jury, shall be otherwise re-examined in any Court of the United States, than according to the rules of the common law.</p>
+            </div>
+            <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+              <h3 style={{ ...titleStyle, color: '#ef4444' }}>VIII. Eighth Amendment</h3>
+              <p style={textStyle}>Excessive bail shall not be required, nor excessive fines imposed, nor cruel and unusual punishments inflicted.</p>
+            </div>
+            <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+              <h3 style={{ ...titleStyle, color: '#ef4444' }}>IX. Ninth Amendment</h3>
+              <p style={textStyle}>The enumeration in the Constitution, of certain rights, shall not be construed to deny or disparage others retained by the people.</p>
+            </div>
+            <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+              <h3 style={{ ...titleStyle, color: '#ef4444' }}>X. Tenth Amendment</h3>
+              <p style={textStyle}>The powers not delegated to the United States by the Constitution, nor prohibited by it to the States, are reserved to the States respectively, or to the people.</p>
             </div>
           </>
         )}
@@ -80,30 +93,31 @@ export default function CivicsRights() {
           <>
             <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
               <h3 style={{ ...titleStyle, color: '#3b82f6' }}>The Preamble</h3>
-              <p style={textStyle}>
-                We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.
-              </p>
+              <p style={textStyle}>We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.</p>
             </div>
-
             <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
               <h3 style={{ ...titleStyle, color: '#3b82f6' }}>Article I: The Legislative Branch</h3>
-              <p style={textStyle}>
-                Establishes the Senate and the House of Representatives. Grants Congress the power to make laws, declare war, coin money, and regulate commerce.
-              </p>
+              <p style={textStyle}>Establishes the Senate and the House of Representatives. Grants Congress the power to make laws, declare war, coin money, and regulate interstate and foreign commerce.</p>
             </div>
-
             <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
               <h3 style={{ ...titleStyle, color: '#3b82f6' }}>Article II: The Executive Branch</h3>
-              <p style={textStyle}>
-                Establishes the offices of the President and Vice President. Defines the President as the Commander in Chief of the armed forces and grants the power to enforce federal laws.
-              </p>
+              <p style={textStyle}>Establishes the offices of the President and Vice President. Defines the President as the Commander in Chief of the armed forces and grants the power to enforce federal laws and make treaties.</p>
             </div>
-
             <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
               <h3 style={{ ...titleStyle, color: '#3b82f6' }}>Article III: The Judicial Branch</h3>
-              <p style={textStyle}>
-                Establishes the Supreme Court and grants Congress the power to create lower federal courts. Defines the scope of federal judicial power and guarantees the right to a trial by jury in criminal cases.
-              </p>
+              <p style={textStyle}>Establishes the Supreme Court and grants Congress the power to create lower federal courts. Defines the scope of federal judicial power and guarantees the right to a trial by jury in criminal cases.</p>
+            </div>
+            <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+              <h3 style={{ ...titleStyle, color: '#3b82f6' }}>Article IV: The States</h3>
+              <p style={textStyle}>Defines the relationship between the states and the federal government. Requires states to give "Full Faith and Credit" to the public acts, records, and judicial proceedings of other states.</p>
+            </div>
+            <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+              <h3 style={{ ...titleStyle, color: '#3b82f6' }}>Article V: The Amendment Process</h3>
+              <p style={textStyle}>Outlines the process for amending the Constitution, requiring a two-thirds majority in both the House and the Senate, or by a constitutional convention called for by two-thirds of the State legislatures.</p>
+            </div>
+            <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+              <h3 style={{ ...titleStyle, color: '#3b82f6' }}>Article VI: The Supremacy Clause</h3>
+              <p style={textStyle}>Establishes that the Constitution, federal laws made pursuant to it, and treaties made under its authority, constitute the "supreme Law of the Land." Requires all legislators, officers, and judges to take an oath to support the Constitution.</p>
             </div>
           </>
         )}
@@ -115,30 +129,35 @@ export default function CivicsRights() {
           <>
             <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
               <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 1</h3>
-              <p style={textStyle}>
-                All human beings are born free and equal in dignity and rights. They are endowed with reason and conscience and should act towards one another in a spirit of brotherhood.
-              </p>
+              <p style={textStyle}>All human beings are born free and equal in dignity and rights. They are endowed with reason and conscience and should act towards one another in a spirit of brotherhood.</p>
             </div>
-
             <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
               <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 3</h3>
-              <p style={textStyle}>
-                Everyone has the right to life, liberty and security of person.
-              </p>
+              <p style={textStyle}>Everyone has the right to life, liberty and security of person.</p>
             </div>
-
+            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 4</h3>
+              <p style={textStyle}>No one shall be held in slavery or servitude; slavery and the slave trade shall be prohibited in all their forms.</p>
+            </div>
+            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 5</h3>
+              <p style={textStyle}>No one shall be subjected to torture or to cruel, inhuman or degrading treatment or punishment.</p>
+            </div>
             <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
               <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 9</h3>
-              <p style={textStyle}>
-                No one shall be subjected to arbitrary arrest, detention or exile.
-              </p>
+              <p style={textStyle}>No one shall be subjected to arbitrary arrest, detention or exile.</p>
             </div>
-
+            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 11</h3>
+              <p style={textStyle}>Everyone charged with a penal offence has the right to be presumed innocent until proved guilty according to law in a public trial at which he has had all the guarantees necessary for his defence.</p>
+            </div>
             <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
               <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 12</h3>
-              <p style={textStyle}>
-                No one shall be subjected to arbitrary interference with his privacy, family, home or correspondence, nor to attacks upon his honour and reputation. Everyone has the right to the protection of the law against such interference or attacks.
-              </p>
+              <p style={textStyle}>No one shall be subjected to arbitrary interference with his privacy, family, home or correspondence, nor to attacks upon his honour and reputation. Everyone has the right to the protection of the law against such interference or attacks.</p>
+            </div>
+            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 19</h3>
+              <p style={textStyle}>Everyone has the right to freedom of opinion and expression; this right includes freedom to hold opinions without interference and to seek, receive and impart information and ideas through any media and regardless of frontiers.</p>
             </div>
           </>
         )}
