@@ -21,6 +21,7 @@ const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
 const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 
 // --- Standalone Modules ---
+const QuickCalc = lazy(() => import('./views/QuickCalc'));
 const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
 const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
 const AssetLedger = lazy(() => import('./views/AssetLedger'));
@@ -96,7 +97,8 @@ function App() {
               <Route path="/civics" element={<CivicsRights />} />
 
               <Route path="/support" element={<Support />} />
-            </Routes>
+              <Route path="/quick" element={<QuickCalc />} />
+        </Routes>
           </Suspense>
         </Router>
       </div>

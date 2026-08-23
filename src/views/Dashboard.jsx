@@ -29,6 +29,7 @@ function Dashboard() {
   }, []);
 
   const tools = [
+    { id: "quick", name: "Quick Tip & Tax", path: "/quick", icon: "💸", badge: "FAST", badgeColor: "#00cc66" },
     { id: "schematics", name: "Schematics", path: "/schematics", icon: "📐", badge: "MASSIVE WIP", badgeColor: "#d00000" },
     { id: "cacher", name: "Zero-Signal Cacher", path: "/cacher", icon: "📡", badge: "COMING SOON", badgeColor: "#ffb703" },
     { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮" },
