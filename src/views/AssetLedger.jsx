@@ -5,6 +5,9 @@ export default function AssetLedger() {
   const navigate = useNavigate();
   
   // --- STATE ---
+  const [activeMainTab, setActiveMainTab] = useState('Ledger');
+  const [guideTab, setGuideTab] = useState('Insurance Tactics');
+
   const [assets, setAssets] = useState(() => {
     const saved = localStorage.getItem('tot_asset_ledger');
     return saved ? JSON.parse(saved) : [];
@@ -12,33 +15,66 @@ export default function AssetLedger() {
   
   const [activeCategory, setActiveCategory] = useState('All');
   const [copied, setCopied] = useState(false);
-
-  // --- NEW ASSET FORM ---
   const [showForm, setShowForm] = useState(false);
-  const [newItem, setNewItem] = useState({ name: '', category: 'Tools & Hardware', serial: '', value: '', date: '' });
+  
+  const [newItem, setNewItem] = useState({ 
+    name: '', category: 'Tools & Hardware', serial: '', value: '', date: '', photo: null 
+  });
 
   // --- LOGIC ---
   useEffect(() => {
-    localStorage.setItem('tot_asset_ledger', JSON.stringify(assets));
+    try {
+      localStorage.setItem('tot_asset_ledger', JSON.stringify(assets));
+    } catch (e) {
+      alert("Local storage is full! Please delete some older assets or photos before saving more.");
+    }
   }, [assets]);
+
+  // Canvas Image Compression (Keeps base64 string tiny to fit in offline localStorage)
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 500; // Aggressive downscale for offline storage
+        const scaleSize = MAX_WIDTH / img.width;
+        
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to highly compressed JPEG base64
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+        setNewItem({ ...newItem, photo: compressedBase64 });
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleAdd = () => {
     if (!newItem.name) return alert('Asset name is required.');
-    setAssets([...assets, { ...newItem, id: Date.now() }]);
-    setNewItem({ name: '', category: 'Tools & Hardware', serial: '', value: '', date: '' });
+    setAssets([{ ...newItem, id: Date.now() }, ...assets]); // Add to top of list
+    setNewItem({ name: '', category: 'Tools & Hardware', serial: '', value: '', date: '', photo: null });
     setShowForm(false);
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Delete this asset from the ledger?')) {
+    if (window.confirm('Delete this asset from the ledger? This cannot be undone.')) {
       setAssets(assets.filter(a => a.id !== id));
     }
   };
 
   const exportCSV = () => {
-    let csv = "Category,Item Name,Serial/VIN,Est. Value,Acquisition Date\n";
+    let csv = "Category,Item Name,Serial/VIN,Est. Value,Acquisition Date,Has Photo\n";
     assets.forEach(a => {
-      csv += `"${a.category}","${a.name}","${a.serial}","$${parseFloat(a.value||0).toFixed(2)}","${a.date}"\n`;
+      csv += `"${a.category}","${a.name}","${a.serial}","$${parseFloat(a.value||0).toFixed(2)}","${a.date}","${a.photo ? 'Yes' : 'No'}"\n`;
     });
     navigator.clipboard.writeText(csv);
     setCopied(true);
@@ -46,7 +82,6 @@ export default function AssetLedger() {
   };
 
   const totalValue = assets.reduce((sum, item) => sum + (parseFloat(item.value) || 0), 0);
-  
   const categories = ['All', 'Tools & Hardware', 'Tech & Comms', 'Fleet & Vehicles', 'Armory'];
   const filteredAssets = activeCategory === 'All' ? assets : assets.filter(a => a.category === activeCategory);
 
@@ -58,97 +93,200 @@ export default function AssetLedger() {
   return (
     <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="header" style={{ borderBottom: '1px solid #222' }}>
-        <button className="back-btn" onClick={() => navigate(-1)}>← Hub</button>
+        <button className="back-btn" onClick={() => navigate('/')}>← Hub</button>
         <h2>Asset & Gear Ledger</h2>
       </header>
 
+      {/* TOP TABS */}
+      <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '6px' }}>
+        <button onClick={() => setActiveMainTab('Ledger')} style={{ flex: 1, padding: '8px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: activeMainTab === 'Ledger' ? '#00cc66' : '#222', color: activeMainTab === 'Ledger' ? '#000' : '#aaa' }}>
+          Ledger
+        </button>
+        <button onClick={() => setActiveMainTab('Guide')} style={{ flex: 1, padding: '8px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: activeMainTab === 'Guide' ? '#f59e0b' : '#222', color: activeMainTab === 'Guide' ? '#000' : '#aaa' }}>
+          Guide
+        </button>
+      </div>
+
       <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '95px' }}>
         
-        {/* DASHBOARD SUMMARY */}
-        <div style={{ ...cardStyle, borderTop: '4px solid #00cc66', textAlign: 'center' }}>
-          <span style={{ color: '#aaa', fontSize: '0.9em', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Fleet Value</span>
-          <h2 style={{ color: '#00cc66', fontSize: '2.5em', margin: '5px 0' }}>${totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h2>
-          <span style={{ color: '#888', fontSize: '0.85em' }}>{assets.length} Tracked Assets</span>
-        </div>
-
-        {/* CONTROLS */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-          <button onClick={() => setShowForm(!showForm)} style={{ flex: 1, padding: '12px', background: showForm ? '#333' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>
-            {showForm ? 'Cancel Entry' : '+ Log New Asset'}
-          </button>
-          <button onClick={exportCSV} style={{ flex: 1, padding: '12px', background: copied ? '#00cc66' : '#222', color: copied ? '#000' : '#fff', border: '1px solid #444', borderRadius: '8px', fontWeight: 'bold' }}>
-            {copied ? '✅ Copied CSV' : '📋 Export Ledger'}
-          </button>
-        </div>
-
-        {/* INPUT FORM */}
-        {showForm && (
-          <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6' }}>Asset Entry</h3>
-            
-            <label style={labelStyle}>Category</label>
-            <select value={newItem.category} onChange={e=>setNewItem({...newItem, category: e.target.value})} style={inputStyle}>
-              {categories.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-
-            <label style={labelStyle}>Item Make / Model</label>
-            <input type="text" placeholder="e.g. DeWalt 20V Max Drill" value={newItem.name} onChange={e=>setNewItem({...newItem, name: e.target.value})} style={inputStyle} />
-
-            <label style={labelStyle}>Serial Number / VIN</label>
-            <input type="text" placeholder="S/N for Insurance/Warranty" value={newItem.serial} onChange={e=>setNewItem({...newItem, serial: e.target.value})} style={inputStyle} />
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>Est. Value ($)</label>
-                <input type="number" placeholder="0.00" value={newItem.value} onChange={e=>setNewItem({...newItem, value: e.target.value})} style={inputStyle} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>Acquired Date</label>
-                <input type="date" value={newItem.date} onChange={e=>setNewItem({...newItem, date: e.target.value})} style={inputStyle} />
-              </div>
+        {/* ========================================== */}
+        {/* TAB 1: THE LEDGER                          */}
+        {/* ========================================== */}
+        {activeMainTab === 'Ledger' && (
+          <>
+            {/* DASHBOARD SUMMARY */}
+            <div style={{ ...cardStyle, borderTop: '4px solid #00cc66', textAlign: 'center' }}>
+              <span style={{ color: '#aaa', fontSize: '0.9em', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Fleet Value</span>
+              <h2 style={{ color: '#00cc66', fontSize: '2.5em', margin: '5px 0' }}>${totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h2>
+              <span style={{ color: '#888', fontSize: '0.85em' }}>{assets.length} Tracked Assets</span>
             </div>
 
-            <button onClick={handleAdd} style={{ width: '100%', padding: '12px', background: '#00cc66', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginTop: '5px' }}>
-              Save Asset to Ledger
-            </button>
-          </div>
-        )}
+            {/* CONTROLS */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+              <button onClick={() => setShowForm(!showForm)} style={{ flex: 1, padding: '12px', background: showForm ? '#333' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>
+                {showForm ? 'Cancel Entry' : '+ Log New Asset'}
+              </button>
+              <button onClick={exportCSV} style={{ flex: 1, padding: '12px', background: copied ? '#00cc66' : '#222', color: copied ? '#000' : '#fff', border: '1px solid #444', borderRadius: '8px', fontWeight: 'bold' }}>
+                {copied ? '✅ Copied CSV' : '📋 Export CSV'}
+              </button>
+            </div>
 
-        {/* CATEGORY FILTER */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '5px' }}>
-          {categories.map(cat => (
-            <button 
-              key={cat} onClick={() => setActiveCategory(cat)}
-              style={{ padding: '8px 12px', borderRadius: '20px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: activeCategory === cat ? '#fff' : '#222', color: activeCategory === cat ? '#000' : '#888' }}>
-              {cat}
-            </button>
-          ))}
-        </div>
+            {/* INPUT FORM */}
+            {showForm && (
+              <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+                <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6' }}>Asset Entry</h3>
+                
+                <label style={labelStyle}>Category</label>
+                <select value={newItem.category} onChange={e=>setNewItem({...newItem, category: e.target.value})} style={inputStyle}>
+                  {categories.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
 
-        {/* ASSET LIST */}
-        {filteredAssets.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px', color: '#666' }}>No assets logged in this category.</div>
-        ) : (
-          filteredAssets.map(asset => (
-            <div key={asset.id} style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <span style={{ color: '#00ffff', fontSize: '0.75em', textTransform: 'uppercase', letterSpacing: '1px' }}>{asset.category}</span>
-                <h4 style={{ margin: '4px 0', color: '#fff', fontSize: '1.1em' }}>{asset.name}</h4>
-                <div style={{ color: '#888', fontSize: '0.85em' }}>
-                  {asset.serial && <span style={{ display: 'block' }}>S/N: {asset.serial}</span>}
-                  {asset.date && <span>Acquired: {asset.date}</span>}
+                <label style={labelStyle}>Item Make / Model</label>
+                <input type="text" placeholder="e.g. DeWalt 20V Max Drill" value={newItem.name} onChange={e=>setNewItem({...newItem, name: e.target.value})} style={inputStyle} />
+
+                <label style={labelStyle}>Serial Number / VIN</label>
+                <input type="text" placeholder="S/N for Insurance/Warranty" value={newItem.serial} onChange={e=>setNewItem({...newItem, serial: e.target.value})} style={inputStyle} />
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Est. Value ($)</label>
+                    <input type="number" placeholder="0.00" value={newItem.value} onChange={e=>setNewItem({...newItem, value: e.target.value})} style={inputStyle} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Acquired Date</label>
+                    <input type="date" value={newItem.date} onChange={e=>setNewItem({...newItem, date: e.target.value})} style={inputStyle} />
+                  </div>
                 </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <strong style={{ color: '#00cc66', fontSize: '1.2em', display: 'block', marginBottom: '10px' }}>
-                  ${parseFloat(asset.value || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
-                </strong>
-                <button onClick={() => handleDelete(asset.id)} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '6px', padding: '6px 12px', fontWeight: 'bold' }}>
-                  Drop
+
+                <label style={{...labelStyle, color: '#a855f7'}}>Proof of Ownership (Photo)</label>
+                <div style={{ background: '#000', border: '1px dashed #444', borderRadius: '8px', padding: '10px', marginTop: '4px', textAlign: 'center' }}>
+                  {newItem.photo ? (
+                    <img src={newItem.photo} alt="Preview" style={{ maxHeight: '100px', borderRadius: '4px', marginBottom: '10px' }} />
+                  ) : (
+                    <span style={{ display: 'block', color: '#666', marginBottom: '10px', fontSize: '0.85em' }}>Capture receipt or S/N plate</span>
+                  )}
+                  <input type="file" accept="image/*" capture="environment" onChange={handleImageUpload} style={{ width: '100%', color: '#aaa', fontSize: '0.9em' }} />
+                </div>
+
+                <button onClick={handleAdd} style={{ width: '100%', padding: '12px', background: '#00cc66', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginTop: '15px' }}>
+                  Save Asset to Ledger
                 </button>
               </div>
+            )}
+
+            {/* CATEGORY FILTER */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '5px' }}>
+              {categories.map(cat => (
+                <button 
+                  key={cat} onClick={() => setActiveCategory(cat)}
+                  style={{ padding: '8px 12px', borderRadius: '20px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: activeCategory === cat ? '#fff' : '#222', color: activeCategory === cat ? '#000' : '#888' }}>
+                  {cat}
+                </button>
+              ))}
             </div>
-          ))
+
+            {/* ASSET LIST */}
+            {filteredAssets.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px', color: '#666' }}>No assets logged in this category.</div>
+            ) : (
+              filteredAssets.map(asset => (
+                <div key={asset.id} style={{ ...cardStyle, display: 'flex', gap: '15px', alignItems: 'center' }}>
+                  
+                  {/* Photo Thumbnail */}
+                  <div style={{ width: '70px', height: '70px', background: '#000', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #333', flexShrink: 0 }}>
+                    {asset.photo ? (
+                      <img src={asset.photo} alt="Asset" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: '1.5em' }}>📷</span>
+                    )}
+                  </div>
+
+                  {/* Asset Details */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ color: '#00ffff', fontSize: '0.7em', textTransform: 'uppercase', letterSpacing: '1px' }}>{asset.category}</span>
+                    <h4 style={{ margin: '2px 0', color: '#fff', fontSize: '1.1em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.name}</h4>
+                    <div style={{ color: '#888', fontSize: '0.85em' }}>
+                      {asset.serial && <span style={{ display: 'block' }}>S/N: {asset.serial}</span>}
+                      {asset.date && <span>{asset.date}</span>}
+                    </div>
+                  </div>
+
+                  {/* Price & Action */}
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <strong style={{ color: '#00cc66', fontSize: '1.2em', display: 'block', marginBottom: '10px' }}>
+                      ${parseFloat(asset.value || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                    </strong>
+                    <button onClick={() => handleDelete(asset.id)} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '6px', padding: '4px 10px', fontWeight: 'bold', fontSize: '0.85em' }}>
+                      Drop
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </>
+        )}
+
+        {/* ========================================== */}
+        {/* TAB 2: THE GUIDE                           */}
+        {/* ========================================== */}
+        {activeMainTab === 'Guide' && (
+          <>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+              {['Insurance Tactics', 'Pro Tips', 'Disclaimer'].map(sub => (
+                <button
+                  key={sub} onClick={() => setGuideTab(sub)}
+                  style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontSize: '0.85em', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: guideTab === sub ? 'rgba(245, 158, 11, 0.2)' : '#151515', color: guideTab === sub ? '#f59e0b' : '#888', border: guideTab === sub ? '1px solid #f59e0b' : '1px solid #222' }}>
+                  {sub}
+                </button>
+              ))}
+            </div>
+
+            {guideTab === 'Insurance Tactics' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>RCV vs. ACV (Don't Get Scammed)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
+                    When setting up a policy for high-value tools or fleet assets, always ensure you have <strong>Replacement Cost Value (RCV)</strong> coverage, not <em>Actual Cash Value (ACV)</em>.<br/><br/>
+                    If your 5-year-old generator is stolen, an ACV policy pays out its depreciated pawn-shop value (e.g., $150). An RCV policy pays out exactly what it costs to go to Home Depot and buy a brand new equivalent model today.
+                  </p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>The Burden of Proof</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
+                    Adjusters will default to the cheapest possible replacement brand if you just write "Drill" on a claim. To force them to pay for professional-grade gear, your photo must clearly show the brand, model number, and the serial plate.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {guideTab === 'Pro Tips' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>The Receipt Shot</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
+                    The ultimate proof of ownership is a photo of the tool sitting physically right next to the printed store receipt. Upload that combined image into the Ledger photo slot for absolute bulletproof verification.
+                  </p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Offline Storage Warning</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
+                    Because this app maintains your privacy by never talking to a cloud server, your photos are compressed and saved to your browser's local storage. This storage has limits. Export your CSV ledger periodically and keep a backup of it in a secure location.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {guideTab === 'Disclaimer' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.5)', borderLeft: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>⚠️ Notice</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.5' }}>
+                    This ledger is a local utility tool. The developer does not guarantee data retention against device failure, browser cache clearing, or physical loss. This guide does not constitute licensed legal or insurance advice. Always read your specific policy declarations page.
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
       </div>
