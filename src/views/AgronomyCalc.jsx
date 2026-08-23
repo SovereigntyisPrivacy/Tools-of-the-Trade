@@ -20,7 +20,7 @@ class ErrorBoundary extends Component {
 
 function AgronomyUI() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Guide');
+  const [activeTab, setActiveTab] = useState('Extract'); // Set to Extract by default to show you!
   const [guideTab, setGuideTab] = useState('Terpenes');
 
   const [tempF, setTempF] = useState('78');
@@ -114,7 +114,7 @@ function AgronomyUI() {
             </div>
             <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Photobiology (DLI)</h3>
-              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Converts continuous PPFD into daily total photons.</div>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Converts continuous PPFD intensity into cumulative photons delivered over 24 hours.</div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>PPFD (µmol)<input type="number" value={ppfd} onChange={e=>setPpfd(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Hours/Day<input type="number" value={lightHours} onChange={e=>setLightHours(e.target.value)} style={inputStyle} /></label></div>
@@ -123,6 +123,7 @@ function AgronomyUI() {
             </div>
             <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>CO2 & Vent Engine</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Calculates required gas volume to hit 1200 PPM target and the minimum exhaust CFM needed to clear the space.</div>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>L (ft)<input type="number" value={tentL} onChange={e=>setTentL(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>W (ft)<input type="number" value={tentW} onChange={e=>setTentW(e.target.value)} style={inputStyle} /></label></div>
@@ -134,6 +135,7 @@ function AgronomyUI() {
             </div>
             <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Electrical Cost</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Projects true monthly operating expenses based on actual wattage draw and local utility rates.</div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Watts<input type="number" value={powerWatts} onChange={e=>setPowerWatts(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Cost/kWh ($)<input type="number" step="0.01" value={kwhRate} onChange={e=>setKwhRate(e.target.value)} style={inputStyle} /></label></div>
@@ -146,7 +148,8 @@ function AgronomyUI() {
         {activeTab === 'Nutrients' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Runoff Delta</h3>
+              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Runoff Delta Tracker</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Measures the difference between feed input and drainage to detect toxic salt lockout.</div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Feed PPM<input type="number" value={feedPpm} onChange={e=>setFeedPpm(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Runoff PPM<input type="number" value={runoffPpm} onChange={e=>setRunoffPpm(e.target.value)} style={inputStyle} /></label></div>
@@ -158,34 +161,61 @@ function AgronomyUI() {
             </div>
             <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>EC to PPM Bridge</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Converts electrical conductivity (mS/cm) into standard 500 (Hanna) or 700 (Truncheon) PPM scales.</div>
               <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Conductivity (EC)<input type="number" step="0.1" value={inputEc} onChange={e=>setInputEc(e.target.value)} style={inputStyle} /></label></div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <div style={{ flex: 1, background: '#000', padding: '12px', borderRadius: '8px', textAlign: 'center' }}><span style={{ color: '#888', display: 'block' }}>500 Scale</span><strong style={{ color: '#00cc66' }}>{ppm500.toFixed(0)}</strong></div>
                 <div style={{ flex: 1, background: '#000', padding: '12px', borderRadius: '8px', textAlign: 'center' }}><span style={{ color: '#888', display: 'block' }}>700 Scale</span><strong style={{ color: '#f59e0b' }}>{ppm700.toFixed(0)}</strong></div>
               </div>
             </div>
+            <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Flush Volume Sizer</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Calculates the exact 3x volume of RO water required to safely strip accumulated salts from the root zone.</div>
+              <div style={{ marginBottom: '12px' }}><label style={labelStyle}>Pot Size (Gal)<input type="number" value={potSizeGal} onChange={e=>setPotSizeGal(e.target.value)} style={inputStyle} /></label></div>
+              <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Target Flush:</span><strong style={{ color: '#ef4444' }}>{flushGal} Gal RO</strong></div>
+            </div>
           </>
         )}
-
         {activeTab === 'Extract' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Wet-to-Dry</h3>
-              <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Wet Weight (g)<input type="number" value={wetWeight} onChange={e=>setWetWeight(e.target.value)} style={inputStyle} /></label></div>
+              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Wet-to-Dry Estimator</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Projects final cured mass from wet harvest weight based on standard 78% moisture dissipation.</div>
+              <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Fresh Wet Weight (g)<input type="number" value={wetWeight} onChange={e=>setWetWeight(e.target.value)} style={inputStyle} /></label></div>
               <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><strong style={{ color: '#fff' }}>Cured (22%):</strong><strong style={{ color: '#3b82f6' }}>{estDryYield.toFixed(1)} g</strong></div>
             </div>
+            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Rosin Press Yield</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Calculates true mechanical extraction efficiency percentage from raw hash or flower inputs.</div>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Input (g)<input type="number" value={rosinInput} onChange={e=>setRosinInput(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Output (g)<input type="number" value={rosinOutput} onChange={e=>setRosinOutput(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Efficiency:</span><strong style={{ color: '#00cc66' }}>{rosinYieldPct.toFixed(1)}%</strong></div>
+            </div>
             <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Decarb Loss</h3>
-              <div style={{ marginBottom: '12px' }}><label style={labelStyle}>Acid Mass (g)<input type="number" value={rawAcidMass} onChange={e=>setRawAcidMass(e.target.value)} style={inputStyle} /></label></div>
+              <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Decarb Loss Engine</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Calculates the true active yield remaining after thermal CO2 carboxyl groups detach during baking/heating.</div>
+              <div style={{ marginBottom: '12px' }}><label style={labelStyle}>Raw Acid Mass (g)<input type="number" value={rawAcidMass} onChange={e=>setRawAcidMass(e.target.value)} style={inputStyle} /></label></div>
               <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Active Yield:</span><strong style={{ color: '#ef4444' }}>{postDecarbActive.toFixed(2)} g</strong></div>
             </div>
+            <div style={{ ...cardStyle, borderTop: '4px solid #00cc66' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>Biomass Yield</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Estimates total crude oil return based on target solvent efficiency and starting biomass.</div>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Input Mass (g)<input type="number" value={inputBiomass} onChange={e=>setInputBiomass(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Target Yield (%)<input type="number" value={targetYield} onChange={e=>setTargetYield(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><strong style={{ color: '#fff' }}>Est. Crude:</strong><strong style={{ color: '#00cc66' }}>{estCrude.toFixed(1)} g</strong></div>
+            </div>
             <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Volumetric Carrier</h3>
+              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Volumetric Concentration</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Determines the exact final milligram per milliliter (mg/mL) dosing strength for mixed tinctures and cartridges.</div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Crude (g)<input type="number" value={crudeMass} onChange={e=>setCrudeMass(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Crude Mass (g)<input type="number" value={crudeMass} onChange={e=>setCrudeMass(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Purity (%)<input type="number" value={crudePurity} onChange={e=>setCrudePurity(e.target.value)} style={inputStyle} /></label></div>
               </div>
-              <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Carrier (mL)<input type="number" value={carrierVol} onChange={e=>setCarrierVol(e.target.value)} style={inputStyle} /></label></div>
+              <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Carrier Volume (mL)<input type="number" value={carrierVol} onChange={e=>setCarrierVol(e.target.value)} style={inputStyle} /></label></div>
               <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px', borderBottom: '1px dashed #333', paddingBottom: '10px' }}><span>Total Active:</span> <span>{totalActive.toFixed(0)} mg</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><strong style={{ color: '#fff' }}>Concentration:</strong><strong style={{ color: '#a855f7' }}>{concentration.toFixed(1)} mg/mL</strong></div>
@@ -193,6 +223,7 @@ function AgronomyUI() {
             </div>
           </>
         )}
+
         {activeTab === 'Guide' && (
           <>
             <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
@@ -206,7 +237,7 @@ function AgronomyUI() {
                 <div style={{ ...cardStyle, background: 'rgba(168, 85, 247, 0.05)', borderLeft: '4px solid #a855f7' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>What is a Terpene?</h3>
                   <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.5' }}>
-                    Terpenes are highly volatile aromatic compounds produced in the resin glands (trichomes) of plants. They dictate the unique smell and flavor profiles of different cultivars. More importantly, they work synergistically with cannabinoids (the "Entourage Effect") to steer the physical and psychoactive effects. Because they are highly volatile, they boil off and degrade quickly under high heat or improper curing.
+                    Terpenes are highly volatile aromatic compounds produced in resin glands. They dictate unique smells and flavors. More importantly, they work synergistically with cannabinoids (the "Entourage Effect") to steer the physical and psychoactive effects. They boil off quickly under high heat or improper curing.
                   </p>
                 </div>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
@@ -239,7 +270,7 @@ function AgronomyUI() {
                 </div>
               </div>
             )}
-
+            
             {guideTab === 'Lighting' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
