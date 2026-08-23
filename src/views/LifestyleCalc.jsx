@@ -353,6 +353,45 @@ function LifestyleUI() {
               <p style={{ color: '#aaa', fontSize: '0.8em', margin: 0, lineHeight: '1.4' }}>• <strong>Time:</strong> 4 - 12 Hours. Apple cider and soy sauce bases work exceptionally well.<br/>• <strong>Profile:</strong> Brown Sugar, Smoked Paprika, Mustard Powder, Fennel, Cumin, Sage.</p>
             </div>
 
+            <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>🐟 Seafood (Salmon & Whitefish)</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold', fontSize: '0.9em', borderBottom: '1px solid #333', paddingBottom: '8px', marginBottom: '8px' }}><span>Type</span><span>Pull Temp</span><span>Rest Temp</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em', marginBottom: '5px' }}><span>Salmon (Medium)</span><span>130°F</span><span style={{ color: '#00cc66' }}>135°F (Flaky)</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em', marginBottom: '5px' }}><span>Whitefish (Cod/Tilapia)</span><span>140°F</span><span style={{ color: '#00cc66' }}>145°F (Opaque)</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em', marginBottom: '15px' }}><span>Shrimp / Scallops</span><span>120°F</span><span style={{ color: '#f59e0b' }}>120°F (Curls to 'C')</span></div>
+              
+              <strong style={{ color: '#fff', fontSize: '0.85em', display: 'block', marginBottom: '4px' }}>Bake & Sear Times:</strong>
+              <p style={{ color: '#aaa', fontSize: '0.8em', margin: '0 0 10px 0', lineHeight: '1.4' }}>• <strong>Bake:</strong> 400°F for 12-15 mins.<br/>• <strong>Pan Sear:</strong> High heat, 4 mins skin-side down, flip, 1 min flesh-side. Baste with butter.</p>
+              
+              <strong style={{ color: '#fff', fontSize: '0.85em', display: 'block', marginBottom: '4px' }}>Flavor Profile:</strong>
+              <p style={{ color: '#aaa', fontSize: '0.8em', margin: 0, lineHeight: '1.4' }}>Dill, Lemon Zest, Capers, White Wine, Garlic, Tarragon. Keep marinades under 30 mins to prevent acid cooking (Ceviche effect).</p>
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>🔥 Oil Smoke Points (Searing Guide)</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold', fontSize: '0.9em', borderBottom: '1px solid #333', paddingBottom: '8px', marginBottom: '8px' }}><span>Fat / Oil</span><span>Smoke Pt</span><span>Best Use</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em', marginBottom: '5px' }}><span>Butter</span><span style={{ color: '#ef4444' }}>302°F</span><span>Finishing/Basting</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em', marginBottom: '5px' }}><span>Extra Virgin Olive Oil</span><span style={{ color: '#f59e0b' }}>350°F</span><span>Sauté/Dressings</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em', marginBottom: '5px' }}><span>Beef Tallow / Lard</span><span style={{ color: '#00cc66' }}>400°F</span><span>Deep Fry/Roast</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em', marginBottom: '15px' }}><span>Avocado / Grapeseed</span><span style={{ color: '#3b82f6' }}>520°F</span><span>Cast Iron Searing</span></div>
+              <p style={{ color: '#aaa', fontSize: '0.8em', margin: 0, lineHeight: '1.4' }}><strong>Pro Tip:</strong> Never sear a steak in butter. Sear in Avocado oil or Tallow, turn off the heat, <em>then</em> add butter and aromatics to baste.</p>
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #8b5cf6' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#8b5cf6' }}>🪵 Smoking Woods Matrix</h3>
+              <p style={{ color: '#aaa', fontSize: '0.8em', margin: '0 0 8px 0', lineHeight: '1.4' }}>• <strong>Apple / Cherry:</strong> Mild & sweet. Perfect for Pork, Poultry, and Salmon.<br/>• <strong>Hickory:</strong> Strong, savory, bacon-like. Best for Pork Ribs and Beef Roasts.<br/>• <strong>Mesquite:</strong> Extremely intense & earthy. Use ONLY for Beef Brisket/Steaks. Will overpower and ruin poultry.</p>
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #eab308' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#eab308' }}>🥚 Perfect Egg Boiling</h3>
+              <p style={{ color: '#aaa', fontSize: '0.8em', margin: '0 0 8px 0', lineHeight: '1.4' }}><em>Drop large eggs straight from fridge into a rolling boil, then immediately ice bath.</em></p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em', marginBottom: '5px' }}><span>6 Mins:</span><span style={{ color: '#f59e0b' }}>Liquid Yolk (Ramen Egg)</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em', marginBottom: '5px' }}><span>7 Mins:</span><span style={{ color: '#00cc66' }}>Jammy / Custard Yolk</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em', marginBottom: '5px' }}><span>9 Mins:</span><span style={{ color: '#3b82f6' }}>Firm but Creamy</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.85em' }}><span>11 Mins:</span><span style={{ color: '#ef4444' }}>Hard Boiled (Deviled Eggs)</span></div>
+            </div>
+
+
           </div>
         )}
 
