@@ -5,6 +5,40 @@ export default function CivicsRights() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Amendments');
 
+  // --- FULL UDHR ARRAY ---
+  const udhrArticles = [
+    { id: 1, text: "All human beings are born free and equal in dignity and rights. They are endowed with reason and conscience and should act towards one another in a spirit of brotherhood." },
+    { id: 2, text: "Everyone is entitled to all the rights and freedoms set forth in this Declaration, without distinction of any kind, such as race, colour, sex, language, religion, political or other opinion, national or social origin, property, birth or other status." },
+    { id: 3, text: "Everyone has the right to life, liberty and security of person." },
+    { id: 4, text: "No one shall be held in slavery or servitude; slavery and the slave trade shall be prohibited in all their forms." },
+    { id: 5, text: "No one shall be subjected to torture or to cruel, inhuman or degrading treatment or punishment." },
+    { id: 6, text: "Everyone has the right to recognition everywhere as a person before the law." },
+    { id: 7, text: "All are equal before the law and are entitled without any discrimination to equal protection of the law. All are entitled to equal protection against any discrimination in violation of this Declaration and against any incitement to such discrimination." },
+    { id: 8, text: "Everyone has the right to an effective remedy by the competent national tribunals for acts violating the fundamental rights granted him by the constitution or by law." },
+    { id: 9, text: "No one shall be subjected to arbitrary arrest, detention or exile." },
+    { id: 10, text: "Everyone is entitled in full equality to a fair and public hearing by an independent and impartial tribunal, in the determination of his rights and obligations and of any criminal charge against him." },
+    { id: 11, text: "(1) Everyone charged with a penal offence has the right to be presumed innocent until proved guilty according to law in a public trial at which he has had all the guarantees necessary for his defence. (2) No one shall be held guilty of any penal offence on account of any act or omission which did not constitute a penal offence, under national or international law, at the time when it was committed." },
+    { id: 12, text: "No one shall be subjected to arbitrary interference with his privacy, family, home or correspondence, nor to attacks upon his honour and reputation. Everyone has the right to the protection of the law against such interference or attacks." },
+    { id: 13, text: "(1) Everyone has the right to freedom of movement and residence within the borders of each state. (2) Everyone has the right to leave any country, including his own, and to return to his country." },
+    { id: 14, text: "(1) Everyone has the right to seek and to enjoy in other countries asylum from persecution. (2) This right may not be invoked in the case of prosecutions genuinely arising from non-political crimes or from acts contrary to the purposes and principles of the United Nations." },
+    { id: 15, text: "(1) Everyone has the right to a nationality. (2) No one shall be arbitrarily deprived of his nationality nor denied the right to change his nationality." },
+    { id: 16, text: "(1) Men and women of full age, without any limitation due to race, nationality or religion, have the right to marry and to found a family. (2) Marriage shall be entered into only with the free and full consent of the intending spouses. (3) The family is the natural and fundamental group unit of society and is entitled to protection by society and the State." },
+    { id: 17, text: "(1) Everyone has the right to own property alone as well as in association with others. (2) No one shall be arbitrarily deprived of his property." },
+    { id: 18, text: "Everyone has the right to freedom of thought, conscience and religion; this right includes freedom to change his religion or belief, and freedom, either alone or in community with others and in public or private, to manifest his religion or belief in teaching, practice, worship and observance." },
+    { id: 19, text: "Everyone has the right to freedom of opinion and expression; this right includes freedom to hold opinions without interference and to seek, receive and impart information and ideas through any media and regardless of frontiers." },
+    { id: 20, text: "(1) Everyone has the right to freedom of peaceful assembly and association. (2) No one may be compelled to belong to an association." },
+    { id: 21, text: "(1) Everyone has the right to take part in the government of his country, directly or through freely chosen representatives. (2) Everyone has the right of equal access to public service in his country. (3) The will of the people shall be the basis of the authority of government." },
+    { id: 22, text: "Everyone, as a member of society, has the right to social security and is entitled to realization, through national effort and international co-operation and in accordance with the organization and resources of each State, of the economic, social and cultural rights indispensable for his dignity and the free development of his personality." },
+    { id: 23, text: "(1) Everyone has the right to work, to free choice of employment, to just and favourable conditions of work and to protection against unemployment. (2) Everyone, without any discrimination, has the right to equal pay for equal work. (3) Everyone who works has the right to just and favourable remuneration. (4) Everyone has the right to form and to join trade unions for the protection of his interests." },
+    { id: 24, text: "Everyone has the right to rest and leisure, including reasonable limitation of working hours and periodic holidays with pay." },
+    { id: 25, text: "(1) Everyone has the right to a standard of living adequate for the health and well-being of himself and of his family, including food, clothing, housing and medical care and necessary social services. (2) Motherhood and childhood are entitled to special care and assistance." },
+    { id: 26, text: "(1) Everyone has the right to education. Education shall be free, at least in the elementary and fundamental stages. Elementary education shall be compulsory. (2) Education shall be directed to the full development of the human personality and to the strengthening of respect for human rights and fundamental freedoms." },
+    { id: 27, text: "(1) Everyone has the right freely to participate in the cultural life of the community, to enjoy the arts and to share in scientific advancement and its benefits." },
+    { id: 28, text: "Everyone is entitled to a social and international order in which the rights and freedoms set forth in this Declaration can be fully realized." },
+    { id: 29, text: "(1) Everyone has duties to the community in which alone the free and full development of his personality is possible. (2) In the exercise of his rights and freedoms, everyone shall be subject only to such limitations as are determined by law solely for the purpose of securing due recognition and respect for the rights and freedoms of others." },
+    { id: 30, text: "Nothing in this Declaration may be interpreted as implying for any State, group or person any right to engage in any activity or to perform any act aimed at the destruction of any of the rights and freedoms set forth herein." }
+  ];
+
   // --- STYLES ---
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
   const titleStyle = { margin: '0 0 8px 0', fontSize: '1.1em', fontWeight: 'bold' };
@@ -126,40 +160,14 @@ export default function CivicsRights() {
         {/* TAB 3: HUMAN RIGHTS (UDHR)                 */}
         {/* ========================================== */}
         {activeTab === 'Human Rights' && (
-          <>
-            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 1</h3>
-              <p style={textStyle}>All human beings are born free and equal in dignity and rights. They are endowed with reason and conscience and should act towards one another in a spirit of brotherhood.</p>
-            </div>
-            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 3</h3>
-              <p style={textStyle}>Everyone has the right to life, liberty and security of person.</p>
-            </div>
-            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 4</h3>
-              <p style={textStyle}>No one shall be held in slavery or servitude; slavery and the slave trade shall be prohibited in all their forms.</p>
-            </div>
-            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 5</h3>
-              <p style={textStyle}>No one shall be subjected to torture or to cruel, inhuman or degrading treatment or punishment.</p>
-            </div>
-            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 9</h3>
-              <p style={textStyle}>No one shall be subjected to arbitrary arrest, detention or exile.</p>
-            </div>
-            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 11</h3>
-              <p style={textStyle}>Everyone charged with a penal offence has the right to be presumed innocent until proved guilty according to law in a public trial at which he has had all the guarantees necessary for his defence.</p>
-            </div>
-            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 12</h3>
-              <p style={textStyle}>No one shall be subjected to arbitrary interference with his privacy, family, home or correspondence, nor to attacks upon his honour and reputation. Everyone has the right to the protection of the law against such interference or attacks.</p>
-            </div>
-            <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-              <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article 19</h3>
-              <p style={textStyle}>Everyone has the right to freedom of opinion and expression; this right includes freedom to hold opinions without interference and to seek, receive and impart information and ideas through any media and regardless of frontiers.</p>
-            </div>
-          </>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {udhrArticles.map(item => (
+              <div key={item.id} style={{ ...cardStyle, borderLeft: '4px solid #00cc66', marginBottom: 0 }}>
+                <h3 style={{ ...titleStyle, color: '#00cc66' }}>Article {item.id}</h3>
+                <p style={textStyle}>{item.text}</p>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* ========================================== */}
