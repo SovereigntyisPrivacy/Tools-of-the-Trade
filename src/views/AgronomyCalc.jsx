@@ -299,6 +299,24 @@ function AgronomyUI() {
                   <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Reservoir Temp</h3>
                   <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Maintain water strictly at <strong>65°F to 68°F</strong> to prevent Pythium and maximize dissolved oxygen.</p>
                 </div>
+
+                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Generative Crop Steering (Dry Backs)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>In late flower (Weeks 6-8), deliberately allow the growing medium to dry out significantly between waterings (a 40-50% dry back). This drought stress signals the plant it is dying, forcing it to swell calyxes and mass-produce protective resin (trichomes).</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>Silica for Extreme Heat Defense</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>If running high ambient temps in arid climates, dose Mono-Silicic Acid during veg. It physically thickens the plant's cell walls, making them highly resistant to heat stress, wilting, and pests. <strong>Always mix Silica first</strong> into your reservoir before anything else, or it will lock out.</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>The 48-Hour Dark Harvest</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Light and heat degrade terpenes. Before chopping the plant, leave it in 100% total darkness for 48 hours, and drop ambient temps to 60°F. This preserves highly volatile monoterpenes and stops the plant from pulling up starches from the roots, resulting in a smoother cure.</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Lung Room Humidification</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Never pump a humidifier directly onto the plant canopy; the localized moisture will breed Botrytis (Bud Rot). Humidify the "lung room" (the room outside the tent) and let your inline exhaust fan pull the pre-conditioned air naturally through the canopy.</p>
+                </div>
+
               </div>
             )}
 
