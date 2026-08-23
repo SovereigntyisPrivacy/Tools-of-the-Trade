@@ -9,7 +9,7 @@ class ErrorBoundary extends Component {
       return (
         <div style={{ padding: '20px', color: '#ff4444', background: '#0a0a0a', minHeight: '100vh' }}>
           <h2>⚠️ Agronomy Module Crashed</h2>
-          <p style={{ fontFamily: 'monospace', background: '#111', padding: '10px' }}>{this.state.error?.toString()}</p>
+          <p style={{ fontFamily: 'monospace', background: '#111', padding: '10px', whiteSpace: 'pre-wrap' }}>{this.state.error?.toString()}</p>
           <button onClick={() => window.history.back()} style={{ padding: '10px', background: '#333', color: '#fff', border: 'none', borderRadius: '8px' }}>Go Back</button>
         </div>
       );
@@ -21,7 +21,7 @@ class ErrorBoundary extends Component {
 function AgronomyUI() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Guide');
-  const [guideTab, setGuideTab] = useState('Compliance');
+  const [guideTab, setGuideTab] = useState('Pro Tips');
 
   const [tempF, setTempF] = useState('78');
   const [rh, setRh] = useState('55');
@@ -224,82 +224,17 @@ function AgronomyUI() {
             </div>
           </>
         )}
+
         {activeTab === 'Guide' && (
           <>
             <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Compliance', 'Terpenes', 'Lighting', 'Pro Tips', 'VPD Targets', 'Climate', 'pH Lockout', 'Soil & NPK', 'Deficiencies', 'Cloning', 'Training', 'Flowering', 'Harvest', 'IPM', 'Rosin Curing'].map(sub => (
+              {['Pro Tips', 'Compliance', 'Terpenes', 'Lighting', 'VPD Targets', 'Climate', 'pH Lockout', 'Soil & NPK', 'Deficiencies', 'Cloning', 'Training', 'Flowering', 'Harvest', 'IPM', 'Rosin Curing'].map(sub => (
                 <button key={sub} onClick={() => setGuideTab(sub)} style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: guideTab === sub ? 'rgba(0, 204, 102, 0.2)' : '#151515', color: guideTab === sub ? '#00cc66' : '#888' }}>{sub}</button>
               ))}
             </div>
 
-            {guideTab === 'Compliance' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Legal Framework & Processing Laws</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>Hemp Threshold:</strong> Federal 2018 Farm Bill limits dry-weight Δ9-THC to 0.3%. Extraction concentrates cannabinoids, which can elevate crude extract above statutory limits during processing.<br/>• <strong>Volatile Solvents:</strong> Residential open-blast or closed-loop butane/propane extractions are criminalized in most jurisdictions. Mechanical heat/pressure (rosin) and ice water separation are legally distinct non-volatile methods.<br/>• <strong>Enclosed Space & Plant Caps:</strong> State-regulated home cultivation universally requires locked, fully enclosed spaces shielded from public view with strict household plant limits.</p>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'Terpenes' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, background: 'rgba(168, 85, 247, 0.05)', borderLeft: '4px solid #a855f7' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>What is a Terpene?</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.5' }}>
-                    Terpenes are highly volatile aromatic compounds produced in resin glands. They dictate unique smells and flavors. More importantly, they work synergistically with cannabinoids (the "Entourage Effect") to steer physical and psychoactive effects.
-                  </p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
-                  <h3 style={{ margin: '0 0 4px 0', color: '#f59e0b' }}>Myrcene (Boiling Pt: 332°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Earthy, herbal, clove.<br/><strong>Effects:</strong> Heavy sedative, "couch-lock", muscle relaxation. Enhances THC blood-brain barrier permeability.</p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
-                  <h3 style={{ margin: '0 0 4px 0', color: '#00ffff' }}>Limonene (Boiling Pt: 349°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Sharp citrus, lemon.<br/><strong>Effects:</strong> Uplifting, mood elevation, anxiety relief.</p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
-                  <h3 style={{ margin: '0 0 4px 0', color: '#ef4444' }}>β-Caryophyllene (Boiling Pt: 266°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Black pepper, spicy.<br/><strong>Effects:</strong> Binds directly to CB2 peripheral receptors. Powerful anti-inflammatory and pain relief.</p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
-                  <h3 style={{ margin: '0 0 4px 0', color: '#3b82f6' }}>Linalool (Boiling Pt: 388°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Floral, lavender.<br/><strong>Effects:</strong> Strong sedative, calming, anticonvulsant.</p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-                  <h3 style={{ margin: '0 0 4px 0', color: '#00cc66' }}>Pinene (Boiling Pt: 311°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Pine needles, fresh forest.<br/><strong>Effects:</strong> Alertness, memory retention, bronchodilator.</p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #a3e635' }}>
-                  <h3 style={{ margin: '0 0 4px 0', color: '#a3e635' }}>Humulene (Boiling Pt: 223°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Earthy, woody, hops.<br/><strong>Effects:</strong> Appetite suppressant, antibacterial.</p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #fbbf24' }}>
-                  <h3 style={{ margin: '0 0 4px 0', color: '#fbbf24' }}>Terpinolene (Boiling Pt: 366°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Piney, floral, herbal.<br/><strong>Effects:</strong> Sedating, antioxidant.</p>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'Lighting' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Grow Light Technologies</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>LED:</strong> High efficiency, low heat. Best for power budgets.<br/>• <strong>CMH:</strong> Great penetration, runs cooler than HPS.<br/>• <strong>HPS:</strong> Traditional flowering giant. Draws heavy power.</p>
-                </div>
-              </div>
-            )}
-            
             {guideTab === 'Pro Tips' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>Leaf Surface Temperature</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Active transpiration cools leaves <strong>2°F to 5°F below ambient air</strong>. Measure canopy tops with an IR thermometer for precision VPD.</p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Reservoir Temp</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Maintain water strictly at <strong>65°F to 68°F</strong> to prevent Pythium and maximize dissolved oxygen.</p>
-                </div>
-
                 <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Generative Crop Steering (Dry Backs)</h3>
                   <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>In late flower (Weeks 6-8), deliberately allow the growing medium to dry out significantly between waterings (a 40-50% dry back). This drought stress signals the plant it is dying, forcing it to swell calyxes and mass-produce protective resin (trichomes).</p>
@@ -316,118 +251,8 @@ function AgronomyUI() {
                   <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Lung Room Humidification</h3>
                   <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Never pump a humidifier directly onto the plant canopy; the localized moisture will breed Botrytis (Bud Rot). Humidify the "lung room" (the room outside the tent) and let your inline exhaust fan pull the pre-conditioned air naturally through the canopy.</p>
                 </div>
-
               </div>
             )}
-
-            {guideTab === 'Climate' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>Humidity Targets</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>Veg:</strong> 50–65% RH<br/>• <strong>Bloom:</strong> 35–45% RH<br/>• <strong>Day/Night Swing:</strong> Maximum 15°F drop to prevent condensation and Botrytis spores.</p>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'Soil & NPK' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#00cc66' }}>The Mixing Order</h3>
-                  <ol style={{ color: '#fff', fontSize: '0.85em', paddingLeft: '16px', lineHeight: '1.5', margin: 0 }}>
-                    <li>Silica (Stem rigidity)</li>
-                    <li>Cal / Mag</li>
-                    <li>Base Nutrients (Micro ➔ Grow ➔ Bloom)</li>
-                    <li>PK Boosters & Additives</li>
-                    <li>pH Correction (5.8 coco / 6.3 soil)</li>
-                    <li>Beneficial Microbes</li>
-                  </ol>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'Deficiencies' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#f59e0b' }}>Nitrogen (N)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Lower mature leaves yellowing and dropping off. Mobile element.</p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#a855f7' }}>Phosphorus (P)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Dark purple petioles, bronze necrotic patches, stunted bloom growth.</p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Potassium (K)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Scorched leaf margins, curling edges, brown necrosis.</p>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'Cloning' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#3b82f6' }}>Cloning & Propagation</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Make razor cuts at a 45° angle, dip immediately in IBA rooting hormone, and maintain 80%+ humidity inside a dome under low PPFD (100–150).</p>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'Training' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Canopy Management</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Top main stem above the 5th node. Soft-pinch stems (supercropping) into horizontal trellis grids to create an even light canopy and maximize yield.</p>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'Flowering' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#a855f7' }}>The 12/12 Flip</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Transition light timers to 12 hours ON / 12 hours OFF. Ensure absolutely zero light leaks during the dark cycle to eliminate hermaphroditic stress.</p>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'Harvest' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#00cc66' }}>Trichome Maturity Ratios</h3>
-                  <ul style={{ color: '#aaa', fontSize: '0.85em', paddingLeft: '16px', lineHeight: '1.5', margin: 0 }}>
-                    <li><strong>Clear:</strong> Immature. Low cannabinoid content.</li>
-                    <li><strong>Milky:</strong> Peak potency and terpene expression.</li>
-                    <li><strong>Amber:</strong> Degradation into sedative CBN (Harvest target: 70% Milky / 25% Amber).</li>
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'IPM' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
-                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Integrated Pest Management</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Apply Diatomaceous Earth to dry topsoil for gnat larvae. Rotate cold-pressed Neem and botanical soaps weekly during veg. Never spray flowers.</p>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-      </div>
-    </div>
-  );
-}
-
-export default function AgronomyCalc() {
-  return <ErrorBoundary><AgronomyUI /></ErrorBoundary>;
-}
-        {activeTab === 'Guide' && (
-          <>
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Compliance', 'Terpenes', 'Lighting', 'Pro Tips', 'Climate', 'Soil & NPK', 'Deficiencies', 'Cloning', 'Training', 'Flowering', 'Harvest', 'IPM'].map(sub => (
-                <button key={sub} onClick={() => setGuideTab(sub)} style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: guideTab === sub ? 'rgba(0, 204, 102, 0.2)' : '#151515', color: guideTab === sub ? '#00cc66' : '#888' }}>{sub}</button>
-              ))}
-            </div>
 
             {guideTab === 'Compliance' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -442,9 +267,7 @@ export default function AgronomyCalc() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, background: 'rgba(168, 85, 247, 0.05)', borderLeft: '4px solid #a855f7' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>What is a Terpene?</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.5' }}>
-                    Terpenes are highly volatile aromatic compounds produced in resin glands. They dictate unique smells and flavors. More importantly, they work synergistically with cannabinoids (the "Entourage Effect") to steer physical and psychoactive effects.
-                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.5' }}>Terpenes are highly volatile aromatic compounds produced in resin glands. They dictate unique smells and flavors. More importantly, they work synergistically with cannabinoids (the "Entourage Effect") to steer physical and psychoactive effects.</p>
                 </div>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
                   <h3 style={{ margin: '0 0 4px 0', color: '#f59e0b' }}>Myrcene (Boiling Pt: 332°F)</h3>
@@ -485,16 +308,21 @@ export default function AgronomyCalc() {
                 </div>
               </div>
             )}
-            
-            {guideTab === 'Pro Tips' && (
+
+            {guideTab === 'VPD Targets' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>Leaf Surface Temperature</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Active transpiration cools leaves <strong>2°F to 5°F below ambient air</strong>. Measure canopy tops with an IR thermometer for precision VPD.</p>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>VPD By Growth Stage</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>Clones / Seedlings:</strong> 0.4 - 0.8 kPa (Low transpiration to build roots).<br/>• <strong>Vegetative:</strong> 0.8 - 1.2 kPa (Maximized nutrient uptake and growth).<br/>• <strong>Flower (Early/Mid):</strong> 1.2 - 1.4 kPa.<br/>• <strong>Flower (Late):</strong> 1.4 - 1.6 kPa (Drives trichome production and prevents bud rot).</p>
                 </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Reservoir Temp</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Maintain water strictly at <strong>65°F to 68°F</strong> to prevent Pythium and maximize dissolved oxygen.</p>
+              </div>
+            )}
+
+            {guideTab === 'pH Lockout' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Nutrient Availability</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>Coco / Hydro:</strong> Target 5.8 - 6.2. Phosphorus locks out above 6.2. Calcium/Magnesium locks out below 5.8.<br/>• <strong>Soil:</strong> Target 6.2 - 6.8. If soil drops below 6.0, Potassium and Calcium become completely unavailable regardless of how much you feed.</p>
                 </div>
               </div>
             )}
@@ -586,6 +414,15 @@ export default function AgronomyCalc() {
                 <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
                   <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Integrated Pest Management</h3>
                   <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Apply Diatomaceous Earth to dry topsoil for gnat larvae. Rotate cold-pressed Neem and botanical soaps weekly during veg. Never spray flowers.</p>
+                </div>
+              </div>
+            )}
+
+            {guideTab === 'Rosin Curing' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Post-Press Tech</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>• <strong>Cold Cure (Badder):</strong> Seal fresh press in an airtight jar. Store at 60°F-65°F for 3-7 days until it opaque/budders up. Whip lightly. Preserves maximum volatile terpenes.<br/>• <strong>Warm Cure (Jam/Sauce):</strong> Seal in jar, place on heat mat at 90°F-100°F until THC-a crashes into micro-crystals. Slower terpene evaporation but creates a sugary texture.</p>
                 </div>
               </div>
             )}
