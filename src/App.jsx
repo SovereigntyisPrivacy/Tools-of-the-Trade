@@ -24,6 +24,7 @@ const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
 const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
 const AssetLedger = lazy(() => import('./views/AssetLedger'));
+const CivicsRights = lazy(() => import("./views/CivicsRights"));
 
 // Schematics & Database Hubs
 const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
@@ -92,6 +93,7 @@ function App() {
               <Route path="/vehicle" element={<VehicleCalc />} />
               <Route path="/agronomy" element={<AgronomyCalc />} />
               <Route path="/ledger" element={<AssetLedger />} />
+              <Route path="/civics" element={<CivicsRights />} />
 
               <Route path="/support" element={<Support />} />
             </Routes>
