@@ -3,18 +3,21 @@ import { useNavigate } from 'react-router-dom';
 
 export default function AgronomyCalc() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Guide'); // Environment, Nutrients, Extract, Guide
-  const [guideTab, setGuideTab] = useState('Training'); // Soil & NPK, Climate & Light, Propagation, Training, Flowering, IPM & Health
+  const [activeTab, setActiveTab] = useState('Environment'); 
+  const [guideTab, setGuideTab] = useState('Deficiencies'); 
 
   // --- ENVIRONMENT STATE ---
   const [ppfd, setPpfd] = useState('900');
   const [lightHours, setLightHours] = useState('12');
+  const [tempF, setTempF] = useState('78');
+  const [rh, setRh] = useState('55');
   
-  // --- NUTRIENTS STATE (Runoff) ---
+  // --- NUTRIENTS STATE ---
   const [feedPpm, setFeedPpm] = useState('600');
   const [runoffPpm, setRunoffPpm] = useState('850');
 
   // --- EXTRACTION STATE ---
+  const [wetWeight, setWetWeight] = useState('1000');
   const [inputBiomass, setInputBiomass] = useState('454');
   const [targetYield, setTargetYield] = useState('15');
   const [crudeMass, setCrudeMass] = useState('10');
@@ -26,11 +29,21 @@ export default function AgronomyCalc() {
   // --- MATH ENGINES ---
   const dli = (parse(ppfd) * parse(lightHours) * 3600) / 1000000;
   
+  // VPD Calculation (Temp F -> C, saturation vapor pressure -> VPD kPa)
+  const tC = (parse(tempF) - 32) * (5/9);
+  const svp = 0.61078 * Math.exp((17.27 * tC) / (tC + 237.3));
+  const vpd = svp * (1 - (parse(rh) / 100));
+  
+  let vpdStatus = { text: "Optimal", color: "#00cc66" };
+  if (vpd < 0.8) vpdStatus = { text: "Low (Risk of Mold/Slow Growth)", color: "#3b82f6" };
+  if (vpd > 1.2) vpdStatus = { text: "High (Plant Stress/Leaf Curl)", color: "#ef4444" };
+
   const ppmDelta = parse(runoffPpm) - parse(feedPpm);
   let runoffStatus = { text: "Optimal Range", color: "#00cc66" };
   if (ppmDelta > 300) runoffStatus = { text: "Salt Buildup - Flush with plain water", color: "#ef4444" };
   if (ppmDelta < -100) runoffStatus = { text: "Hungry - Increase feeding strength", color: "#f59e0b" };
 
+  const estDryYield = parse(wetWeight) * 0.22; // ~22% average dry retention
   const estCrude = parse(inputBiomass) * (parse(targetYield) / 100);
   const totalActive = parse(crudeMass) * 1000 * (parse(crudePurity) / 100);
   const concentration = totalActive / (parse(carrierVol) || 1);
@@ -64,18 +77,38 @@ export default function AgronomyCalc() {
         {/* TAB 1: ENVIRONMENT                         */}
         {/* ========================================== */}
         {activeTab === 'Environment' && (
-          <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>Photobiology (DLI)</h3>
-            <p style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '15px' }}>Calculate Daily Light Integral to optimize canopy mass.</p>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-              <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>PPFD (µmol/m²/s)<input type="number" value={ppfd} onChange={e=>setPpfd(e.target.value)} style={inputStyle} /></label></div>
-              <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>Light Hours/Day<input type="number" value={lightHours} onChange={e=>setLightHours(e.target.value)} style={inputStyle} /></label></div>
+          <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>Vapor Pressure Deficit (VPD)</h3>
+              <p style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '15px' }}>Balance Temp and RH to control plant transpiration rates.</p>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#ef4444'}}>Temp (°F)<input type="number" value={tempF} onChange={e=>setTempF(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#ef4444'}}>Humidity (%)<input type="number" value={rh} onChange={e=>setRh(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222', textAlign: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <strong style={{ color: '#fff', fontSize: '1.1em' }}>VPD:</strong>
+                  <strong style={{ color: vpdStatus.color, fontSize: '1.3em' }}>{vpd.toFixed(2)} kPa</strong>
+                </div>
+                <div style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', color: vpdStatus.color, fontWeight: 'bold', fontSize: '0.9em' }}>
+                  {vpdStatus.text}
+                </div>
+              </div>
             </div>
-            <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
-              <strong style={{ color: '#fff', fontSize: '1.2em' }}>Total DLI:</strong>
-              <strong style={{ color: dli >= 40 ? '#ef4444' : '#00cc66', fontSize: '1.5em' }}>{dli.toFixed(1)} <span style={{fontSize: '0.5em', color: '#888'}}>mol/m²/d</span></strong>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>Photobiology (DLI)</h3>
+              <p style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '15px' }}>Calculate Daily Light Integral to optimize canopy mass.</p>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>PPFD (µmol/m²/s)<input type="number" value={ppfd} onChange={e=>setPpfd(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={{...labelStyle, color: '#f59e0b'}}>Light Hours/Day<input type="number" value={lightHours} onChange={e=>setLightHours(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
+                <strong style={{ color: '#fff', fontSize: '1.2em' }}>Total DLI:</strong>
+                <strong style={{ color: dli >= 40 ? '#ef4444' : '#00cc66', fontSize: '1.5em' }}>{dli.toFixed(1)} <span style={{fontSize: '0.5em', color: '#888'}}>mol/m²/d</span></strong>
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* ========================================== */}
@@ -106,6 +139,19 @@ export default function AgronomyCalc() {
         {/* ========================================== */}
         {activeTab === 'Extract' && (
           <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>Wet-to-Dry Estimator</h3>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{...labelStyle, color: '#3b82f6'}}>Fresh Chopped Wet Weight (g)
+                  <input type="number" value={wetWeight} onChange={e=>setWetWeight(e.target.value)} style={{...inputStyle, borderColor: '#3b82f6'}} />
+                </label>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #222' }}>
+                <strong style={{ color: '#fff', fontSize: '1.1em' }}>Est. Cured Yield:</strong>
+                <strong style={{ color: '#3b82f6', fontSize: '1.4em' }}>{estDryYield.toFixed(1)} g</strong>
+              </div>
+            </div>
+
             <div style={{ ...cardStyle, borderTop: '4px solid #00cc66' }}>
               <h3 style={{ margin: '0 0 10px 0', color: '#00cc66' }}>Biomass Yield</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
@@ -145,7 +191,7 @@ export default function AgronomyCalc() {
         {activeTab === 'Guide' && (
           <>
             <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Soil & NPK', 'Climate', 'Propagation', 'Training', 'Flowering', 'IPM & Health'].map(sub => (
+              {['Deficiencies', 'Soil & NPK', 'Climate', 'Propagation', 'Training', 'Flowering', 'IPM & Health'].map(sub => (
                 <button
                   key={sub} onClick={() => setGuideTab(sub)}
                   style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontSize: '0.85em', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: guideTab === sub ? 'rgba(0, 204, 102, 0.2)' : '#151515', color: guideTab === sub ? '#00cc66' : '#888', border: guideTab === sub ? '1px solid #00cc66' : '1px solid #222' }}>
@@ -154,6 +200,44 @@ export default function AgronomyCalc() {
               ))}
             </div>
 
+            {guideTab === 'Deficiencies' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#f59e0b' }}>Nitrogen (N)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', lineHeight: '1.5', margin: 0 }}>
+                    <strong>Symptoms:</strong> Older, lower leaves turn pale yellow and eventually drop off. Plant looks generally pale and stunted.<br/><br/>
+                    <strong>Fix:</strong> Extremely mobile nutrient. Add a high-N vegetative fertilizer. Plants recover quickly.
+                  </p>
+                </div>
+
+                <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#a855f7' }}>Phosphorus (P)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', lineHeight: '1.5', margin: 0 }}>
+                    <strong>Symptoms:</strong> Stunted growth with dark, bluish-green leaves. Stems and petioles often turn deep purple or red. Leaves may develop dark copper or purplish dead spots.<br/><br/>
+                    <strong>Fix:</strong> Often caused by pH lockout or cold root zones. Correct pH (6.0-6.5 soil, 5.8-6.0 coco) and ensure temperatures are stable.
+                  </p>
+                </div>
+
+                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Potassium (K)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', lineHeight: '1.5', margin: 0 }}>
+                    <strong>Symptoms:</strong> Edges of leaves look burnt or scorched, curling upward. Brown spots may appear on older leaves while the veins stay green.<br/><br/>
+                    <strong>Fix:</strong> Flush the medium with pH-balanced water (salt buildup often causes K lockout), then re-feed with a balanced PK booster.
+                  </p>
+                </div>
+
+                <div style={{ ...cardStyle, borderLeft: '4px solid #fff' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#fff' }}>Calcium & Magnesium (CalMag)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', lineHeight: '1.5', margin: 0 }}>
+                    <strong>Calcium:</strong> Tiny brown/bronze spots appear on *new* growth. Leaves may crinkle or twist. Highly immobile.<br/><br/>
+                    <strong>Magnesium:</strong> Interveinal chlorosis on *older* leaves (veins stay dark green, but the tissue between them turns bright yellow). Leaves may eventually turn crispy.<br/><br/>
+                    <strong>Fix:</strong> These usually appear together, especially in RO water or Coco Coir. Add a Cal/Mag supplement immediately.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ... The rest of your existing guide tabs (Soil, Climate, Propagation, Training, Flowering, IPM) remain exactly as they were in the previous block! ... */}
             {guideTab === 'Soil & NPK' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
