@@ -1,26 +1,22 @@
 import React, { useState, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// BULLETPROOF ERROR BOUNDARY
+// THE BULLETPROOF SAFETY NET
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { error: null };
+    this.state = { hasError: false, error: null };
   }
   static getDerivedStateFromError(error) {
-    return { error };
+    return { hasError: true, error };
   }
   render() {
-    if (this.state.error) {
+    if (this.state.hasError) {
       return (
-        <div style={{ padding: '20px', color: '#ff4444', background: '#111', minHeight: '100vh' }}>
+        <div style={{ padding: '20px', color: '#ff4444', background: '#0a0a0a', minHeight: '100vh' }}>
           <h2>⚠️ Agronomy Module Crashed</h2>
-          <p style={{ fontFamily: 'monospace', background: '#000', padding: '10px' }}>
-            {this.state.error.toString()}
-          </p>
-          <button onClick={() => window.history.back()} style={{ padding: '10px 15px', marginTop: '20px', background: '#333', color: '#fff', border: 'none', borderRadius: '8px' }}>
-            Go Back
-          </button>
+          <p style={{ fontFamily: 'monospace', background: '#111', padding: '10px' }}>{this.state.error?.toString()}</p>
+          <button onClick={() => window.history.back()} style={{ padding: '10px', background: '#333', color: '#fff', border: 'none', borderRadius: '8px' }}>Go Back</button>
         </div>
       );
     }
@@ -31,9 +27,9 @@ class ErrorBoundary extends Component {
 function AgronomyUI() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Environment');
-  const [guideTab, setGuideTab] = useState('Lighting Guide');
+  const [guideTab, setGuideTab] = useState('Lighting');
 
-  // --- STATE ---
+  // STATE
   const [tempF, setTempF] = useState('78');
   const [rh, setRh] = useState('55');
   const [ppfd, setPpfd] = useState('900');
@@ -45,12 +41,10 @@ function AgronomyUI() {
   const [hasFilter, setHasFilter] = useState(true);
   const [powerWatts, setPowerWatts] = useState('480');
   const [kwhRate, setKwhRate] = useState('0.14');
-
   const [feedPpm, setFeedPpm] = useState('600');
   const [runoffPpm, setRunoffPpm] = useState('850');
   const [inputEc, setInputEc] = useState('1.6');
   const [potSizeGal, setPotSizeGal] = useState('5');
-
   const [wetWeight, setWetWeight] = useState('1000');
   const [rosinInput, setRosinInput] = useState('28');
   const [rosinOutput, setRosinOutput] = useState('5.6');
@@ -63,14 +57,13 @@ function AgronomyUI() {
 
   const parse = (val) => parseFloat(val) || 0;
 
-  // --- MATH ENGINES ---
+  // MATH
   const dli = (parse(ppfd) * parse(lightHours) * 3600) / 1000000;
   const tC = (parse(tempF) - 32) * (5/9);
   const svp = 0.61078 * Math.exp((17.27 * tC) / (tC + 237.3));
   const vpd = svp * (1 - (parse(rh) / 100));
-
   let vpdStatus = { text: "Optimal Transpiration", color: "#00cc66" };
-  if (vpd < 0.8) vpdStatus = { text: "Low VPD (High Mold Risk)", color: "#3b82f6" };
+  if (vpd < 0.8) vpdStatus = { text: "Low VPD (Mold Risk)", color: "#3b82f6" };
   if (vpd > 1.4) vpdStatus = { text: "High VPD (Plant Stress)", color: "#ef4444" };
 
   const tentCuFt = parse(tentL) * parse(tentW) * parse(tentH);
@@ -78,13 +71,11 @@ function AgronomyUI() {
   const reqCfm = tentCuFt * (hasFilter ? 1.35 : 1.0);
   const dailyKwh = (parse(powerWatts) * parse(lightHours)) / 1000;
   const monthlyCost = dailyKwh * parse(kwhRate) * 30.4;
-
   const ecVal = parse(inputEc);
   const ppm500 = ecVal * 500;
   const ppm700 = ecVal * 700;
   const flushGal = parse(potSizeGal) * 3;
   const ppmDelta = parse(runoffPpm) - parse(feedPpm);
-
   let runoffStatus = { text: "Optimal Nutrient Consumption", color: "#00cc66" };
   if (ppmDelta > 300) runoffStatus = { text: "Salt Accumulation (Flush)", color: "#ef4444" };
   if (ppmDelta < -100) runoffStatus = { text: "Underfed (Increase PPM)", color: "#f59e0b" };
@@ -96,7 +87,6 @@ function AgronomyUI() {
   const totalActive = parse(crudeMass) * 1000 * (parse(crudePurity) / 100);
   const concentration = parse(carrierVol) > 0 ? (totalActive / parse(carrierVol)) : 0;
 
-  // --- STYLES ---
   const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.05em', marginTop: '4px' };
   const labelStyle = { color: '#00ffff', fontSize: '0.8em', fontWeight: 'bold', textTransform: 'uppercase' };
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
@@ -105,11 +95,10 @@ function AgronomyUI() {
   return (
     <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-        <button className="back-btn" onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px' }}>← Back</button>
-        <h2 style={{ margin: 0, color: '#fff' }}>Agronomy & Extract</h2>
+        <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Back</button>
+        <h2 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>Agronomy & Extract</h2>
       </header>
 
-      {/* TOP TABS */}
       <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
         {['Environment', 'Nutrients', 'Extract', 'Guide'].map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: activeTab === tab ? '#00cc66' : '#222', color: activeTab === tab ? '#000' : '#aaa' }}>{tab}</button>
@@ -118,7 +107,6 @@ function AgronomyUI() {
 
       <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '95px' }}>
         
-        {/* TAB 1: ENVIRONMENT */}
         {activeTab === 'Environment' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
@@ -136,7 +124,6 @@ function AgronomyUI() {
 
             <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Photobiology (DLI)</h3>
-              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Converts continuous PPFD into daily total photons.</div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>PPFD (µmol)<input type="number" value={ppfd} onChange={e=>setPpfd(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Hours/Day<input type="number" value={lightHours} onChange={e=>setLightHours(e.target.value)} style={inputStyle} /></label></div>
@@ -155,15 +142,22 @@ function AgronomyUI() {
               <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', border: '1px solid #222' }}><span style={{ color: '#aaa' }}>CO2 Needed:</span><strong style={{ color: '#00ffff' }}>+{co2NeededCuFt.toFixed(3)} cu ft</strong></div>
               <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', border: '1px solid #222', marginTop: '10px' }}><span style={{ color: '#aaa' }}>Exhaust Need:</span><strong style={{ color: '#3b82f6' }}>{Math.ceil(reqCfm)} CFM</strong></div>
             </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Electrical Operating Cost</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Watts<input type="number" value={powerWatts} onChange={e=>setPowerWatts(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Cost/kWh ($)<input type="number" step="0.01" value={kwhRate} onChange={e=>setKwhRate(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Monthly Draw:</span><strong style={{ color: '#00cc66' }}>${monthlyCost.toFixed(2)} / mo</strong></div>
+            </div>
           </>
         )}
 
-        {/* TAB 2: NUTRIENTS */}
         {activeTab === 'Nutrients' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Runoff Delta Tracker</h3>
-              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Measures difference between feed and drainage to spot lockout.</div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Feed PPM<input type="number" value={feedPpm} onChange={e=>setFeedPpm(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Runoff PPM<input type="number" value={runoffPpm} onChange={e=>setRunoffPpm(e.target.value)} style={inputStyle} /></label></div>
@@ -182,10 +176,15 @@ function AgronomyUI() {
                 <div style={{ flex: 1, background: '#000', padding: '12px', borderRadius: '8px', textAlign: 'center' }}><span style={{ color: '#888', display: 'block' }}>700 Scale</span><strong style={{ color: '#f59e0b' }}>{ppm700.toFixed(0)}</strong></div>
               </div>
             </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Flush Volume Sizer</h3>
+              <div style={{ marginBottom: '12px' }}><label style={labelStyle}>Pot Size (Gal)<input type="number" value={potSizeGal} onChange={e=>setPotSizeGal(e.target.value)} style={inputStyle} /></label></div>
+              <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Target Flush:</span><strong style={{ color: '#ef4444' }}>{flushGal} Gal RO</strong></div>
+            </div>
           </>
         )}
 
-        {/* TAB 3: EXTRACT */}
         {activeTab === 'Extract' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
@@ -208,19 +207,40 @@ function AgronomyUI() {
               <div style={{ marginBottom: '12px' }}><label style={labelStyle}>Raw Acid Mass (g)<input type="number" value={rawAcidMass} onChange={e=>setRawAcidMass(e.target.value)} style={inputStyle} /></label></div>
               <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Active Yield:</span><strong style={{ color: '#ef4444' }}>{postDecarbActive.toFixed(2)} g</strong></div>
             </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #00cc66' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>Biomass Yield</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Input Mass (g)<input type="number" value={inputBiomass} onChange={e=>setInputBiomass(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Target Yield (%)<input type="number" value={targetYield} onChange={e=>setTargetYield(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><strong style={{ color: '#fff' }}>Est. Crude:</strong><strong style={{ color: '#00cc66' }}>{estCrude.toFixed(1)} g</strong></div>
+            </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
+              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Volumetric Concentration</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Crude Mass (g)<input type="number" value={crudeMass} onChange={e=>setCrudeMass(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Purity (%)<input type="number" value={crudePurity} onChange={e=>setCrudePurity(e.target.value)} style={inputStyle} /></label></div>
+              </div>
+              <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Carrier Volume (mL)<input type="number" value={carrierVol} onChange={e=>setCarrierVol(e.target.value)} style={inputStyle} /></label></div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px', borderBottom: '1px dashed #333', paddingBottom: '10px' }}><span>Total Active:</span> <span>{totalActive.toFixed(0)} mg</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><strong style={{ color: '#fff' }}>Concentration:</strong><strong style={{ color: '#a855f7' }}>{concentration.toFixed(1)} mg/mL</strong></div>
+              </div>
+            </div>
           </>
         )}
 
-        {/* TAB 4: GUIDE */}
         {activeTab === 'Guide' && (
           <>
             <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Lighting Guide', 'Pro Tips', 'Terpenes', 'Climate'].map(sub => (
+              {['Lighting', 'Pro Tips', 'Terpenes', 'Climate', 'Harvest', 'IPM'].map(sub => (
                 <button key={sub} onClick={() => setGuideTab(sub)} style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: guideTab === sub ? 'rgba(0, 204, 102, 0.2)' : '#151515', color: guideTab === sub ? '#00cc66' : '#888' }}>{sub}</button>
               ))}
             </div>
 
-            {guideTab === 'Lighting Guide' && (
+            {guideTab === 'Lighting' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Grow Light Technologies</h3>
@@ -235,14 +255,22 @@ function AgronomyUI() {
                   <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>Leaf Surface Temperature</h3>
                   <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Active transpiration cools leaves <strong>2°F to 5°F below ambient air</strong>. Measure canopy tops with an IR thermometer for precision VPD.</p>
                 </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Reservoir Temp</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Maintain water strictly at <strong>65°F to 68°F</strong> to prevent Pythium and maximize dissolved oxygen.</p>
+                </div>
               </div>
             )}
 
             {guideTab === 'Terpenes' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
-                  <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Linalool (388°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Floral, lavender. <strong>Effects:</strong> Strong sedative, stress relief.</p>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+                  <h3 style={{ margin: '0 0 4px 0', color: '#f59e0b' }}>Myrcene (332°F)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}><strong>Aroma:</strong> Earthy. <strong>Effects:</strong> Sedating.</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
+                  <h3 style={{ margin: '0 0 4px 0', color: '#00ffff' }}>Limonene (349°F)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}><strong>Aroma:</strong> Citrus. <strong>Effects:</strong> Mood elevation.</p>
                 </div>
               </div>
             )}
@@ -255,14 +283,36 @@ function AgronomyUI() {
                 </div>
               </div>
             )}
+
+            {guideTab === 'Harvest' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#00cc66' }}>Trichome Maturity Ratios</h3>
+                  <ul style={{ color: '#aaa', fontSize: '0.85em', paddingLeft: '16px', lineHeight: '1.5', margin: 0 }}>
+                    <li><strong>Clear:</strong> Immature. Low cannabinoid content.</li>
+                    <li><strong>Milky:</strong> Peak potency and terpene expression.</li>
+                    <li><strong>Amber:</strong> Degradation into sedative CBN (Harvest target: 70% Milky / 25% Amber).</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {guideTab === 'IPM' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Integrated Pest Management</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Apply Diatomaceous Earth to dry topsoil for gnat larvae. Rotate cold-pressed Neem and botanical soaps weekly during veg. Never spray flowers.</p>
+                </div>
+              </div>
+            )}
           </>
         )}
+
       </div>
     </div>
   );
 }
 
-// EXPORT THE BOUNDARY
 export default function AgronomyCalc() {
   return <ErrorBoundary><AgronomyUI /></ErrorBoundary>;
 }
