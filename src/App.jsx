@@ -23,6 +23,7 @@ const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 // --- New Standalone Modules ---
 const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
 const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
+const AssetLedger = lazy(() => import("./views/AssetLedger.jsx"));
 
 // Schematics hubs
 const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
