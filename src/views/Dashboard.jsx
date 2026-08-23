@@ -26,7 +26,7 @@ function Dashboard() {
   const tools = [
     { id: "schematics", name: "Schematics", path: "/schematics", icon: "📐", badge: "MASSIVE WIP", badgeColor: "#d00000" },
     { id: "cacher", name: "Zero-Signal Cacher", path: "/cacher", icon: "📡", badge: "COMING SOON", badgeColor: "#ffb703" },
-    { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮" }
+    { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮" },
     { id: "ledger", name: "Asset Ledger", path: "/ledger", icon: "📋" },
   ];
 
