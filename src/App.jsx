@@ -20,12 +20,12 @@ const TechCalc = lazy(() => import('./views/TechCalc'));
 const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
 const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 
-// --- New Standalone Modules ---
+// --- Standalone Modules ---
 const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
 const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
-const AssetLedger = lazy(() => import("./views/AssetLedger.jsx"));
+const AssetLedger = lazy(() => import('./views/AssetLedger'));
 
-// Schematics hubs
+// Schematics & Database Hubs
 const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
 const VisualScanner = lazy(() => import('./views/VisualScanner'));
 const ElectronicsDatabase = lazy(() => import('./views/ElectronicsDatabase'));
@@ -40,10 +40,10 @@ const Vault = lazy(() => import('./views/Vault'));
 
 function GlobalNav() {
   const location = useLocation();
-  const useNavigateInstance = useNavigate();
+  const navigate = useNavigate();
   if (location.pathname === '/') return null;
   return (
-    <button className="global-home-btn" onClick={() => useNavigateInstance('/')}>
+    <button className="global-home-btn" onClick={() => navigate('/')}>
       🏠
     </button>
   );
@@ -55,7 +55,7 @@ function App() {
       <div className="app-container">
         <Router>
           <GlobalNav />
-          <Suspense fallback={<div className="loading-screen">Loading Tools of the Trade...</div>}>
+          <Suspense fallback={<div className="loading-screen" style={{ color: '#fff', textAlign: 'center', paddingTop: '50px' }}>Loading Module...</div>}>
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
@@ -88,11 +88,12 @@ function App() {
               <Route path="/calculator/builder" element={<BuilderCalc />} />
               <Route path="/calculator/finance" element={<FinanceCalc />} />
 
-              {/* New Standalone Modules */}
+              {/* Standalone Hub Modules */}
               <Route path="/vehicle" element={<VehicleCalc />} />
-              <Route path="/calculator/agronomy" element={<AgronomyCalc />} />
+              <Route path="/agronomy" element={<AgronomyCalc />} />
+              <Route path="/ledger" element={<AssetLedger />} />
 
-        <Route path="/support" element={<Support />} />
+              <Route path="/support" element={<Support />} />
             </Routes>
           </Suspense>
         </Router>
