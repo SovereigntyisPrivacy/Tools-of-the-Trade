@@ -1,15 +1,9 @@
 import React, { useState, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// THE BULLETPROOF SAFETY NET
 class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
   render() {
     if (this.state.hasError) {
       return (
@@ -26,10 +20,9 @@ class ErrorBoundary extends Component {
 
 function AgronomyUI() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Environment');
-  const [guideTab, setGuideTab] = useState('Lighting');
+  const [activeTab, setActiveTab] = useState('Guide');
+  const [guideTab, setGuideTab] = useState('Terpenes');
 
-  // STATE
   const [tempF, setTempF] = useState('78');
   const [rh, setRh] = useState('55');
   const [ppfd, setPpfd] = useState('900');
@@ -57,7 +50,6 @@ function AgronomyUI() {
 
   const parse = (val) => parseFloat(val) || 0;
 
-  // MATH
   const dli = (parse(ppfd) * parse(lightHours) * 3600) / 1000000;
   const tC = (parse(tempF) - 32) * (5/9);
   const svp = 0.61078 * Math.exp((17.27 * tC) / (tC + 237.3));
@@ -106,7 +98,6 @@ function AgronomyUI() {
       </div>
 
       <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '95px' }}>
-        
         {activeTab === 'Environment' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
@@ -121,16 +112,15 @@ function AgronomyUI() {
                 <div style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', color: vpdStatus.color, fontWeight: 'bold' }}>{vpdStatus.text}</div>
               </div>
             </div>
-
             <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Photobiology (DLI)</h3>
+              <div style={infoStyle}><strong style={{ color: '#00ffff' }}>What it does:</strong> Converts continuous PPFD into daily total photons.</div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>PPFD (µmol)<input type="number" value={ppfd} onChange={e=>setPpfd(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Hours/Day<input type="number" value={lightHours} onChange={e=>setLightHours(e.target.value)} style={inputStyle} /></label></div>
               </div>
               <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', border: '1px solid #222' }}><strong style={{ color: '#fff' }}>Total DLI:</strong><strong style={{ color: dli >= 40 ? '#ef4444' : '#00cc66' }}>{dli.toFixed(1)}</strong></div>
             </div>
-
             <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>CO2 & Vent Engine</h3>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
@@ -142,9 +132,8 @@ function AgronomyUI() {
               <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', border: '1px solid #222' }}><span style={{ color: '#aaa' }}>CO2 Needed:</span><strong style={{ color: '#00ffff' }}>+{co2NeededCuFt.toFixed(3)} cu ft</strong></div>
               <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', border: '1px solid #222', marginTop: '10px' }}><span style={{ color: '#aaa' }}>Exhaust Need:</span><strong style={{ color: '#3b82f6' }}>{Math.ceil(reqCfm)} CFM</strong></div>
             </div>
-
             <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Electrical Operating Cost</h3>
+              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Electrical Cost</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Watts<input type="number" value={powerWatts} onChange={e=>setPowerWatts(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Cost/kWh ($)<input type="number" step="0.01" value={kwhRate} onChange={e=>setKwhRate(e.target.value)} style={inputStyle} /></label></div>
@@ -157,7 +146,7 @@ function AgronomyUI() {
         {activeTab === 'Nutrients' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Runoff Delta Tracker</h3>
+              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Runoff Delta</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Feed PPM<input type="number" value={feedPpm} onChange={e=>setFeedPpm(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Runoff PPM<input type="number" value={runoffPpm} onChange={e=>setRunoffPpm(e.target.value)} style={inputStyle} /></label></div>
@@ -167,7 +156,6 @@ function AgronomyUI() {
                 <div style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', color: runoffStatus.color, fontWeight: 'bold' }}>{runoffStatus.text}</div>
               </div>
             </div>
-
             <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
               <h3 style={{ margin: '0 0 6px 0', color: '#00ffff' }}>EC to PPM Bridge</h3>
               <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Conductivity (EC)<input type="number" step="0.1" value={inputEc} onChange={e=>setInputEc(e.target.value)} style={inputStyle} /></label></div>
@@ -176,54 +164,28 @@ function AgronomyUI() {
                 <div style={{ flex: 1, background: '#000', padding: '12px', borderRadius: '8px', textAlign: 'center' }}><span style={{ color: '#888', display: 'block' }}>700 Scale</span><strong style={{ color: '#f59e0b' }}>{ppm700.toFixed(0)}</strong></div>
               </div>
             </div>
-
-            <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Flush Volume Sizer</h3>
-              <div style={{ marginBottom: '12px' }}><label style={labelStyle}>Pot Size (Gal)<input type="number" value={potSizeGal} onChange={e=>setPotSizeGal(e.target.value)} style={inputStyle} /></label></div>
-              <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Target Flush:</span><strong style={{ color: '#ef4444' }}>{flushGal} Gal RO</strong></div>
-            </div>
           </>
         )}
 
         {activeTab === 'Extract' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Wet-to-Dry Estimator</h3>
-              <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Fresh Wet Weight (g)<input type="number" value={wetWeight} onChange={e=>setWetWeight(e.target.value)} style={inputStyle} /></label></div>
-              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><strong style={{ color: '#fff' }}>Est. Cured (22%):</strong><strong style={{ color: '#3b82f6' }}>{estDryYield.toFixed(1)} g</strong></div>
+              <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Wet-to-Dry</h3>
+              <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Wet Weight (g)<input type="number" value={wetWeight} onChange={e=>setWetWeight(e.target.value)} style={inputStyle} /></label></div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><strong style={{ color: '#fff' }}>Cured (22%):</strong><strong style={{ color: '#3b82f6' }}>{estDryYield.toFixed(1)} g</strong></div>
             </div>
-
-            <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#f59e0b' }}>Rosin Press Yield</h3>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Input (g)<input type="number" value={rosinInput} onChange={e=>setRosinInput(e.target.value)} style={inputStyle} /></label></div>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Output (g)<input type="number" value={rosinOutput} onChange={e=>setRosinOutput(e.target.value)} style={inputStyle} /></label></div>
-              </div>
-              <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Efficiency:</span><strong style={{ color: '#00cc66' }}>{rosinYieldPct.toFixed(1)}%</strong></div>
-            </div>
-
             <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Decarb Loss Engine</h3>
-              <div style={{ marginBottom: '12px' }}><label style={labelStyle}>Raw Acid Mass (g)<input type="number" value={rawAcidMass} onChange={e=>setRawAcidMass(e.target.value)} style={inputStyle} /></label></div>
+              <h3 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Decarb Loss</h3>
+              <div style={{ marginBottom: '12px' }}><label style={labelStyle}>Acid Mass (g)<input type="number" value={rawAcidMass} onChange={e=>setRawAcidMass(e.target.value)} style={inputStyle} /></label></div>
               <div style={{ background: '#000', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#aaa' }}>Active Yield:</span><strong style={{ color: '#ef4444' }}>{postDecarbActive.toFixed(2)} g</strong></div>
             </div>
-
-            <div style={{ ...cardStyle, borderTop: '4px solid #00cc66' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#00cc66' }}>Biomass Yield</h3>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Input Mass (g)<input type="number" value={inputBiomass} onChange={e=>setInputBiomass(e.target.value)} style={inputStyle} /></label></div>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Target Yield (%)<input type="number" value={targetYield} onChange={e=>setTargetYield(e.target.value)} style={inputStyle} /></label></div>
-              </div>
-              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}><strong style={{ color: '#fff' }}>Est. Crude:</strong><strong style={{ color: '#00cc66' }}>{estCrude.toFixed(1)} g</strong></div>
-            </div>
-
             <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
-              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Volumetric Concentration</h3>
+              <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>Volumetric Carrier</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                <div style={{ flex: 1 }}><label style={labelStyle}>Crude Mass (g)<input type="number" value={crudeMass} onChange={e=>setCrudeMass(e.target.value)} style={inputStyle} /></label></div>
+                <div style={{ flex: 1 }}><label style={labelStyle}>Crude (g)<input type="number" value={crudeMass} onChange={e=>setCrudeMass(e.target.value)} style={inputStyle} /></label></div>
                 <div style={{ flex: 1 }}><label style={labelStyle}>Purity (%)<input type="number" value={crudePurity} onChange={e=>setCrudePurity(e.target.value)} style={inputStyle} /></label></div>
               </div>
-              <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Carrier Volume (mL)<input type="number" value={carrierVol} onChange={e=>setCarrierVol(e.target.value)} style={inputStyle} /></label></div>
+              <div style={{ marginBottom: '15px' }}><label style={labelStyle}>Carrier (mL)<input type="number" value={carrierVol} onChange={e=>setCarrierVol(e.target.value)} style={inputStyle} /></label></div>
               <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '10px', borderBottom: '1px dashed #333', paddingBottom: '10px' }}><span>Total Active:</span> <span>{totalActive.toFixed(0)} mg</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><strong style={{ color: '#fff' }}>Concentration:</strong><strong style={{ color: '#a855f7' }}>{concentration.toFixed(1)} mg/mL</strong></div>
@@ -231,14 +193,52 @@ function AgronomyUI() {
             </div>
           </>
         )}
-
         {activeTab === 'Guide' && (
           <>
             <div style={{ display: 'flex', gap: '6px', marginBottom: '15px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-              {['Lighting', 'Pro Tips', 'Terpenes', 'Climate', 'Harvest', 'IPM'].map(sub => (
+              {['Terpenes', 'Lighting', 'Pro Tips', 'Climate', 'Harvest', 'IPM'].map(sub => (
                 <button key={sub} onClick={() => setGuideTab(sub)} style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: guideTab === sub ? 'rgba(0, 204, 102, 0.2)' : '#151515', color: guideTab === sub ? '#00cc66' : '#888' }}>{sub}</button>
               ))}
             </div>
+
+            {guideTab === 'Terpenes' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ ...cardStyle, background: 'rgba(168, 85, 247, 0.05)', borderLeft: '4px solid #a855f7' }}>
+                  <h3 style={{ margin: '0 0 6px 0', color: '#a855f7' }}>What is a Terpene?</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.5' }}>
+                    Terpenes are highly volatile aromatic compounds produced in the resin glands (trichomes) of plants. They dictate the unique smell and flavor profiles of different cultivars. More importantly, they work synergistically with cannabinoids (the "Entourage Effect") to steer the physical and psychoactive effects. Because they are highly volatile, they boil off and degrade quickly under high heat or improper curing.
+                  </p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+                  <h3 style={{ margin: '0 0 4px 0', color: '#f59e0b' }}>Myrcene (Boiling Pt: 332°F)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Earthy, herbal, clove, musky.<br/><strong>Effects:</strong> Heavy sedative, "couch-lock", muscle relaxation. Enhances THC blood-brain barrier permeability.</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
+                  <h3 style={{ margin: '0 0 4px 0', color: '#00ffff' }}>Limonene (Boiling Pt: 349°F)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Sharp citrus, lemon, orange peel.<br/><strong>Effects:</strong> Uplifting, mood elevation, anxiety relief, gastric reflux suppression.</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 4px 0', color: '#ef4444' }}>β-Caryophyllene (Boiling Pt: 266°F)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Black pepper, spicy, woody.<br/><strong>Effects:</strong> The only terpene that binds directly to CB2 peripheral receptors. Powerful anti-inflammatory and pain relief.</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+                  <h3 style={{ margin: '0 0 4px 0', color: '#3b82f6' }}>Linalool (Boiling Pt: 388°F)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Floral, lavender, fresh spice.<br/><strong>Effects:</strong> Strong sedative, calming, anticonvulsant, stress and pain mitigation.</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #00cc66' }}>
+                  <h3 style={{ margin: '0 0 4px 0', color: '#00cc66' }}>Pinene (Boiling Pt: 311°F)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Pine needles, fresh forest, rosemary.<br/><strong>Effects:</strong> Alertness, memory retention (counteracts short-term memory loss), bronchodilator (opens airways).</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #a3e635' }}>
+                  <h3 style={{ margin: '0 0 4px 0', color: '#a3e635' }}>Humulene (Boiling Pt: 223°F)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Earthy, woody, hops.<br/><strong>Effects:</strong> Appetite suppressant (rare for cannabis), antibacterial, anti-inflammatory.</p>
+                </div>
+                <div style={{ ...cardStyle, borderLeft: '4px solid #fbbf24' }}>
+                  <h3 style={{ margin: '0 0 4px 0', color: '#fbbf24' }}>Terpinolene (Boiling Pt: 366°F)</h3>
+                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}><strong>Aroma:</strong> Piney, floral, herbal, slightly citrus.<br/><strong>Effects:</strong> Sedating (in contrast to its uplifting smell), antioxidant, antibacterial.</p>
+                </div>
+              </div>
+            )}
 
             {guideTab === 'Lighting' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -258,19 +258,6 @@ function AgronomyUI() {
                 <div style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
                   <h3 style={{ margin: '0 0 6px 0', color: '#3b82f6' }}>Reservoir Temp</h3>
                   <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>Maintain water strictly at <strong>65°F to 68°F</strong> to prevent Pythium and maximize dissolved oxygen.</p>
-                </div>
-              </div>
-            )}
-
-            {guideTab === 'Terpenes' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
-                  <h3 style={{ margin: '0 0 4px 0', color: '#f59e0b' }}>Myrcene (332°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}><strong>Aroma:</strong> Earthy. <strong>Effects:</strong> Sedating.</p>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: '4px solid #00ffff' }}>
-                  <h3 style={{ margin: '0 0 4px 0', color: '#00ffff' }}>Limonene (349°F)</h3>
-                  <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}><strong>Aroma:</strong> Citrus. <strong>Effects:</strong> Mood elevation.</p>
                 </div>
               </div>
             )}
