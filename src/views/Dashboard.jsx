@@ -10,7 +10,7 @@ function Dashboard() {
       try {
         await AdMob.initialize();
         await AdMob.showBanner({
-          adId: 'ca-app-pub-2156721625422799/4098150349',
+          adId: "ca-app-pub-3940256099942544/6300978111", // Standard Google Test ID
           adSize: BannerAdSize.BANNER,
           position: BannerAdPosition.BOTTOM_CENTER,
           margin: 0,
@@ -21,6 +21,11 @@ function Dashboard() {
       }
     };
     showBanner();
+
+    // SURGICAL FIX: Destroy the native banner when the component unmounts
+    return () => {
+      AdMob.removeBanner().catch(e => console.error('Remove Error:', e));
+    };
   }, []);
 
   const tools = [
