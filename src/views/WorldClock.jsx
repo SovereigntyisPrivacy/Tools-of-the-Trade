@@ -31,7 +31,25 @@ export default function WorldClock() {
     localStorage.setItem('clock_opacity', opacity);
   }, [tz, color, opacity]);
 
-  const filteredTz = allTz.filter(t => t.toLowerCase().includes(search.toLowerCase())).slice(0, 50);
+    const searchVal = search.toLowerCase().trim();
+  const aliasMap = { 
+    'arizona': 'phoenix', 
+    'brazil': 'sao_paulo', 
+    'uk': 'london', 
+    'england': 'london',
+    'china': 'shanghai', 
+    'india': 'kolkata', 
+    'japan': 'tokyo', 
+    'australia': 'sydney', 
+    'mexico': 'mexico_city',
+    'korea': 'seoul',
+    'california': 'los_angeles',
+    'new york': 'new_york',
+    'texas': 'chicago',
+    'florida': 'new_york'
+  };
+  const mappedSearch = aliasMap[searchVal] || searchVal;
+  const filteredTz = allTz.filter(t => t.toLowerCase().includes(mappedSearch.replace(' ', '_')));
 
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
   const labelStyle = { color: '#888', fontSize: '0.8em', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px', display: 'block' };
@@ -90,7 +108,7 @@ export default function WorldClock() {
           <h3 style={{ margin: '0 0 15px 0', color: '#fff' }}>Set Dashboard Timezone</h3>
           <input 
             type="text" 
-            placeholder="Search countries, states, cities..." 
+            placeholder="Search major cities (e.g. Phoenix, London)..." 
             value={search} 
             onChange={e => setSearch(e.target.value)} 
             style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginBottom: '15px' }} 
