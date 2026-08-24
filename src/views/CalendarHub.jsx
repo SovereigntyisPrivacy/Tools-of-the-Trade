@@ -73,7 +73,33 @@ export default function CalendarHub() {
           }
       });
       
+      
+      // 4. Pull Recurring Subscriptions
+      try {
+        const subs = JSON.parse(localStorage.getItem('fleet_subscriptions') || '[]');
+        subs.forEach(sub => {
+          if (!sub.renewal) return;
+          const target = new Date(dateStr + 'T00:00:00');
+          const renew = new Date(sub.renewal + 'T00:00:00');
+          
+          let isDue = false;
+          if (sub.cycle === 'Monthly' && target >= renew && target.getDate() === renew.getDate()) isDue = true;
+          if (sub.cycle === 'Yearly' && target >= renew && target.getMonth() === renew.getMonth() && target.getDate() === renew.getDate()) isDue = true;
+          
+          if (isDue || dateStr === sub.renewal) {
+             events.push({
+               id: `sub_${sub.id}_${dateStr}`,
+               text: `[RENEWAL] ${sub.name} - ${parseFloat(sub.cost).toFixed(2)}`,
+               module: 'Subscriptions',
+               priority: 'High',
+               isDynamic: true
+             });
+          }
+        });
+      } catch(e) {}
+      
       return events;
+
   };
 
   const handleDayClick = (day) => {
