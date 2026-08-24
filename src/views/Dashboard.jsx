@@ -105,7 +105,7 @@ function Dashboard() {
   return (
     <div className="view-wrapper pb-safe">
       <GhostTap />
-      <button className="corner-settings-btn" onClick={() => navigate('/settings')}>
+      <button onClick={handleGearTap} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
         ⚙️
       </button>
       

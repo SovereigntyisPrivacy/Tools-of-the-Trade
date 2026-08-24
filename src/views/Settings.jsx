@@ -5,18 +5,19 @@ import { PrivacyScreen } from '@capacitor-community/privacy-screen';
 export default function Settings() {
   const navigate = useNavigate();
 
-  // --- STATES ---
   const [shield, setShield] = useState(() => localStorage.getItem('fleet_shield') !== 'false');
-  const [textScale, setTextScale] = useState(() => localStorage.getItem('fleet_textScale') || 'Normal');
+  const [textScale, setTextScale] = useState(() => localStorage.getItem('fleet_textScale') || '16');
   const [accent, setAccent] = useState(() => localStorage.getItem('fleet_accent') || '#3b82f6');
-  const [wallpaper, setWallpaper] = useState(() => localStorage.getItem('fleet_wallpaper') || 'Solid Black');
+  const [wallpaper, setWallpaper] = useState(() => localStorage.getItem('fleet_wallpaper') || 'Default Dark');
 
-  // --- EFFECTS ---
-  useEffect(() => { localStorage.setItem('fleet_textScale', textScale); }, [textScale]);
+  useEffect(() => { 
+      localStorage.setItem('fleet_textScale', textScale); 
+      document.documentElement.style.fontSize = `${textScale}px`;
+  }, [textScale]);
+
   useEffect(() => { localStorage.setItem('fleet_accent', accent); }, [accent]);
   useEffect(() => { localStorage.setItem('fleet_wallpaper', wallpaper); }, [wallpaper]);
 
-  // --- HANDLERS ---
   const toggleShield = async () => {
     const newState = !shield;
     setShield(newState);
@@ -24,21 +25,27 @@ export default function Settings() {
     try {
       if (newState) await PrivacyScreen.enable();
       else await PrivacyScreen.disable();
-    } catch (e) { console.log('Native bridge offline'); }
+    } catch (e) {}
   };
 
   const clearData = () => {
-      if (window.confirm("WARNING: This will wipe all local schedules, budgets, and settings. Proceed?")) {
+      if (window.confirm("WARNING: This will wipe all local data. Proceed?")) {
           localStorage.clear();
           window.location.reload();
       }
+  };
+
+  const getWallpaperBg = () => {
+      if (wallpaper === 'Midnight Blue') return '#000511';
+      if (wallpaper === 'Deep Obsidian') return '#0a0a0a';
+      return '#000000';
   };
 
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
   const labelStyle = { color: '#888', fontSize: '0.8em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '10px', display: 'block' };
 
   return (
-    <div className="view-wrapper" style={{ background: wallpaper === 'Solid Black' ? '#000' : '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="view-wrapper" style={{ background: getWallpaperBg(), minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
         <h2 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>System Settings</h2>
@@ -50,21 +57,24 @@ export default function Settings() {
         <div style={{ background: 'linear-gradient(45deg, #111, #1a0033)', border: '1px solid #a855f7', borderRadius: '12px', padding: '20px', marginBottom: '20px', textAlign: 'center' }}>
           <h3 style={{ margin: '0 0 5px 0', color: '#a855f7', textTransform: 'uppercase', letterSpacing: '2px' }}>Sovereign Tools</h3>
           <p style={{ color: '#aaa', fontSize: '0.85em', margin: '0 0 15px 0', lineHeight: '1.4' }}>
-            Need military-grade AES-256 encryption, Shizuku telemetry eradication, and an offline mesh network? Get the ultimate privacy suite.
+            Get military-grade AES-256 encryption, Shizuku telemetry eradication, and offline mesh networking.
           </p>
           <a href="https://github.com/xNoOnex/SovereignTools1" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', background: '#a855f7', color: '#fff', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>
             Upgrade Security
           </a>
         </div>
 
-        {/* --- UI CUSTOMIZATION --- */}
+        {/* --- UI CUSTOMIZATION (SLIDER & WALLPAPER) --- */}
         <div style={cardStyle}>
-            <label style={labelStyle}>Global Text Scale</label>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                {['Small', 'Normal', 'Large'].map(size => (
-                    <button key={size} onClick={() => setTextScale(size)} style={{ flex: 1, padding: '10px', background: textScale === size ? accent : '#222', color: textScale === size ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>{size}</button>
-                ))}
-            </div>
+            <label style={labelStyle}>Global Text Scale ({textScale}px)</label>
+            <input 
+                type="range" 
+                min="12" 
+                max="22" 
+                value={textScale} 
+                onChange={e => setTextScale(e.target.value)} 
+                style={{ width: '100%', marginBottom: '20px', accentColor: accent }} 
+            />
 
             <label style={labelStyle}>Accent Color</label>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
@@ -73,15 +83,15 @@ export default function Settings() {
                 ))}
             </div>
 
-            <label style={labelStyle}>Background Environment</label>
+            <label style={labelStyle}>Wallpaper Environment</label>
             <div style={{ display: 'flex', gap: '10px' }}>
-                {['Solid Black', 'Dark Gray'].map(bg => (
-                    <button key={bg} onClick={() => setWallpaper(bg)} style={{ flex: 1, padding: '10px', background: wallpaper === bg ? accent : '#222', color: wallpaper === bg ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>{bg}</button>
+                {['Default Dark', 'Midnight Blue', 'Deep Obsidian'].map(bg => (
+                    <button key={bg} onClick={() => setWallpaper(bg)} style={{ flex: 1, padding: '10px', background: wallpaper === bg ? accent : '#222', color: wallpaper === bg ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.8em' }}>{bg}</button>
                 ))}
             </div>
         </div>
 
-        {/* --- SECURITY --- */}
+        {/* --- SCREENSHOT SHIELD (NOW HIDDEN UNLESS ACCESSED) --- */}
         <div style={{ ...cardStyle, borderLeft: shield ? '4px solid #00cc66' : '4px solid #ef4444' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3 style={{ margin: 0, color: shield ? '#00cc66' : '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -92,18 +102,18 @@ export default function Settings() {
             </button>
           </div>
           <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0, lineHeight: '1.4' }}>
-            Blocks OS screen capture and recording. The app will appear as a black screen in the Android recents menu.
+            Blocks OS screen capture and recording.
           </p>
         </div>
 
-        {/* --- DANGER ZONE & SUPPORT --- */}
+        {/* --- DANGER ZONE & SUPPORT VIEW BUTTON --- */}
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
             <button onClick={clearData} style={{ flex: 1, padding: '15px', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', fontWeight: 'bold' }}>
-                Wipe Local Data
+                Wipe Data
             </button>
-            <a href="https://github.com/xNoOnex" target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: 'block', padding: '15px', background: '#222', color: '#fff', border: '1px solid #333', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none', textAlign: 'center' }}>
+            <button onClick={() => navigate('/support')} style={{ flex: 1, padding: '15px', background: '#222', color: '#fff', border: '1px solid #333', borderRadius: '8px', fontWeight: 'bold' }}>
                 ☕ Support Creator
-            </a>
+            </button>
         </div>
 
       </div>
