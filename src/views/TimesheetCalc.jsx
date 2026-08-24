@@ -181,6 +181,9 @@ function TimesheetUI() {
                   const shifts = activeWeek.shifts[emp.id] || getEmptyShifts();
                   let totalHrs = 0;
                   Object.values(shifts).forEach(s => totalHrs += calcShiftHrs(s?.in, s?.out));
+                  let hrsColor = '#00cc66'; // Green safe zone
+                  if (totalHrs >= 38) hrsColor = '#f59e0b'; // Yellow 38+ Warning
+                  if (totalHrs >= 40.1) hrsColor = '#ef4444'; // Red OT Limit exceeded
                   
                   return (
                     <div key={emp.id} style={{ ...cardStyle, padding: '15px' }}>
@@ -189,7 +192,7 @@ function TimesheetUI() {
                           <h4 style={{ margin: '0 0 2px 0', color: '#a855f7', fontSize: '1.1em' }}>{emp.name || 'Unnamed Worker'}</h4>
                           {emp.empNum && <span style={{ color: '#888', fontSize: '0.75em' }}>ID: {emp.empNum}</span>}
                         </div>
-                        <strong style={{ color: totalHrs > 40 ? '#f59e0b' : '#00cc66', fontSize: '1.2em' }}>{totalHrs.toFixed(1)} hrs</strong>
+                        <strong style={{ color: hrsColor, fontSize: '1.2em' }}>{totalHrs.toFixed(1)} hrs</strong>
                       </div>
                       
                       {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
