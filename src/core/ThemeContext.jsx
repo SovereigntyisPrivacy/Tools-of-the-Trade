@@ -9,10 +9,11 @@ export function ThemeProvider({ children }) {
     const wallpaper = localStorage.getItem('fleet_wallpaper') || 'Deep Obsidian';
     const customBg = localStorage.getItem('fleet_wallpaper_custom');
     
-    // Custom Gallery Adjustments
     const blur = localStorage.getItem('fleet_bg_blur') || '0';
     const bright = localStorage.getItem('fleet_bg_bright') || '1';
-    const bgSize = localStorage.getItem('fleet_bg_size') || 'cover';
+    const zoom = localStorage.getItem('fleet_bg_zoom') || '1';
+    const posX = localStorage.getItem('fleet_bg_x') || '50';
+    const posY = localStorage.getItem('fleet_bg_y') || '50';
     
     const root = document.documentElement;
     root.style.setProperty('--global-font-scale', `${scale}px`);
@@ -21,26 +22,32 @@ export function ThemeProvider({ children }) {
     
     if (wallpaper === 'Custom' && customBg) {
         root.style.setProperty('--bg-image', `url(${customBg})`);
-        root.style.setProperty('--bg-size', bgSize);
         root.style.setProperty('--bg-blur', `${blur}px`);
         root.style.setProperty('--bg-brightness', bright);
-        root.style.setProperty('--bg-color', '#000');
+        root.style.setProperty('--bg-zoom', zoom);
+        root.style.setProperty('--bg-pos-x', `${posX}%`);
+        root.style.setProperty('--bg-pos-y', `${posY}%`);
     } else if (wallpaper === 'Cyber Grid') {
-        // Uses your accent color to draw a tactical grid
         root.style.setProperty('--bg-image', `linear-gradient(var(--accent) 1px, transparent 1px), linear-gradient(90deg, var(--accent) 1px, transparent 1px)`);
         root.style.setProperty('--bg-size', '30px 30px');
-        root.style.setProperty('--bg-blur', '0px');
-        root.style.setProperty('--bg-brightness', '0.15'); // Dimmed so it's not blinding
-        root.style.setProperty('--bg-color', '#000');
+        root.style.setProperty('--bg-zoom', '1');
+        root.style.setProperty('--bg-brightness', '0.15');
     } else if (wallpaper === 'Tactical Flare') {
         root.style.setProperty('--bg-image', `radial-gradient(circle at top center, var(--accent) 0%, transparent 60%)`);
-        root.style.setProperty('--bg-size', 'cover');
-        root.style.setProperty('--bg-blur', '0px');
+        root.style.setProperty('--bg-zoom', '1');
         root.style.setProperty('--bg-brightness', '0.2');
-        root.style.setProperty('--bg-color', '#050505');
+    } else if (wallpaper === 'Matrix Rain') {
+        root.style.setProperty('--bg-image', `repeating-linear-gradient(180deg, transparent, transparent 10px, var(--accent) 10px, var(--accent) 20px)`);
+        root.style.setProperty('--bg-zoom', '1');
+        root.style.setProperty('--bg-brightness', '0.1');
+    } else if (wallpaper === 'Crimson Hex') {
+        root.style.setProperty('--bg-image', `radial-gradient(circle, var(--accent) 2px, transparent 3px)`);
+        root.style.setProperty('--bg-size', '20px 20px');
+        root.style.setProperty('--bg-zoom', '1');
+        root.style.setProperty('--bg-brightness', '0.2');
     } else {
         root.style.setProperty('--bg-image', 'none');
-        root.style.setProperty('--bg-color', wallpaper === 'Midnight Blue' ? '#000511' : '#0a0a0a');
+        document.body.style.backgroundColor = wallpaper === 'Midnight Blue' ? '#000511' : '#0a0a0a';
     }
   }, []);
 

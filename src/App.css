@@ -402,3 +402,28 @@ body::before {
     filter: blur(var(--bg-blur, 0px)) brightness(var(--bg-brightness, 1)); 
     pointer-events: none; 
 }
+
+
+/* --- SOVEREIGN V3 ENGINE OVERRIDES --- */
+/* Force all primary headers to use the dynamic accent color */
+h1, h2, h3, .friendly-title { 
+    color: var(--text-accent, #3b82f6) !important; 
+    text-shadow: 0 0 10px rgba(0,0,0,0.6); 
+}
+
+html, body { min-height: 100vh; background-color: #000 !important; }
+body { position: relative; z-index: 0; }
+
+body::before { 
+    content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; 
+    background-image: var(--bg-image, none); 
+    background-size: cover; 
+    background-position: var(--bg-pos-x, 50%) var(--bg-pos-y, 50%); 
+    background-repeat: no-repeat;
+    filter: blur(var(--bg-blur, 0px)) brightness(var(--bg-brightness, 1)); 
+    pointer-events: none; 
+    transform: scale(var(--bg-zoom, 1));
+    transition: filter 0.2s, background-position 0.1s, transform 0.1s;
+}
+
+.view-wrapper { background: transparent !important; z-index: 1; }
