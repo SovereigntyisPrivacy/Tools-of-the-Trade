@@ -35,12 +35,11 @@ export default function BudgetEngine() {
   const totalAllocated = envelopes.reduce((sum, env) => sum + env.amount, 0);
   const unassigned = netIncome - totalAllocated;
 
-  const inputStyle = { width: '100%', padding: '12px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1.1em' };
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
 
   return (
-    <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+    <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px', background: '#0a0a0a' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
         <h2 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>Cashflow Engine</h2>
       </header>
@@ -61,7 +60,7 @@ export default function BudgetEngine() {
                 />
             </div>
             
-            <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: `1px solid ${unassigned < 0 ? '#ef4444' : unassigned === 0 ? '#555' : '#00ffff'}` }}>
+            <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: `1px solid ${unassigned < 0 ? '#ef4444' : unassigned === 0 ? '#333' : '#00ffff'}` }}>
                 <div style={{ color: '#888', textTransform: 'uppercase', fontSize: '0.8em', marginBottom: '5px' }}>Unassigned Cash</div>
                 <div style={{ fontSize: '2em', fontWeight: 'bold', fontFamily: 'monospace', color: unassigned < 0 ? '#ef4444' : unassigned === 0 ? '#aaa' : '#00ffff' }}>
                     ${unassigned.toFixed(2)}
@@ -93,7 +92,6 @@ export default function BudgetEngine() {
                 </div>
             </div>
         ))}
-
       </div>
     </div>
   );
