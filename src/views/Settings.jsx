@@ -11,9 +11,36 @@ export default function Settings() {
   const [accent, setAccent] = useState(() => localStorage.getItem('fleet_accent') || '#3b82f6');
   const [wallpaper, setWallpaper] = useState(() => localStorage.getItem('fleet_wallpaper') || 'Deep Obsidian');
 
-  const applyTheme = (key, value) => {
-      localStorage.setItem(key, value);
-      window.location.reload(); 
+  // NATIVE 60FPS UI UPDATES (No reloading)
+  const handleScaleChange = (val) => {
+      setTextScale(val);
+      document.documentElement.style.fontSize = `${val}px`;
+  };
+  
+  const handleScaleSave = (val) => {
+      localStorage.setItem('fleet_textScale', val);
+  };
+
+  const handleAccentChange = (color) => {
+      setAccent(color);
+      localStorage.setItem('fleet_accent', color);
+      document.documentElement.style.setProperty('--accent', color);
+      document.documentElement.style.setProperty('--text-accent', color);
+  };
+
+  const handleWallpaperChange = (bg, customData = null) => {
+      setWallpaper(bg);
+      localStorage.setItem('fleet_wallpaper', bg);
+      
+      if (bg === 'Custom' && customData) {
+          document.body.style.backgroundImage = `url(${customData})`;
+          document.body.style.backgroundSize = 'cover';
+          document.body.style.backgroundPosition = 'center';
+          document.body.style.backgroundAttachment = 'fixed';
+      } else {
+          document.body.style.backgroundImage = 'none';
+          document.body.style.backgroundColor = bg === 'Midnight Blue' ? '#000511' : (bg === 'Deep Obsidian' ? '#0a0a0a' : '#000');
+      }
   };
 
   const handleImageUpload = (e) => {
@@ -22,7 +49,7 @@ export default function Settings() {
           const reader = new FileReader();
           reader.onloadend = () => {
               localStorage.setItem('fleet_wallpaper_custom', reader.result);
-              applyTheme('fleet_wallpaper', 'Custom');
+              handleWallpaperChange('Custom', reader.result);
           };
           reader.readAsDataURL(file);
       }
@@ -42,32 +69,38 @@ export default function Settings() {
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'transparent' }}>
       <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(10, 10, 10, 0.9)', backdropFilter: 'blur(10px)' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
-        <h2 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>System Settings</h2>
+        <h2 style={{ margin: 0, color: 'var(--text-accent)', fontSize: '1.2em' }}>System Settings</h2>
       </header>
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
         
-        <div style={{ background: 'linear-gradient(45deg, rgba(17,17,17,0.9), rgba(26,0,51,0.9))', backdropFilter: 'blur(10px)', border: '1px solid #a855f7', borderRadius: '12px', padding: '20px', marginBottom: '20px', textAlign: 'center' }}>
-          <h3 style={{ margin: '0 0 5px 0', color: '#a855f7', textTransform: 'uppercase', letterSpacing: '2px' }}>Sovereign Tools</h3>
+        <div style={{ background: 'linear-gradient(45deg, rgba(17,17,17,0.9), rgba(26,0,51,0.9))', backdropFilter: 'blur(10px)', border: '1px solid var(--accent)', borderRadius: '12px', padding: '20px', marginBottom: '20px', textAlign: 'center' }}>
+          <h3 style={{ margin: '0 0 5px 0', color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '2px' }}>Sovereign Tools</h3>
           <p style={{ color: '#ccc', fontSize: '0.85em', margin: '0 0 15px 0', lineHeight: '1.4' }}>Get military-grade AES-256 encryption, Shizuku telemetry eradication, and offline mesh networking.</p>
-          <a href="https://github.com/xNoOnex/SovereignTools1" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', background: '#a855f7', color: '#fff', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>Upgrade Security</a>
+          <a href="https://github.com/xNoOnex/SovereignTools1" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', background: 'var(--accent)', color: '#fff', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>Upgrade Security</a>
         </div>
 
         <div style={cardStyle}>
             <label style={labelStyle}>Global Text Scale ({textScale}px)</label>
-            <input type="range" min="12" max="22" value={textScale} onChange={e => setTextScale(e.target.value)} onMouseUp={e => applyTheme('fleet_textScale', e.target.value)} onTouchEnd={e => applyTheme('fleet_textScale', e.target.value)} style={{ width: '100%', marginBottom: '20px', accentColor: accent }} />
+            <input 
+                type="range" min="12" max="22" value={textScale} 
+                onChange={e => handleScaleChange(e.target.value)} 
+                onMouseUp={e => handleScaleSave(e.target.value)} 
+                onTouchEnd={e => handleScaleSave(e.target.value)} 
+                style={{ width: '100%', marginBottom: '20px', accentColor: accent }} 
+            />
 
             <label style={labelStyle}>Accent Color</label>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                 {['#3b82f6', '#00cc66', '#f59e0b', '#ef4444', '#a855f7'].map(color => (
-                    <button key={color} onClick={() => applyTheme('fleet_accent', color)} style={{ width: '40px', height: '40px', borderRadius: '20px', background: color, border: accent === color ? '3px solid #fff' : 'none' }} />
+                    <button key={color} onClick={() => handleAccentChange(color)} style={{ width: '40px', height: '40px', borderRadius: '20px', background: color, border: accent === color ? '3px solid #fff' : 'none' }} />
                 ))}
             </div>
 
             <label style={labelStyle}>Wallpaper Environment</label>
             <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                 {['Default Dark', 'Midnight Blue', 'Deep Obsidian'].map(bg => (
-                    <button key={bg} onClick={() => applyTheme('fleet_wallpaper', bg)} style={{ flex: 1, padding: '10px 5px', background: wallpaper === bg ? accent : 'rgba(34,34,34,0.8)', color: wallpaper === bg ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.75em' }}>{bg}</button>
+                    <button key={bg} onClick={() => handleWallpaperChange(bg)} style={{ flex: 1, padding: '10px 5px', background: wallpaper === bg ? accent : 'rgba(34,34,34,0.8)', color: wallpaper === bg ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.75em' }}>{bg}</button>
                 ))}
                 <label style={{ flex: 1, padding: '10px 5px', background: wallpaper === 'Custom' ? accent : 'rgba(34,34,34,0.8)', color: wallpaper === 'Custom' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.75em', textAlign: 'center', cursor: 'pointer' }}>
                     Gallery
@@ -76,12 +109,10 @@ export default function Settings() {
             </div>
         </div>
 
-        {/* --- RESTORED SUPPORT BUTTON --- */}
-        <button onClick={() => navigate('/support')} style={{ width: '100%', padding: '15px', background: 'rgba(34, 34, 34, 0.85)', backdropFilter: 'blur(10px)', color: '#fff', border: '1px solid #444', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>
+        <button onClick={() => navigate('/support')} style={{ width: '100%', padding: '15px', background: 'rgba(34, 34, 34, 0.85)', backdropFilter: 'blur(10px)', color: '#fff', border: '1px solid var(--accent)', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>
             ☕ Support Creator
         </button>
 
-        {/* --- HIDDEN DEVELOPER TOOLS --- */}
         {devMode && (
             <>
               <div style={{ ...cardStyle, borderLeft: shield ? '4px solid #00cc66' : '4px solid #ef4444' }}>

@@ -9,11 +9,10 @@ export function ThemeProvider({ children }) {
     const wallpaper = localStorage.getItem('fleet_wallpaper') || 'Deep Obsidian';
     const customBg = localStorage.getItem('fleet_wallpaper_custom');
     
-    // Apply Global Text Scale & Accent Color
     document.documentElement.style.fontSize = `${scale}px`;
     document.documentElement.style.setProperty('--accent', accent);
+    document.documentElement.style.setProperty('--text-accent', accent);
     
-    // Apply Background Environment
     if (wallpaper === 'Custom' && customBg) {
         document.body.style.backgroundImage = `url(${customBg})`;
         document.body.style.backgroundSize = 'cover';
