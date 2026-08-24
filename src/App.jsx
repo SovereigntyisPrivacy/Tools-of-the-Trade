@@ -1,6 +1,6 @@
 import Support from "./views/Support.jsx";
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './core/ThemeContext';
 import { CalendarProvider } from './core/CalendarContext';
 import './App.css';
