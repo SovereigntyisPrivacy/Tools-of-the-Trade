@@ -1,5 +1,5 @@
-import React
-import GhostTap from '../components/GhostTap';, { useState, useEffect } from 'react';
+import GhostTap from '../components/GhostTap';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
@@ -88,6 +88,7 @@ function Dashboard() {
   }, []);
 
   const tools = [
+    { id: "chronos", name: "Chronos Hub", path: "/chronos", icon: "⏱️", badge: "", badgeColor: "#222" },
     { id: "burner", name: "Burner Pad", path: "/burner", icon: "🔥", badge: "WIPES", badgeColor: "#ef4444" },
     { id: "sop", name: "SOP Engine", path: "/sop", icon: "📋", badge: "CORE", badgeColor: "#3b82f6" },
     
