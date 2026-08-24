@@ -87,12 +87,17 @@ export default function AssetLedger() {
     assets.forEach(a => {
       csv += `${a.name},${a.status},${a.purchDate},${a.price},${getBookValue(a.price, a.purchDate)},${a.warrantyStr},${a.expDate || 'N/A'}\n`;
     });
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Asset_Ledger_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    
+    const fileName = `Asset_Ledger_${new Date().toISOString().split('T')[0]}.csv`;
+    const file = new File([csv], fileName, { type: 'text/csv' });
+    
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: fileName }).catch(e=>console.log(e));
+    } else {
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = fileName; a.click(); URL.revokeObjectURL(url);
+    }
   };
 
   const totalVal = assets.reduce((sum, a) => sum + parseFloat(a.price || 0), 0);

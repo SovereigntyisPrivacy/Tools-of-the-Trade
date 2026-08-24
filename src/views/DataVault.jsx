@@ -37,14 +37,17 @@ export default function DataVault() {
       reminders: JSON.parse(localStorage.getItem('global_reminders') || '[]'),
       subscriptions: JSON.parse(localStorage.getItem('fleet_subscriptions') || '[]')
     };
+    const content = JSON.stringify(backup, null, 2);
+    const fileName = `SovereignFleet_ColdStorage_${new Date().toISOString().split('T')[0]}.json`;
+    const file = new File([content], fileName, { type: 'application/json' });
     
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `SovereignFleet_ColdStorage_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: fileName }).catch(e=>console.log(e));
+    } else {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = fileName; a.click(); URL.revokeObjectURL(url);
+    }
   };
 
   const exportPayrollCSV = () => {
@@ -59,8 +62,7 @@ export default function DataVault() {
           if (s && s.in && s.out) {
             const [h1, m1] = s.in.split(':').map(Number);
             const [h2, m2] = s.out.split(':').map(Number);
-            let m1Total = h1 * 60 + m1;
-            let m2Total = h2 * 60 + m2;
+            let m1Total = h1 * 60 + m1; let m2Total = h2 * 60 + m2;
             if (m2Total < m1Total) m2Total += 24 * 60;
             hrs += (m2Total - m1Total) / 60;
           }
@@ -69,16 +71,20 @@ export default function DataVault() {
         const regHrs = Math.min(hrs, 40);
         const otHrs = Math.max(0, hrs - 40);
         const pay = (regHrs * rate) + (otHrs * (rate * 1.5));
-        if (hrs > 0) csv += `${week.weekDate},${emp.empNum || 'N/A'},${emp.name || 'Unnamed'},${regHrs.toFixed(2)},${otHrs.toFixed(2)},$${rate.toFixed(2)},$${pay.toFixed(2)}\n`;
+        if (hrs > 0) csv += `${week.weekDate},${emp.empNum || 'N/A'},${emp.name || 'Unnamed'},${regHrs.toFixed(2)},${otHrs.toFixed(2)},${rate.toFixed(2)},${pay.toFixed(2)}\n`;
       });
     });
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Payroll_Export_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    
+    const fileName = `Payroll_Export_${new Date().toISOString().split('T')[0]}.csv`;
+    const file = new File([csv], fileName, { type: 'text/csv' });
+    
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: fileName }).catch(e=>console.log(e));
+    } else {
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = fileName; a.click(); URL.revokeObjectURL(url);
+    }
   };
 
   const inputStyle = { width: '100%', padding: '12px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginBottom: '10px' };
