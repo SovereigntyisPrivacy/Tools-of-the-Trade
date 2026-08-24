@@ -10,7 +10,7 @@ class ErrorBoundary extends Component {
         <div style={{ padding: '20px', color: '#ff4444', background: '#0a0a0a', minHeight: '100vh' }}>
           <h2>⚠️ Timesheet Module Crashed</h2>
           <p style={{ fontFamily: 'monospace', background: '#111', padding: '10px' }}>{this.state.error?.toString()}</p>
-          <button onClick={() => window.history.back()} style={{ padding: '10px', background: '#333', color: '#fff', border: 'none', borderRadius: '8px' }}>Go Back</button>
+          <button onClick={() => { localStorage.removeItem('fleet_schedules'); window.location.reload(); }} style={{ padding: '10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px' }}>Hard Reset Data</button>
         </div>
       );
     }
@@ -23,44 +23,58 @@ function TimesheetUI() {
   const [mainTab, setMainTab] = useState('Manager');
   const [mgrTab, setMgrTab] = useState('Schedule');
 
+  // Time Math Helper (Calculates hours between HH:mm strings, handles night shifts)
+  const calcShiftHrs = (inTime, outTime) => {
+    if (!inTime || !outTime) return 0;
+    const [h1, m1] = inTime.split(':').map(Number);
+    const [h2, m2] = outTime.split(':').map(Number);
+    let mins1 = h1 * 60 + m1;
+    let mins2 = h2 * 60 + m2;
+    if (mins2 < mins1) mins2 += 24 * 60; 
+    return (mins2 - mins1) / 60;
+  };
+
+  const getEmptyShifts = () => ({
+    Mon: {in: '', out: ''}, Tue: {in: '', out: ''}, Wed: {in: '', out: ''},
+    Thu: {in: '', out: ''}, Fri: {in: '', out: ''}, Sat: {in: '', out: ''}, Sun: {in: '', out: ''}
+  });
+
   // --- MULTI-WEEK PERSISTENCE ENGINE ---
   const [weeks, setWeeks] = useState(() => {
-    const saved = localStorage.getItem('fleet_schedules');
-    if (saved) return JSON.parse(saved);
+    try {
+      const saved = localStorage.getItem('fleet_schedules');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Migration safeguard: if old string data exists, force a clean start
+        if (parsed[0] && typeof parsed[0].shifts?.[parsed[0].roster[0]?.id]?.Mon === 'string') throw new Error("Old data");
+        return parsed;
+      }
+    } catch (e) {
+      console.log("Starting fresh to support new time formats");
+    }
+    const today = new Date().toISOString().split('T')[0];
     return [{
       id: `week_${Date.now()}`,
-      label: `Week of ${new Date().toLocaleDateString()}`,
+      weekDate: today,
       budgetHrs: '160',
-      roster: [{ id: 'emp_1', name: 'Employee 1', rate: '16.50' }],
-      shifts: { 'emp_1': { Mon: '', Tue: '', Wed: '', Thu: '', Fri: '', Sat: '', Sun: '' } }
+      roster: [{ id: 'emp_1', empNum: '1001', name: 'Employee 1', email: 'worker@fleet.com', rate: '16.50' }],
+      shifts: { 'emp_1': getEmptyShifts() }
     }];
   });
 
   const [activeWeekId, setActiveWeekId] = useState(weeks[0].id);
   const activeWeek = weeks.find(w => w.id === activeWeekId) || weeks[0];
 
-  // Save to disk whenever weeks state changes
-  useEffect(() => {
-    localStorage.setItem('fleet_schedules', JSON.stringify(weeks));
-  }, [weeks]);
+  useEffect(() => { localStorage.setItem('fleet_schedules', JSON.stringify(weeks)); }, [weeks]);
 
-  const updateActiveWeek = (updates) => {
-    setWeeks(weeks.map(w => w.id === activeWeekId ? { ...w, ...updates } : w));
-  };
+  const updateActiveWeek = (updates) => setWeeks(weeks.map(w => w.id === activeWeekId ? { ...w, ...updates } : w));
 
   const createNewWeek = () => {
     const newId = `week_${Date.now()}`;
     const newShifts = {};
-    activeWeek.roster.forEach(emp => { newShifts[emp.id] = { Mon: '', Tue: '', Wed: '', Thu: '', Fri: '', Sat: '', Sun: '' }; });
-    
-    const newWeek = {
-      id: newId,
-      label: `New Week (${new Date().toLocaleDateString()})`,
-      budgetHrs: activeWeek.budgetHrs,
-      roster: [...activeWeek.roster],
-      shifts: newShifts
-    };
-    setWeeks([...weeks, newWeek]);
+    activeWeek.roster.forEach(emp => { newShifts[emp.id] = getEmptyShifts(); });
+    const today = new Date().toISOString().split('T')[0];
+    setWeeks([...weeks, { id: newId, weekDate: today, budgetHrs: activeWeek.budgetHrs, roster: [...activeWeek.roster], shifts: newShifts }]);
     setActiveWeekId(newId);
   };
 
@@ -71,8 +85,8 @@ function TimesheetUI() {
     setActiveWeekId(filtered[0].id);
   };
 
-  const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', marginTop: '4px' };
-  const labelStyle = { color: '#a855f7', fontSize: '0.8em', fontWeight: 'bold', textTransform: 'uppercase' };
+  const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff' };
+  const labelStyle = { color: '#a855f7', fontSize: '0.75em', fontWeight: 'bold', textTransform: 'uppercase' };
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
 
   return (
@@ -90,18 +104,21 @@ function TimesheetUI() {
       <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '95px' }}>
         {mainTab === 'Manager' && (
           <>
-            {/* Week Controller */}
+            {/* Native Android Date Controller */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'center', background: '#111', padding: '10px', borderRadius: '8px', border: '1px solid #a855f7' }}>
-              <input 
-                type="text" 
-                value={activeWeek.label} 
-                onChange={e => updateActiveWeek({ label: e.target.value })} 
-                style={{ flex: 1, padding: '8px', background: '#000', color: '#00ffff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }} 
-              />
-              <select value={activeWeekId} onChange={e => setActiveWeekId(e.target.value)} style={{ padding: '8px', background: '#222', color: '#fff', border: 'none', borderRadius: '6px', maxWidth: '100px' }}>
-                {weeks.map(w => <option key={w.id} value={w.id}>{w.label}</option>)}
+              <div style={{ flex: 1 }}>
+                <label style={{...labelStyle, color: '#aaa', display: 'block', marginBottom: '4px'}}>Week Of:</label>
+                <input 
+                  type="date" 
+                  value={activeWeek.weekDate} 
+                  onChange={e => updateActiveWeek({ weekDate: e.target.value })} 
+                  style={{ width: '100%', padding: '8px', background: '#000', color: '#00ffff', border: '1px solid #333', borderRadius: '6px', fontWeight: 'bold' }} 
+                />
+              </div>
+              <select value={activeWeekId} onChange={e => setActiveWeekId(e.target.value)} style={{ padding: '8px', background: '#222', color: '#fff', border: '1px solid #333', borderRadius: '6px', maxWidth: '100px', alignSelf: 'flex-end', height: '40px' }}>
+                {weeks.map((w, i) => <option key={w.id} value={w.id}>Wk {i+1}</option>)}
               </select>
-              <button onClick={createNewWeek} style={{ background: '#00cc66', color: '#000', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>+ Wk</button>
+              <button onClick={createNewWeek} style={{ background: '#00cc66', color: '#000', border: 'none', padding: '0 12px', borderRadius: '6px', fontWeight: 'bold', alignSelf: 'flex-end', height: '40px' }}>+ Wk</button>
             </div>
 
             <div style={{ display: 'flex', gap: '6px', marginBottom: '15px' }}>
@@ -116,10 +133,10 @@ function TimesheetUI() {
                   <h3 style={{ margin: 0, color: '#fff' }}>Crew Roster</h3>
                   <button 
                     onClick={() => {
-                      const newEmp = { id: `emp_${Date.now()}`, name: `Worker ${activeWeek.roster.length + 1}`, rate: '15.00' };
+                      const newEmp = { id: `emp_${Date.now()}`, empNum: '', name: '', email: '', rate: '15.00' };
                       updateActiveWeek({ 
                         roster: [...activeWeek.roster, newEmp],
-                        shifts: { ...activeWeek.shifts, [newEmp.id]: { Mon: '', Tue: '', Wed: '', Thu: '', Fri: '', Sat: '', Sun: '' } }
+                        shifts: { ...activeWeek.shifts, [newEmp.id]: getEmptyShifts() }
                       });
                     }} 
                     style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.8em' }}
@@ -129,20 +146,18 @@ function TimesheetUI() {
                 <label style={labelStyle}>Target Fleet Budget (Hrs)<input type="number" value={activeWeek.budgetHrs} onChange={e=>updateActiveWeek({budgetHrs: e.target.value})} style={{...inputStyle, marginBottom: '20px'}} /></label>
 
                 {activeWeek.roster.map(emp => (
-                  <div key={emp.id} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center', background: '#000', padding: '10px', borderRadius: '8px', borderLeft: '4px solid #a855f7' }}>
-                    <div style={{ flex: 2 }}><label style={{color:'#aaa', fontSize:'0.7em'}}>Name</label><input type="text" value={emp.name} onChange={e => {
-                      const newRoster = activeWeek.roster.map(r => r.id === emp.id ? { ...r, name: e.target.value } : r);
-                      updateActiveWeek({ roster: newRoster });
-                    }} style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontWeight: 'bold' }} /></div>
+                  <div key={emp.id} style={{ background: '#000', padding: '15px', borderRadius: '8px', borderLeft: '4px solid #a855f7', marginBottom: '15px', position: 'relative' }}>
+                    <button onClick={() => updateActiveWeek({ roster: activeWeek.roster.filter(r => r.id !== emp.id) })} style={{ position: 'absolute', top: '10px', right: '10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', width: '28px', height: '28px', fontWeight: 'bold' }}>X</button>
                     
-                    <div style={{ flex: 1 }}><label style={{color:'#aaa', fontSize:'0.7em'}}>Rate ($)</label><input type="number" value={emp.rate} onChange={e => {
-                      const newRoster = activeWeek.roster.map(r => r.id === emp.id ? { ...r, rate: e.target.value } : r);
-                      updateActiveWeek({ roster: newRoster });
-                    }} style={{ width: '100%', background: 'transparent', border: 'none', color: '#00cc66' }} /></div>
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', paddingRight: '35px' }}>
+                      <div style={{ flex: 1 }}><label style={{color:'#aaa', fontSize:'0.7em'}}>Emp #</label><input type="text" value={emp.empNum} onChange={e => updateActiveWeek({ roster: activeWeek.roster.map(r => r.id === emp.id ? { ...r, empNum: e.target.value } : r) })} style={{ ...inputStyle, padding: '8px' }} placeholder="ID" /></div>
+                      <div style={{ flex: 2 }}><label style={{color:'#aaa', fontSize:'0.7em'}}>Name</label><input type="text" value={emp.name} onChange={e => updateActiveWeek({ roster: activeWeek.roster.map(r => r.id === emp.id ? { ...r, name: e.target.value } : r) })} style={{ ...inputStyle, padding: '8px' }} placeholder="Full Name" /></div>
+                    </div>
                     
-                    <button onClick={() => {
-                      updateActiveWeek({ roster: activeWeek.roster.filter(r => r.id !== emp.id) });
-                    }} style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px', fontWeight: 'bold' }}>X</button>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <div style={{ flex: 2 }}><label style={{color:'#aaa', fontSize:'0.7em'}}>Email</label><input type="email" value={emp.email} onChange={e => updateActiveWeek({ roster: activeWeek.roster.map(r => r.id === emp.id ? { ...r, email: e.target.value } : r) })} style={{ ...inputStyle, padding: '8px' }} placeholder="email@..." /></div>
+                      <div style={{ flex: 1 }}><label style={{color:'#00cc66', fontSize:'0.7em', fontWeight:'bold'}}>Rate ($)</label><input type="number" value={emp.rate} onChange={e => updateActiveWeek({ roster: activeWeek.roster.map(r => r.id === emp.id ? { ...r, rate: e.target.value } : r) })} style={{ ...inputStyle, padding: '8px', color: '#00cc66', borderColor: '#00cc66' }} /></div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -151,33 +166,40 @@ function TimesheetUI() {
             {mgrTab === 'Schedule' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 {activeWeek.roster.map(emp => {
-                  const shifts = activeWeek.shifts[emp.id] || { Mon: '', Tue: '', Wed: '', Thu: '', Fri: '', Sat: '', Sun: '' };
-                  const totalHrs = Object.values(shifts).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+                  const shifts = activeWeek.shifts[emp.id] || getEmptyShifts();
+                  let totalHrs = 0;
+                  Object.values(shifts).forEach(s => totalHrs += calcShiftHrs(s?.in, s?.out));
                   
                   return (
-                    <div key={emp.id} style={{ ...cardStyle, padding: '15px 10px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #333' }}>
-                        <h4 style={{ margin: 0, color: '#a855f7' }}>{emp.name}</h4>
-                        <strong style={{ color: totalHrs > 40 ? '#f59e0b' : '#00cc66' }}>{totalHrs.toFixed(1)} hrs</strong>
+                    <div key={emp.id} style={{ ...cardStyle, padding: '15px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingBottom: '10px', borderBottom: '1px solid #333' }}>
+                        <div>
+                          <h4 style={{ margin: '0 0 2px 0', color: '#a855f7', fontSize: '1.1em' }}>{emp.name || 'Unnamed Worker'}</h4>
+                          {emp.empNum && <span style={{ color: '#888', fontSize: '0.75em' }}>ID: {emp.empNum}</span>}
+                        </div>
+                        <strong style={{ color: totalHrs > 40 ? '#f59e0b' : '#00cc66', fontSize: '1.2em' }}>{totalHrs.toFixed(1)} hrs</strong>
                       </div>
                       
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                          <div key={day} style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.65em', color: '#888', marginBottom: '4px', textTransform: 'uppercase' }}>{day}</div>
-                            <input 
-                              type="number" 
-                              value={shifts[day]} 
-                              placeholder="-"
-                              onChange={e => {
-                                const newShifts = { ...activeWeek.shifts, [emp.id]: { ...shifts, [day]: e.target.value } };
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+                        const s = shifts[day] || {in: '', out: ''};
+                        const hrs = calcShiftHrs(s.in, s.out);
+                        return (
+                          <div key={day} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <div style={{ width: '35px', color: '#aaa', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase' }}>{day}</div>
+                            {/* Android Native Time Spinners */}
+                            <input type="time" value={s.in} onChange={e => {
+                                const newShifts = { ...activeWeek.shifts, [emp.id]: { ...shifts, [day]: { ...s, in: e.target.value } } };
                                 updateActiveWeek({ shifts: newShifts });
-                              }}
-                              style={{ width: '100%', padding: '8px 0', textAlign: 'center', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '6px', fontSize: '1em' }}
-                            />
+                              }} style={{ flex: 1, padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '6px', color: '#00ffff', textAlign: 'center' }} />
+                            <span style={{ color: '#555' }}>to</span>
+                            <input type="time" value={s.out} onChange={e => {
+                                const newShifts = { ...activeWeek.shifts, [emp.id]: { ...shifts, [day]: { ...s, out: e.target.value } } };
+                                updateActiveWeek({ shifts: newShifts });
+                              }} style={{ flex: 1, padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '6px', color: '#f59e0b', textAlign: 'center' }} />
+                            <div style={{ width: '45px', textAlign: 'right', color: hrs > 0 ? '#00cc66' : '#555', fontWeight: 'bold' }}>{hrs > 0 ? hrs.toFixed(1) : '-'}</div>
                           </div>
-                        ))}
-                      </div>
+                        )
+                      })}
                     </div>
                   );
                 })}
@@ -193,8 +215,9 @@ function TimesheetUI() {
                   const budget = parseFloat(activeWeek.budgetHrs) || 160;
 
                   const breakdowns = activeWeek.roster.map(emp => {
-                    const shifts = activeWeek.shifts[emp.id] || {};
-                    const hrs = Object.values(shifts).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+                    const shifts = activeWeek.shifts[emp.id] || getEmptyShifts();
+                    let hrs = 0;
+                    Object.values(shifts).forEach(s => hrs += calcShiftHrs(s?.in, s?.out));
                     const rate = parseFloat(emp.rate) || 0;
                     
                     const regHrs = Math.min(hrs, 40);
@@ -205,14 +228,14 @@ function TimesheetUI() {
                     fleetPay += pay;
                     
                     return (
-                      <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #222' }}>
+                      <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #222' }}>
                         <div>
-                          <div style={{ color: '#a855f7', fontWeight: 'bold' }}>{emp.name}</div>
-                          <div style={{ color: '#888', fontSize: '0.8em' }}>{otHrs > 0 ? <span style={{color: '#f59e0b'}}>OT Triggered ({otHrs}h)</span> : 'Regular Time'}</div>
+                          <div style={{ color: '#a855f7', fontWeight: 'bold' }}>{emp.name || `Worker (${emp.empNum})`}</div>
+                          <div style={{ color: '#888', fontSize: '0.8em' }}>{otHrs > 0 ? <span style={{color: '#f59e0b'}}>OT Triggered ({otHrs.toFixed(1)}h)</span> : 'Regular Time'}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ color: '#fff', fontWeight: 'bold' }}>${pay.toFixed(2)}</div>
-                          <div style={{ color: '#555', fontSize: '0.8em' }}>{hrs} hrs @ ${rate}/hr</div>
+                          <div style={{ color: '#555', fontSize: '0.8em' }}>{hrs.toFixed(1)} hrs @ ${rate}/hr</div>
                         </div>
                       </div>
                     );
@@ -244,7 +267,6 @@ function TimesheetUI() {
           </>
         )}
 
-        {/* Placeholder Shells to prevent blank screens on other tabs */}
         {mainTab === 'Employee' && (
           <div style={{ ...cardStyle, textAlign: 'center', color: '#aaa', padding: '40px 20px' }}>
             <h3>🛠️ Employee View</h3>
