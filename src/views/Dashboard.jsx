@@ -8,6 +8,19 @@ import { useCalendar } from '../core/CalendarContext';
 import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
 
 function Dashboard() {
+
+  const [gearTaps, setGearTaps] = useState(0);
+  const handleGearTap = () => {
+    const t = gearTaps + 1;
+    setGearTaps(t);
+    if (t >= 5) {
+      setGearTaps(0);
+      navigate('/settings');
+    } else {
+      setTimeout(() => setGearTaps(0), 1500);
+    }
+  };
+
   const navigate = useNavigate();
   const { alertCount } = useCalendar();
 
