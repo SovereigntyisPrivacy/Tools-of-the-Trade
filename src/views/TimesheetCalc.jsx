@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCalendar } from '../core/CalendarContext';
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
@@ -21,6 +22,7 @@ class ErrorBoundary extends Component {
 function TimesheetUI() {
   const navigate = useNavigate();
   const [mainTab, setMainTab] = useState('Manager');
+  const { globalDate, addReminder } = useCalendar();
   const [mgrTab, setMgrTab] = useState('Schedule');
 
   // Time Math Helper (Calculates hours between HH:mm strings, handles night shifts)
@@ -85,6 +87,7 @@ function TimesheetUI() {
 
     setWeeks([...weeks, { id: newId, weekDate: nextDateStr, budgetHrs: activeWeek.budgetHrs, roster: [...activeWeek.roster], shifts: newShifts }]);
     setActiveWeekId(newId);
+    addReminder(nextDateStr, `Timesheet: Generated New Schedule`, 'Timesheet', 'Normal');
   };
 
   const deleteActiveWeek = () => {
