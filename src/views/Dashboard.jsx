@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React
+import GhostTap from '../components/GhostTap';, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
@@ -87,6 +88,8 @@ function Dashboard() {
   }, []);
 
   const tools = [
+    { id: "burner", name: "Burner Pad", path: "/burner", icon: "🔥", badge: "WIPES", badgeColor: "#ef4444" },
+    { id: "sop", name: "SOP Engine", path: "/sop", icon: "📋", badge: "CORE", badgeColor: "#3b82f6" },
     
     { id: "subscriptions", name: "Sub Tracker", path: "/subscriptions", icon: "🔄", badge: "NEW", badgeColor: "#a855f7" },
     { id: "vault", name: "Data Vault", path: "/datavault", icon: "💾", badge: "SAFE", badgeColor: "#00ffff" },
@@ -100,6 +103,7 @@ function Dashboard() {
 
   return (
     <div className="view-wrapper pb-safe">
+      <GhostTap />
       <button className="corner-settings-btn" onClick={() => navigate('/settings')}>
         ⚙️
       </button>

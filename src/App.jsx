@@ -22,6 +22,9 @@ const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
 const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 
 // --- Standalone Modules ---
+const BurnerPad = lazy(() => import('./views/BurnerPad'));
+const SOPEngine = lazy(() => import('./views/SOPEngine'));
+const AccessKeyring = lazy(() => import('./views/AccessKeyring'));
 const MyShiftTracker = lazy(() => import('./views/MyShiftTracker'));
 const LearningHub = lazy(() => import('./views/LearningHub'));
 const SubscriptionTracker = lazy(() => import('./views/SubscriptionTracker'));
@@ -114,6 +117,9 @@ function App() {
           <Route path="/subscriptions" element={<SubscriptionTracker />} />
           <Route path="/learning" element={<LearningHub />} />
                     <Route path="/myschedule" element={<MyShiftTracker />} />
+          <Route path="/keyring" element={<AccessKeyring />} />
+          <Route path="/burner" element={<BurnerPad />} />
+          <Route path="/sop" element={<SOPEngine />} />
         </Routes>
           </Suspense>
         </Router>
