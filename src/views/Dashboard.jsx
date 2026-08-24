@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCalendar } from '../core/CalendarContext';
 import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
 
 function Dashboard() {
   const navigate = useNavigate();
+  const { alertCount } = useCalendar();
 
   const [time, setTime] = useState(new Date());
   const [clockConfig, setClockConfig] = useState({ 
@@ -105,7 +107,7 @@ function Dashboard() {
                 zIndex: 10,
                 whiteSpace: 'nowrap'
               }}>
-                {tool.badge}
+                {tool.id === 'calendar' && alertCount > 0 ? alertCount : tool.badge}
               </div>
             )}
             <span className="tool-icon">{tool.icon}</span>
