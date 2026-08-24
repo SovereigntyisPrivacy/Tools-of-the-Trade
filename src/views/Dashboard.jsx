@@ -51,6 +51,8 @@ function Dashboard() {
   }, []);
 
   const tools = [
+    { id: "subscriptions", name: "Sub Tracker", path: "/subscriptions", icon: "🔄", badge: "NEW", badgeColor: "#a855f7" },
+    { id: "vault", name: "Data Vault", path: "/vault", icon: "💾", badge: "SAFE", badgeColor: "#00ffff" },
     { id: "calendar", name: "Master Calendar", path: "/calendar", icon: "📅", badge: "CORE", badgeColor: "#a855f7" },
     { id: "quick", name: "Quick Tip & Tax", path: "/quick", icon: "💸", badge: "FAST", badgeColor: "#00cc66" },
     { id: "schematics", name: "Schematics", path: "/schematics", icon: "📐", badge: "MASSIVE WIP", badgeColor: "#d00000" },

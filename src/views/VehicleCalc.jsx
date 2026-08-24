@@ -1,5 +1,6 @@
 import React, { useState, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCalendar } from '../core/CalendarContext';
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
@@ -22,6 +23,7 @@ function VehicleUI() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Fuel');
   const [guideTab, setGuideTab] = useState('Rental');
+  const { addReminder, globalDate } = useCalendar();
 
   // Towing State
   const [curWt, setCurWt] = useState('5500');
@@ -80,7 +82,7 @@ function VehicleUI() {
       </header>
 
       <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-        {['Fuel', 'Towing', 'Winch', 'Reference'].map(tab => (
+        {['Fuel', 'Towing', 'Winch', 'DVIR', 'Reference'].map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', fontWeight: 'bold', border: 'none', whiteSpace: 'nowrap', background: activeTab === tab ? '#00cc66' : '#222', color: activeTab === tab ? '#000' : '#aaa' }}>{tab}</button>
         ))}
       </div>
@@ -167,6 +169,35 @@ function VehicleUI() {
                 <strong style={{ color: '#f59e0b', fontSize: '1.2em' }}>{minWinch.toFixed(0)} lbs</strong>
               </div>
             </div>
+          </div>
+        )}
+
+        
+        {activeTab === 'DVIR' && (
+          <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#00ffff' }}>📋 Daily DOT Inspection</h3>
+            <div style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '15px' }}>Drivers must clear this checklist before deploying commercial assets over 10k lbs.</div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222', marginBottom: '15px' }}>
+              {['Brakes (Air/Hydraulic) Checked', 'Tire Pressure & Tread Depth Safe', 'Headlights, Signals & Hazards Active', 'Wipers & Horn Operational', 'No Active Fluid Leaks'].map((item, i) => (
+                <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#fff', fontSize: '0.9em', cursor: 'pointer' }}>
+                  <input type="checkbox" style={{ width: '22px', height: '22px', accentColor: '#00cc66' }} />
+                  {item}
+                </label>
+              ))}
+            </div>
+            
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+              <input type="text" id="dvir_driver" placeholder="Driver Name" style={{...inputStyle, flex: 1, marginTop: 0}} />
+              <input type="text" id="dvir_truck" placeholder="Truck ID" style={{...inputStyle, flex: 1, marginTop: 0}} />
+            </div>
+
+            <button onClick={() => {
+              const driver = document.getElementById('dvir_driver').value || 'Unknown';
+              const truck = document.getElementById('dvir_truck').value || 'Unknown Truck';
+              addReminder(globalDate, `[DVIR CLEARED] ${truck} checked by ${driver}`, 'Vehicle', 'Done');
+              alert("DVIR Logged to Master Calendar!");
+            }} style={{ width: '100%', padding: '12px', background: '#00cc66', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Submit Clear Inspection</button>
           </div>
         )}
 
