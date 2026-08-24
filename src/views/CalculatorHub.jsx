@@ -5,8 +5,9 @@ export default function CalculatorHub() {
   const navigate = useNavigate();
 
   const calculators = [
-    { id: 'timesheet', icon: '⏱️', title: 'Timesheet & Wage', desc: 'Calculate shifts, hours, overtime, and projected net income.', path: '/calculator/timesheet' },
-    { id: 'tax', icon: '💼', title: 'Tax Calculator', desc: 'Calculate income tax brackets and standard sales tax.', path: '/calculator/tax' },
+    { id: 'timesheet', icon: '⏱️', title: 'Fleet Payroll Engine', desc: 'Manage crew rosters, OT liabilities, and 1099 flat-rates.', path: '/calculator/timesheet' },
+    { id: 'myschedule', name: 'Personal Shift Tracker', title: 'Personal Shift Tracker', path: '/myschedule', icon: '👤', desc: 'Track your personal shifts, straight-time, and estimate net paychecks.', description: 'Track your personal shifts, straight-time, and estimate net paychecks.' },
+      { id: 'tax', icon: '💼', title: 'Tax Calculator', desc: 'Calculate income tax brackets and standard sales tax.', path: '/calculator/tax' },
     { id: 'solar', icon: '⚡', title: 'Solar Array & Battery', desc: 'Calculate panel wattage, battery banks, and inverter loads.', path: '/calculator/solar' },
     { id: 'shooting', icon: '🎯', title: 'Shooting Range', desc: 'Calculate MOA, bullet drop, and windage adjustments.', path: '/calculator/shooting' },
     { id: 'engineering', icon: '📐', title: 'Engineering', desc: 'Structural limits, materials, and physics formulas.', path: '/calculator/engineering' },
