@@ -6,7 +6,7 @@ export default function Settings() {
   const navigate = useNavigate();
 
   const [shield, setShield] = useState(() => localStorage.getItem('fleet_shield') !== 'false');
-  const [textScale, setTextScale] = useState(() => localStorage.getItem('fleet_textScale') || '16');
+  const [textScale, setTextScale] = useState(() => { const s = localStorage.getItem('fleet_textScale'); return (s && !isNaN(s)) ? parseInt(s) : 16; });
   const [accent, setAccent] = useState(() => localStorage.getItem('fleet_accent') || '#3b82f6');
   const [wallpaper, setWallpaper] = useState(() => localStorage.getItem('fleet_wallpaper') || 'Default Dark');
 
