@@ -282,19 +282,122 @@ function TimesheetUI() {
           </>
         )}
 
-        {mainTab === 'Employee' && (
-          <div style={{ ...cardStyle, textAlign: 'center', color: '#aaa', padding: '40px 20px' }}>
-            <h3>🛠️ Employee View</h3>
-            <p>Select the Manager tab above to build and track fleet schedules.</p>
-          </div>
-        )}
         
-        {mainTab === 'Self-Employed' && (
-          <div style={{ ...cardStyle, textAlign: 'center', color: '#aaa', padding: '40px 20px' }}>
-            <h3>💼 Contractor View</h3>
-            <p>Select the Manager tab above to build and track fleet schedules.</p>
+        {/* --- EMPLOYEE KIOSK VIEW --- */}
+        {mainTab === 'Employee' && (
+          <div style={cardStyle}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 5px 0', color: '#00ffff', textTransform: 'uppercase' }}>Crew Board</h3>
+              <span style={{ color: '#888', fontSize: '0.85em' }}>Week of {activeWeek.weekDate} • Read-Only</span>
+            </div>
+            
+            {activeWeek.roster.filter(emp => {
+              const shifts = activeWeek.shifts[emp.id] || getEmptyShifts();
+              return Object.values(shifts).some(s => s && s.in && s.out);
+            }).length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#555', padding: '20px' }}>No shifts scheduled for this week.</div>
+            ) : (
+              activeWeek.roster.map(emp => {
+                const shifts = activeWeek.shifts[emp.id] || getEmptyShifts();
+                let totalHrs = 0;
+                Object.values(shifts).forEach(s => totalHrs += calcShiftHrs(s?.in, s?.out));
+                if (totalHrs === 0) return null;
+                
+                return (
+                  <div key={emp.id} style={{ background: '#000', padding: '15px', borderRadius: '8px', borderLeft: '4px solid #00ffff', marginBottom: '15px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #222' }}>
+                      <h4 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>{emp.name || `Worker (${emp.empNum})`}</h4>
+                      <strong style={{ color: '#00ffff', fontSize: '1.2em' }}>{totalHrs.toFixed(1)} hrs</strong>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+                         const s = shifts[day];
+                         const isWorking = s && s.in && s.out;
+                         return (
+                           <div key={day} style={{ background: isWorking ? '#111' : 'transparent', padding: '8px 2px', borderRadius: '6px', border: isWorking ? '1px solid #333' : 'none' }}>
+                             <div style={{ fontSize: '0.65em', color: '#888', textTransform: 'uppercase', marginBottom: '4px' }}>{day}</div>
+                             {isWorking ? (
+                               <div style={{ fontSize: '0.75em', color: '#00cc66', fontWeight: 'bold', lineHeight: '1.4' }}>
+                                 {s.in}<br/><span style={{color: '#555'}}>to</span><br/>{s.out}
+                               </div>
+                             ) : (
+                               <div style={{ fontSize: '0.8em', color: '#333' }}>-</div>
+                             )}
+                           </div>
+                         );
+                      })}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
+
+        {/* --- SELF-EMPLOYED 1099 VIEW --- */}
+        {mainTab === 'Self-Employed' && (
+          <div style={cardStyle}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 5px 0', color: '#f59e0b', textTransform: 'uppercase' }}>1099 Contractor Payouts</h3>
+              <span style={{ color: '#888', fontSize: '0.85em' }}>Owner-Operators & Day Labor (Straight Pay / No OT)</span>
+            </div>
+
+            <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #333', marginBottom: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}>
+                 <span>W2 Liability (With OT):</span>
+                 <span>${(() => {
+                   let pay = 0;
+                   activeWeek.roster.forEach(emp => {
+                     let hrs = 0;
+                     Object.values(activeWeek.shifts[emp.id] || {}).forEach(s => hrs += calcShiftHrs(s?.in, s?.out));
+                     const rate = parseFloat(emp.rate) || 0;
+                     pay += (Math.min(hrs, 40) * rate) + (Math.max(0, hrs - 40) * rate * 1.5);
+                   });
+                   return pay.toFixed(2);
+                 })()}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px dashed #333' }}>
+                <strong style={{ color: '#fff' }}>1099 Liability:</strong>
+                <strong style={{ color: '#f59e0b', fontSize: '1.5em' }}>
+                  ${(() => {
+                   let pay1099 = 0;
+                   activeWeek.roster.forEach(emp => {
+                     let hrs = 0;
+                     Object.values(activeWeek.shifts[emp.id] || {}).forEach(s => hrs += calcShiftHrs(s?.in, s?.out));
+                     const rate = parseFloat(emp.rate) || 0;
+                     pay1099 += (hrs * rate);
+                   });
+                   return pay1099.toFixed(2);
+                 })()}
+                </strong>
+              </div>
+            </div>
+            
+            {activeWeek.roster.map(emp => {
+              const shifts = activeWeek.shifts[emp.id] || getEmptyShifts();
+              let hrs = 0;
+              Object.values(shifts).forEach(s => hrs += calcShiftHrs(s?.in, s?.out));
+              if (hrs === 0) return null;
+              
+              const rate = parseFloat(emp.rate) || 0;
+              const straightPay = hrs * rate;
+              
+              return (
+                <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #222' }}>
+                  <div>
+                    <div style={{ color: '#f59e0b', fontWeight: 'bold' }}>{emp.name || `Worker (${emp.empNum})`}</div>
+                    <div style={{ color: '#888', fontSize: '0.8em' }}>Straight Pay (No OT)</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: '#fff', fontWeight: 'bold' }}>${straightPay.toFixed(2)}</div>
+                    <div style={{ color: '#555', fontSize: '0.8em' }}>{hrs.toFixed(1)} hrs @ ${rate}/hr</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
 
       </div>
     </div>
