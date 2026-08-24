@@ -69,6 +69,18 @@ function TimesheetUI() {
 
   useEffect(() => { localStorage.setItem('fleet_schedules', JSON.stringify(weeks)); }, [weeks]);
 
+  
+  const getAttendance = (empId) => {
+    let lates = 0, absences = 0;
+    weeks.forEach(w => {
+      Object.values(w.shifts[empId] || {}).forEach(s => {
+        if (s?.flag === 'late') lates++;
+        if (s?.flag === 'absent') absences++;
+      });
+    });
+    return { lates, absences };
+  };
+
   const updateActiveWeek = (updates) => setWeeks(weeks.map(w => w.id === activeWeekId ? { ...w, ...updates } : w));
 
   const createNewWeek = () => {
@@ -169,11 +181,18 @@ function TimesheetUI() {
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <div style={{ flex: 2 }}><label style={{color:'#aaa', fontSize:'0.7em'}}>Email</label><input type="email" value={emp.email} onChange={e => updateActiveWeek({ roster: activeWeek.roster.map(r => r.id === emp.id ? { ...r, email: e.target.value } : r) })} style={{ ...inputStyle, padding: '8px' }} placeholder="email@..." /></div>
                       <div style={{ flex: 1 }}><label style={{color:'#00cc66', fontSize:'0.7em', fontWeight:'bold'}}>Rate ($)</label><input type="number" value={emp.rate} onChange={e => updateActiveWeek({ roster: activeWeek.roster.map(r => r.id === emp.id ? { ...r, rate: e.target.value } : r) })} style={{ ...inputStyle, padding: '8px', color: '#00cc66', borderColor: '#00cc66' }} /></div>
+                    
+                    </div>
+                    {/* Lifetime Attendance Record */}
+                    <div style={{ display: 'flex', gap: '15px', marginTop: '10px', fontSize: '0.85em', background: '#111', padding: '10px', borderRadius: '6px', borderTop: '1px dashed #333' }}>
+                      <div style={{ color: '#f59e0b' }}>⏰ Lifetime Lates: <strong style={{fontSize: '1.2em'}}>{getAttendance(emp.id).lates}</strong></div>
+                      <div style={{ color: '#ef4444' }}>❌ Absences: <strong style={{fontSize: '1.2em'}}>{getAttendance(emp.id).absences}</strong></div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+
 
             {mgrTab === 'Schedule' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -211,6 +230,15 @@ function TimesheetUI() {
                                 const newShifts = { ...activeWeek.shifts, [emp.id]: { ...shifts, [day]: { ...s, out: e.target.value } } };
                                 updateActiveWeek({ shifts: newShifts });
                               }} style={{ flex: 1, padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '6px', color: '#f59e0b', textAlign: 'center' }} />
+                            
+                            <button onClick={() => {
+                                const currentFlag = s.flag || '';
+                                const nextFlag = currentFlag === '' ? 'late' : currentFlag === 'late' ? 'absent' : '';
+                                const newShifts = { ...activeWeek.shifts, [emp.id]: { ...shifts, [day]: { ...s, flag: nextFlag } } };
+                                updateActiveWeek({ shifts: newShifts });
+                            }} style={{ background: s.flag === 'late' ? 'rgba(245, 158, 11, 0.15)' : s.flag === 'absent' ? 'rgba(239, 68, 68, 0.15)' : '#000', border: '1px solid #333', borderRadius: '6px', padding: '0 10px', fontSize: '1.2em', cursor: 'pointer' }}>
+                              {s.flag === 'late' ? '⏰' : s.flag === 'absent' ? '❌' : '✓'}
+                            </button>
                             <div style={{ width: '45px', textAlign: 'right', color: hrs > 0 ? '#00cc66' : '#555', fontWeight: 'bold' }}>{hrs > 0 ? hrs.toFixed(1) : '-'}</div>
                           </div>
                         )
