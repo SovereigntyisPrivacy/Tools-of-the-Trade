@@ -66,7 +66,7 @@ export default function BudgetEngine() {
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'transparent' }}>
       <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(10, 10, 10, 0.9)', backdropFilter: 'blur(10px)' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
-        <h2 style={{ margin: 0, color: 'var(--text-accent, #3b82f6)', fontSize: '1.2em', textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>Cashflow Engine</h2>
+        <h2 style={{ margin: 0, color: 'var(--text-accent, #3b82f6)', fontSize: '1.2em', textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>Budget Engine</h2>
       </header>
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
