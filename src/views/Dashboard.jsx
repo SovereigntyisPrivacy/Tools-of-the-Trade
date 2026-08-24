@@ -24,7 +24,43 @@ function Dashboard() {
       });
     };
     loadConfig();
-    return () => clearInterval(timer);
+    
+  // --- EXECUTIVE OMNI-TELEMETRY HUD ---
+  let totalAssetValue = 0;
+  let monthlyBurn = 0;
+  let activePayroll = 0;
+
+  try {
+    const assets = JSON.parse(localStorage.getItem('asset_ledger') || '[]');
+    totalAssetValue = assets.reduce((sum, a) => sum + parseFloat(a.price || 0), 0);
+
+    const subs = JSON.parse(localStorage.getItem('fleet_subscriptions') || '[]');
+    monthlyBurn = subs.reduce((sum, s) => sum + (s.cycle === 'Monthly' ? parseFloat(s.cost || 0) : parseFloat(s.cost || 0)/12), 0);
+
+    const schedules = JSON.parse(localStorage.getItem('fleet_schedules') || '[]');
+    if (schedules.length > 0) {
+      const activeWk = schedules[schedules.length - 1]; // Grabs the most recently generated week
+      activeWk.roster.forEach(emp => {
+        let hrs = 0;
+        Object.values(activeWk.shifts[emp.id] || {}).forEach(s => {
+          if (s && s.in && s.out) {
+            const [h1, m1] = s.in.split(':').map(Number);
+            const [h2, m2] = s.out.split(':').map(Number);
+            let m1Total = h1 * 60 + m1;
+            let m2Total = h2 * 60 + m2;
+            if (m2Total < m1Total) m2Total += 24 * 60;
+            hrs += (m2Total - m1Total) / 60;
+          }
+        });
+        const rate = parseFloat(emp.rate) || 0;
+        const reg = Math.min(hrs, 40);
+        const ot = Math.max(0, hrs - 40);
+        activePayroll += (reg * rate) + (ot * rate * 1.5);
+      });
+    }
+  } catch(e) {}
+
+  return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
