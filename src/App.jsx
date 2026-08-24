@@ -1,4 +1,3 @@
-import Support from "./views/Support.jsx";
 import React, { Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './core/ThemeContext';
@@ -112,8 +111,7 @@ function App() {
               <Route path="/ledger" element={<AssetLedger />} />
               <Route path="/civics" element={<CivicsRights />} />
 
-              <Route path="/support" element={<Support />} />
-              <Route path="/quick" element={<QuickCalc />} />
+                            <Route path="/quick" element={<QuickCalc />} />
           <Route path="/worldclock" element={<WorldClock />} />
           <Route path="/calendar" element={<CalendarHub />} />
           <Route path="/datavault" element={<DataVault />} />

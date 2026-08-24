@@ -1,5 +1,7 @@
-import GhostTap from '../components/GhostTap';
 import React, { useState, useEffect } from 'react';
+import GhostTap from '../components/GhostTap';
+import GhostTap from '../components/GhostTap';
+
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
