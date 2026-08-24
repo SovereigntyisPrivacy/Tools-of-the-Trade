@@ -14,7 +14,6 @@ export default function BudgetEngine() {
         { id: '2', name: 'Gas & Transit', amount: 0, dueDate: '' },
         { id: '3', name: 'Groceries', amount: 0, dueDate: '' }
     ];
-    // Migration safety check to ensure old entries don't crash the date field
     return parsed.map(e => ({ ...e, dueDate: e.dueDate || '' }));
   });
 
@@ -22,10 +21,8 @@ export default function BudgetEngine() {
   useEffect(() => { localStorage.setItem('fleet_budget_envs', JSON.stringify(envelopes)); }, [envelopes]);
 
   const addEnvelope = () => {
-      const name = prompt("Enter category name (e.g., Subscriptions, Phone Bill):");
-      if (name) {
-          setEnvelopes([...envelopes, { id: `env_${Date.now()}`, name, amount: 0, dueDate: '' }]);
-      }
+      const newId = `env_${Date.now()}`;
+      setEnvelopes([...envelopes, { id: newId, name: 'New Bill', amount: 0, dueDate: '' }]);
   };
 
   const updateEnvelope = (id, field, value) => {
@@ -37,9 +34,9 @@ export default function BudgetEngine() {
   };
 
   const syncToCalendar = (env) => {
-      if (!env.dueDate) return alert("Please set a due date for this item first!");
+      if (!env.dueDate) return alert("⚠️ Please set a due date for this bill first!");
       addReminder(env.dueDate, `[BILL DUE] ${env.name} ($${env.amount})`, 'Cashflow Engine', 'High');
-      alert(`${env.name} synced to Master Calendar!`);
+      alert(`✅ ${env.name} successfully synced to Master Calendar!`);
   };
 
   const totalAllocated = envelopes.reduce((sum, env) => sum + env.amount, 0);
@@ -75,44 +72,49 @@ export default function BudgetEngine() {
                 <div style={{ fontSize: '2em', fontWeight: 'bold', fontFamily: 'monospace', color: unassigned < 0 ? '#ef4444' : unassigned === 0 ? '#aaa' : '#00ffff' }}>
                     ${unassigned.toFixed(2)}
                 </div>
-                {unassigned < 0 && <div style={{ color: '#ef4444', fontSize: '0.8em', marginTop: '5px', fontWeight: 'bold' }}>⚠️ Over Budget</div>}
-                {unassigned === 0 && <div style={{ color: '#00cc66', fontSize: '0.8em', marginTop: '5px', fontWeight: 'bold' }}>✓ Zero-Based Target Met</div>}
             </div>
         </div>
 
-        {/* --- ENVELOPES --- */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
-            <h3 style={{ margin: 0, color: '#fff', textTransform: 'uppercase', fontSize: '0.9em', letterSpacing: '1px' }}>Cash Envelopes</h3>
-            <button onClick={addEnvelope} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.85em' }}>+ Add Category</button>
+        {/* --- ENVELOPES LEDGER --- */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h3 style={{ margin: 0, color: '#fff', textTransform: 'uppercase', fontSize: '0.9em', letterSpacing: '1px' }}>Bill Ledger</h3>
+            <button onClick={addEnvelope} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.85em' }}>+ Add Bill</button>
         </div>
 
         {envelopes.map(env => (
-            <div key={env.id} style={{ background: 'rgba(17, 17, 17, 0.85)', backdropFilter: 'blur(10px)', padding: '15px', borderRadius: '12px', borderLeft: '4px solid #3b82f6', marginBottom: '15px', borderTop: '1px solid #333', borderRight: '1px solid #333', borderBottom: '1px solid #333' }}>
+            <div key={env.id} style={{ background: 'rgba(17, 17, 17, 0.85)', backdropFilter: 'blur(10px)', padding: '12px', borderRadius: '12px', borderLeft: '4px solid #3b82f6', marginBottom: '12px', borderTop: '1px solid #333', borderRight: '1px solid #333', borderBottom: '1px solid #333' }}>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                    <button onClick={() => removeEnvelope(env.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.2em', padding: '0 5px' }}>×</button>
-                    <div style={{ flex: 1, color: '#fff', fontWeight: 'bold', fontSize: '1.1em' }}>{env.name}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.6)', padding: '5px 10px', borderRadius: '6px', border: '1px solid #444' }}>
-                        <span style={{ color: '#00cc66', fontWeight: 'bold', marginRight: '5px' }}>$</span>
+                {/* Editable Title Row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <input 
+                        type="text" 
+                        value={env.name} 
+                        onChange={e => updateEnvelope(env.id, 'name', e.target.value)} 
+                        style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: '1px solid #444', color: '#fff', fontSize: '1.1em', fontWeight: 'bold', outline: 'none', paddingBottom: '4px' }}
+                    />
+                    <button onClick={() => removeEnvelope(env.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.2em' }}>×</button>
+                </div>
+
+                {/* Side-by-Side Data Row */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                    <input 
+                        type="date" 
+                        value={env.dueDate} 
+                        onChange={e => updateEnvelope(env.id, 'dueDate', e.target.value)} 
+                        style={{ flex: 1, background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#aaa', padding: '8px', borderRadius: '6px', fontSize: '0.85em', outline: 'none' }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.6)', padding: '0 10px', borderRadius: '6px', border: '1px solid #444' }}>
+                        <span style={{ color: '#00cc66', fontWeight: 'bold', marginRight: '4px' }}>$</span>
                         <input 
                             type="number" 
                             value={env.amount || ''} 
                             onChange={e => updateEnvelope(env.id, 'amount', e.target.value)} 
                             placeholder="0"
-                            style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2em', fontWeight: 'bold', width: '70px', textAlign: 'right', outline: 'none' }} 
+                            style={{ width: '60px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1em', fontWeight: 'bold', textAlign: 'right', outline: 'none' }} 
                         />
                     </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', paddingLeft: '32px' }}>
-                    <input 
-                        type="date" 
-                        value={env.dueDate} 
-                        onChange={e => updateEnvelope(env.id, 'dueDate', e.target.value)} 
-                        style={{ flex: 1, background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#aaa', padding: '8px', borderRadius: '6px', fontSize: '0.85em' }}
-                    />
-                    <button onClick={() => syncToCalendar(env)} style={{ background: 'transparent', border: '1px dashed #a855f7', color: '#a855f7', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85em', fontWeight: 'bold' }}>
-                        📅 Sync
+                    <button onClick={() => syncToCalendar(env)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '6px', fontSize: '0.85em', fontWeight: 'bold' }}>
+                        Sync
                     </button>
                 </div>
             </div>
