@@ -98,59 +98,56 @@ function TimesheetUI() {
       
       <div className="calc-content" style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '95px' }}>
         
-        {/* --- PERSONAL SHIFT TRACKER --- */}
+        
+        {/* --- EMPLOYEE KIOSK VIEW --- */}
         {mainTab === 'Employee' && (
-          <>
-            <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase' }}>My Hourly Rate</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{color: '#00cc66', fontSize: '1.2em'}}>$</span><input type="number" value={myRate} onChange={e=>setMyRate(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#00cc66', fontSize: '1.5em', fontWeight: 'bold', width: '80px', padding: 0 }} /></div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase' }}>Total Hours</div>
-                <strong style={{ color: '#3b82f6', fontSize: '1.5em' }}>{Object.values(myShifts).reduce((sum, s) => sum + calcShiftHrs(s.in, s.out), 0).toFixed(1)}</strong>
-              </div>
+          <div style={cardStyle}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 5px 0', color: '#00ffff', textTransform: 'uppercase' }}>Crew Board</h3>
+              <span style={{ color: '#888', fontSize: '0.85em' }}>Week of {activeWeek.weekDate} • Read-Only</span>
             </div>
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                 <h3 style={{ margin: 0, color: '#fff' }}>My Shifts</h3>
-                 <button onClick={() => { const ns = {...myShifts}; ['Mon','Tue','Wed','Thu','Fri'].forEach(d => ns[d] = {in:'16:00', out:'22:00'}); setMyShifts(ns); }} style={{ background: '#222', color: '#00ffff', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8em' }}>⚡ Quick Fill</button>
-              </div>
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
-                const s = myShifts[day]; const hrs = calcShiftHrs(s.in, s.out);
+            
+            {activeWeek.roster.filter(emp => {
+              const shifts = activeWeek.shifts[emp.id] || getEmptyShifts();
+              return Object.values(shifts).some(s => s && s.in && s.out);
+            }).length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#555', padding: '20px' }}>No shifts scheduled for this week.</div>
+            ) : (
+              activeWeek.roster.map(emp => {
+                const shifts = activeWeek.shifts[emp.id] || getEmptyShifts();
+                let totalHrs = 0;
+                Object.values(shifts).forEach(s => totalHrs += calcShiftHrs(s?.in, s?.out));
+                if (totalHrs === 0) return null;
+                
                 return (
-                  <div key={day} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                    <div style={{ width: '35px', color: '#aaa', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase' }}>{day}</div>
-                    <input type="time" value={s.in} onChange={e => setMyShifts({...myShifts, [day]: {...s, in: e.target.value}})} style={{ ...inputStyle, color: '#00ffff', padding: '8px' }} />
-                    <span style={{ color: '#555' }}>to</span>
-                    <input type="time" value={s.out} onChange={e => setMyShifts({...myShifts, [day]: {...s, out: e.target.value}})} style={{ ...inputStyle, color: '#f59e0b', padding: '8px' }} />
+                  <div key={emp.id} style={{ background: '#000', padding: '15px', borderRadius: '8px', borderLeft: '4px solid #00ffff', marginBottom: '15px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #222' }}>
+                      <h4 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>{emp.name || `Worker (${emp.empNum})`}</h4>
+                      <strong style={{ color: '#00ffff', fontSize: '1.2em' }}>{totalHrs.toFixed(1)} hrs</strong>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+                         const s = shifts[day];
+                         const isWorking = s && s.in && s.out;
+                         return (
+                           <div key={day} style={{ background: isWorking ? '#111' : 'transparent', padding: '8px 2px', borderRadius: '6px', border: isWorking ? '1px solid #333' : 'none' }}>
+                             <div style={{ fontSize: '0.65em', color: '#888', textTransform: 'uppercase', marginBottom: '4px' }}>{day}</div>
+                             {isWorking ? (
+                               <div style={{ fontSize: '0.75em', color: '#00cc66', fontWeight: 'bold', lineHeight: '1.4' }}>
+                                 {s.in}<br/><span style={{color: '#555'}}>to</span><br/>{s.out}
+                               </div>
+                             ) : (
+                               <div style={{ fontSize: '0.8em', color: '#333' }}>-</div>
+                             )}
+                           </div>
+                         );
+                      })}
+                    </div>
                   </div>
-                )
-              })}
-              <button onClick={() => setMyShifts(getEmptyShifts())} style={{ width: '100%', padding: '10px', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', marginTop: '10px' }}>Clear Week</button>
-            </div>
-            <div style={{ ...cardStyle, background: '#000' }}>
-                <h3 style={{ margin: '0 0 15px 0', color: '#a855f7', textAlign: 'center', textTransform: 'uppercase' }}>Paycheck Estimator</h3>
-                {(() => {
-                    const h = Object.values(myShifts).reduce((sum, s) => sum + calcShiftHrs(s.in, s.out), 0);
-                    const r = parseFloat(myRate) || 0;
-                    const reg = Math.min(h, 40); const ot = Math.max(0, h - 40);
-                    return (
-                        <>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #222', paddingBottom: '10px', marginBottom: '10px' }}>
-                                <span style={{ color: '#888' }}>Regular Pay ({reg.toFixed(1)}h)</span><span style={{ color: '#fff' }}>${(reg * r).toFixed(2)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #333', paddingBottom: '10px', marginBottom: '10px' }}>
-                                <span style={{ color: '#888' }}>Overtime Pay ({ot.toFixed(1)}h)</span><span style={{ color: '#f59e0b' }}>${(ot * r * 1.5).toFixed(2)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <strong style={{ color: '#fff' }}>Est. Net Pay (~18% Tax)</strong><strong style={{ color: '#00cc66', fontSize: '1.5em' }}>${(((reg * r) + (ot * r * 1.5)) * 0.82).toFixed(2)}</strong>
-                            </div>
-                        </>
-                    )
-                })()}
-            </div>
-          </>
+                );
+              })
+            )}
+          </div>
         )}
 
         {/* --- MANAGER ENGINE --- */}

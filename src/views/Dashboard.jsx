@@ -87,6 +87,7 @@ function Dashboard() {
   }, []);
 
   const tools = [
+    { id: "myschedule", name: "My Schedule", path: "/myschedule", icon: "⏱️", badge: "", badgeColor: "#222" },
     
     { id: "subscriptions", name: "Sub Tracker", path: "/subscriptions", icon: "🔄", badge: "NEW", badgeColor: "#a855f7" },
     { id: "vault", name: "Data Vault", path: "/datavault", icon: "💾", badge: "SAFE", badgeColor: "#00ffff" },

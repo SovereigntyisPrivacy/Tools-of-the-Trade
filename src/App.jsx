@@ -22,6 +22,7 @@ const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
 const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 
 // --- Standalone Modules ---
+const MyShiftTracker = lazy(() => import('./views/MyShiftTracker'));
 const LearningHub = lazy(() => import('./views/LearningHub'));
 const SubscriptionTracker = lazy(() => import('./views/SubscriptionTracker'));
 const DataVault = lazy(() => import('./views/DataVault'));
@@ -112,7 +113,8 @@ function App() {
           <Route path="/datavault" element={<DataVault />} />
           <Route path="/subscriptions" element={<SubscriptionTracker />} />
           <Route path="/learning" element={<LearningHub />} />
-                  </Routes>
+                    <Route path="/myschedule" element={<MyShiftTracker />} />
+        </Routes>
           </Suspense>
         </Router>
       </CalendarProvider>
