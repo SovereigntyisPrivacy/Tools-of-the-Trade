@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function ChronosHub() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Timer');
+  const [activeTab, setActiveTab] = useState('Stopwatch');
 
   // --- STOPWATCH LOGIC ---
   const [time, setTime] = useState(0);
@@ -35,21 +35,27 @@ export default function ChronosHub() {
      setTime(0); setIsRunning(false);
   };
 
-  // --- WORLD CLOCK LOGIC ---
-  const [clocks, setClocks] = useState(() => {
-      const saved = localStorage.getItem('fleet_world_clocks');
-      return saved ? JSON.parse(saved) : [
-          { id: '1', name: 'Local Dispatch', tz: 'America/Phoenix' },
-          { id: '2', name: 'East Coast HQ', tz: 'America/New_York' },
-          { id: '3', name: 'UTC / Zulu', tz: 'UTC' }
-      ];
-  });
-  const [currentTime, setCurrentTime] = useState(new Date());
+  // --- BREAK COUNTDOWN LOGIC ---
+  const [breakTime, setBreakTime] = useState(0);
+  const [isBreakRunning, setIsBreakRunning] = useState(false);
+  const breakRef = useRef(null);
 
   useEffect(() => {
-     const int = setInterval(() => setCurrentTime(new Date()), 1000);
-     return () => clearInterval(int);
-  }, []);
+    if (isBreakRunning && breakTime > 0) {
+      breakRef.current = setInterval(() => setBreakTime(t => t - 1), 1000);
+    } else if (breakTime === 0 && isBreakRunning) {
+      setIsBreakRunning(false);
+      alert('Break time is over! Clock back in.');
+    } else {
+      clearInterval(breakRef.current);
+    }
+    return () => clearInterval(breakRef.current);
+  }, [isBreakRunning, breakTime]);
+
+  const startBreak = (minutes) => {
+      setBreakTime(minutes * 60);
+      setIsBreakRunning(true);
+  };
 
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
 
@@ -61,12 +67,12 @@ export default function ChronosHub() {
       </header>
 
       <div style={{ display: 'flex', background: '#111', padding: '10px', gap: '6px' }}>
-        <button onClick={() => setActiveTab('Timer')} style={{ flex: 1, padding: '8px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: activeTab === 'Timer' ? '#3b82f6' : '#222', color: activeTab === 'Timer' ? '#fff' : '#aaa' }}>Job Timer</button>
-        <button onClick={() => setActiveTab('World')} style={{ flex: 1, padding: '8px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: activeTab === 'World' ? '#3b82f6' : '#222', color: activeTab === 'World' ? '#fff' : '#aaa' }}>World Clock</button>
+        <button onClick={() => setActiveTab('Stopwatch')} style={{ flex: 1, padding: '8px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: activeTab === 'Stopwatch' ? '#3b82f6' : '#222', color: activeTab === 'Stopwatch' ? '#fff' : '#aaa' }}>Job Stopwatch</button>
+        <button onClick={() => setActiveTab('Break')} style={{ flex: 1, padding: '8px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: activeTab === 'Break' ? '#f59e0b' : '#222', color: activeTab === 'Break' ? '#fff' : '#aaa' }}>Break Timer</button>
       </div>
 
       <div style={{ padding: '15px', flex: 1 }}>
-        {activeTab === 'Timer' && (
+        {activeTab === 'Stopwatch' && (
           <div style={{...cardStyle, textAlign: 'center', padding: '30px 15px', borderTop: '4px solid #3b82f6'}}>
              <div style={{ color: '#888', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '2px', marginBottom: '10px' }}>Active Billable Time</div>
              <div style={{ fontSize: '4em', color: isRunning ? '#00cc66' : '#fff', fontWeight: 'bold', fontFamily: 'monospace', textShadow: isRunning ? '0 0 10px rgba(0,204,102,0.5)' : 'none', marginBottom: '30px' }}>
@@ -86,26 +92,27 @@ export default function ChronosHub() {
           </div>
         )}
 
-        {activeTab === 'World' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {clocks.map(clock => {
-                let timeString = 'Invalid TZ';
-                try {
-                    timeString = currentTime.toLocaleTimeString('en-US', { timeZone: clock.tz, hour12: true, hour: 'numeric', minute: '2px', second: '2-digit' });
-                } catch(e) {}
-                
-                return (
-                    <div key={clock.id} style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                            <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1em' }}>{clock.name}</div>
-                            <div style={{ color: '#555', fontSize: '0.8em', textTransform: 'uppercase' }}>{clock.tz}</div>
-                        </div>
-                        <div style={{ color: '#00ffff', fontSize: '1.5em', fontWeight: 'bold', fontFamily: 'monospace' }}>
-                            {timeString}
-                        </div>
-                    </div>
-                )
-            })}
+        {activeTab === 'Break' && (
+          <div style={{...cardStyle, textAlign: 'center', padding: '30px 15px', borderTop: '4px solid #f59e0b'}}>
+             <div style={{ color: '#888', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '2px', marginBottom: '10px' }}>Rest / Compliance Countdown</div>
+             <div style={{ fontSize: '4em', color: isBreakRunning ? '#f59e0b' : '#fff', fontWeight: 'bold', fontFamily: 'monospace', textShadow: isBreakRunning ? '0 0 10px rgba(245,158,11,0.5)' : 'none', marginBottom: '30px' }}>
+                {formatTime(breakTime)}
+             </div>
+             
+             {!isBreakRunning && breakTime === 0 ? (
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                     <button onClick={() => startBreak(15)} style={{ padding: '12px', background: '#222', color: '#fff', border: '1px solid #333', borderRadius: '8px', fontWeight: 'bold' }}>15 Min (Quick Rest)</button>
+                     <button onClick={() => startBreak(30)} style={{ padding: '12px', background: '#222', color: '#fff', border: '1px solid #333', borderRadius: '8px', fontWeight: 'bold' }}>30 Min (Lunch Break)</button>
+                     <button onClick={() => startBreak(60)} style={{ padding: '12px', background: '#222', color: '#fff', border: '1px solid #333', borderRadius: '8px', fontWeight: 'bold' }}>60 Min (Full Hour)</button>
+                 </div>
+             ) : (
+                 <div style={{ display: 'flex', gap: '10px' }}>
+                     <button onClick={() => setIsBreakRunning(!isBreakRunning)} style={{ flex: 2, padding: '15px', fontSize: '1.2em', fontWeight: 'bold', borderRadius: '8px', border: 'none', background: isBreakRunning ? '#222' : '#00cc66', color: isBreakRunning ? '#fff' : '#000' }}>
+                        {isBreakRunning ? 'PAUSE' : 'RESUME'}
+                     </button>
+                     <button onClick={() => { setBreakTime(0); setIsBreakRunning(false); }} style={{ flex: 1, padding: '15px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
+                 </div>
+             )}
           </div>
         )}
       </div>
