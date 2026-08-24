@@ -93,7 +93,6 @@ function Dashboard() {
     { id: "calendar", name: "Master Calendar", path: "/calendar", icon: "📅", badge: "CORE", badgeColor: "#a855f7" },
     { id: "quick", name: "Quick Tip & Tax", path: "/quick", icon: "💸", badge: "FAST", badgeColor: "#00cc66" },
     { id: "learning", name: "Learning Center", path: "/learning", icon: "📚", badge: "NEW", badgeColor: "#00ffff" },
-    { id: "cacher", name: "Zero-Signal Cacher", path: "/cacher", icon: "📡", badge: "COMING SOON", badgeColor: "#ffb703" },
     { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮" },
     { id: "ledger", name: "Asset Ledger", path: "/ledger", icon: "📋" },
     { id: "civics", name: "Civics & Rights", path: "/civics", icon: "⚖️" }
