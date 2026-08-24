@@ -10,11 +10,12 @@ export default function BudgetEngine() {
   const [envelopes, setEnvelopes] = useState(() => {
     const saved = localStorage.getItem('fleet_budget_envs');
     const parsed = saved ? JSON.parse(saved) : [
-        { id: '1', name: 'Housing / Rent', amount: 0, dueDate: '' },
-        { id: '2', name: 'Gas & Transit', amount: 0, dueDate: '' },
-        { id: '3', name: 'Groceries', amount: 0, dueDate: '' }
+        { id: '1', name: 'Housing / Rent', amount: 0, dueDate: '', recurrence: 'Monthly' },
+        { id: '2', name: 'Gas & Transit', amount: 0, dueDate: '', recurrence: 'Weekly' },
+        { id: '3', name: 'Groceries', amount: 0, dueDate: '', recurrence: 'Weekly' }
     ];
-    return parsed.map(e => ({ ...e, dueDate: e.dueDate || '' }));
+    // Migration safety check to add recurrence to any older saved envelopes
+    return parsed.map(e => ({ ...e, dueDate: e.dueDate || '', recurrence: e.recurrence || 'Monthly' }));
   });
 
   useEffect(() => { localStorage.setItem('fleet_budget_net', netIncome.toString()); }, [netIncome]);
@@ -22,7 +23,7 @@ export default function BudgetEngine() {
 
   const addEnvelope = () => {
       const newId = `env_${Date.now()}`;
-      setEnvelopes([...envelopes, { id: newId, name: 'New Bill', amount: 0, dueDate: '' }]);
+      setEnvelopes([...envelopes, { id: newId, name: 'New Bill', amount: 0, dueDate: '', recurrence: 'Monthly' }]);
   };
 
   const updateEnvelope = (id, field, value) => {
@@ -35,7 +36,8 @@ export default function BudgetEngine() {
 
   const syncToCalendar = (env) => {
       if (!env.dueDate) return alert("⚠️ Please set a due date for this bill first!");
-      addReminder(env.dueDate, `[BILL DUE] ${env.name} ($${env.amount})`, 'Cashflow Engine', 'High');
+      // Adds the recurrence directly to the calendar event title
+      addReminder(env.dueDate, `[BILL: ${env.recurrence}] ${env.name} ($${env.amount})`, 'Cashflow Engine', 'High');
       alert(`✅ ${env.name} successfully synced to Master Calendar!`);
   };
 
@@ -84,24 +86,13 @@ export default function BudgetEngine() {
         {envelopes.map(env => (
             <div key={env.id} style={{ background: 'rgba(17, 17, 17, 0.85)', backdropFilter: 'blur(10px)', padding: '12px', borderRadius: '12px', borderLeft: '4px solid #3b82f6', marginBottom: '12px', borderTop: '1px solid #333', borderRight: '1px solid #333', borderBottom: '1px solid #333' }}>
                 
-                {/* Editable Title Row */}
+                {/* Row 1: Name, Amount, Delete */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                     <input 
                         type="text" 
                         value={env.name} 
                         onChange={e => updateEnvelope(env.id, 'name', e.target.value)} 
                         style={{ flex: 1, background: 'transparent', border: 'none', borderBottom: '1px solid #444', color: '#fff', fontSize: '1.1em', fontWeight: 'bold', outline: 'none', paddingBottom: '4px' }}
-                    />
-                    <button onClick={() => removeEnvelope(env.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.2em' }}>×</button>
-                </div>
-
-                {/* Side-by-Side Data Row */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
-                    <input 
-                        type="date" 
-                        value={env.dueDate} 
-                        onChange={e => updateEnvelope(env.id, 'dueDate', e.target.value)} 
-                        style={{ flex: 1, background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#aaa', padding: '8px', borderRadius: '6px', fontSize: '0.85em', outline: 'none' }}
                     />
                     <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.6)', padding: '0 10px', borderRadius: '6px', border: '1px solid #444' }}>
                         <span style={{ color: '#00cc66', fontWeight: 'bold', marginRight: '4px' }}>$</span>
@@ -110,9 +101,32 @@ export default function BudgetEngine() {
                             value={env.amount || ''} 
                             onChange={e => updateEnvelope(env.id, 'amount', e.target.value)} 
                             placeholder="0"
-                            style={{ width: '60px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1em', fontWeight: 'bold', textAlign: 'right', outline: 'none' }} 
+                            style={{ width: '70px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.1em', fontWeight: 'bold', textAlign: 'right', outline: 'none' }} 
                         />
                     </div>
+                    <button onClick={() => removeEnvelope(env.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.2em' }}>×</button>
+                </div>
+
+                {/* Row 2: Date, Recurrence, Sync */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                    <input 
+                        type="date" 
+                        value={env.dueDate} 
+                        onChange={e => updateEnvelope(env.id, 'dueDate', e.target.value)} 
+                        style={{ flex: 1, background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#aaa', padding: '8px', borderRadius: '6px', fontSize: '0.85em', outline: 'none' }}
+                    />
+                    <select 
+                        value={env.recurrence || 'Monthly'} 
+                        onChange={e => updateEnvelope(env.id, 'recurrence', e.target.value)}
+                        style={{ flex: 1, background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#aaa', padding: '8px', borderRadius: '6px', fontSize: '0.85em', outline: 'none' }}
+                    >
+                        <option value="One-Time">One-Time</option>
+                        <option value="Weekly">Weekly</option>
+                        <option value="Bi-Weekly">Bi-Weekly</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Bi-Monthly">Bi-Monthly</option>
+                        <option value="Yearly">Yearly</option>
+                    </select>
                     <button onClick={() => syncToCalendar(env)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '6px', fontSize: '0.85em', fontWeight: 'bold' }}>
                         Sync
                     </button>
