@@ -2,6 +2,7 @@ import Support from "./views/Support.jsx";
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './core/ThemeContext';
+import { CalendarProvider } from './core/CalendarContext';
 import './App.css';
 
 const Dashboard = lazy(() => import('./views/Dashboard'));
@@ -21,6 +22,7 @@ const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
 const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 
 // --- Standalone Modules ---
+const CalendarHub = lazy(() => import('./views/CalendarHub'));
 const WorldClock = lazy(() => import('./views/WorldClock'));
 const QuickCalc = lazy(() => import('./views/QuickCalc'));
 const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
@@ -56,7 +58,8 @@ function App() {
   return (
     <ThemeProvider>
       <div className="app-container">
-        <Router>
+        <CalendarProvider>
+      <Router>
           <GlobalNav />
           <Suspense fallback={<div className="loading-screen" style={{ color: '#fff', textAlign: 'center', paddingTop: '50px' }}>Loading Module...</div>}>
             <Routes>
@@ -102,9 +105,11 @@ function App() {
               <Route path="/support" element={<Support />} />
               <Route path="/quick" element={<QuickCalc />} />
           <Route path="/worldclock" element={<WorldClock />} />
+          <Route path="/calendar" element={<CalendarHub />} />
         </Routes>
           </Suspense>
         </Router>
+      </CalendarProvider>
       </div>
     </ThemeProvider>
   );

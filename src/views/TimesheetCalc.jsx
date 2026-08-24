@@ -73,8 +73,17 @@ function TimesheetUI() {
     const newId = `week_${Date.now()}`;
     const newShifts = {};
     activeWeek.roster.forEach(emp => { newShifts[emp.id] = getEmptyShifts(); });
-    const today = new Date().toISOString().split('T')[0];
-    setWeeks([...weeks, { id: newId, weekDate: today, budgetHrs: activeWeek.budgetHrs, roster: [...activeWeek.roster], shifts: newShifts }]);
+    
+    // Smart Calendar Engine: Automatically add 7 days to the current week
+    let nextDate = new Date();
+    if (activeWeek.weekDate) {
+      const [y, m, d] = activeWeek.weekDate.split('-');
+      nextDate = new Date(y, m - 1, d);
+      nextDate.setDate(nextDate.getDate() + 7);
+    }
+    const nextDateStr = nextDate.toISOString().split('T')[0];
+
+    setWeeks([...weeks, { id: newId, weekDate: nextDateStr, budgetHrs: activeWeek.budgetHrs, roster: [...activeWeek.roster], shifts: newShifts }]);
     setActiveWeekId(newId);
   };
 
