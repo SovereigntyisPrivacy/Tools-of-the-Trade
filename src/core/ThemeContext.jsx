@@ -1,61 +1,29 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { Preferences } from '@capacitor/preferences';
+import React, { createContext, useEffect } from 'react';
 
-const ThemeContext = createContext();
-export const useTheme = () => useContext(ThemeContext);
+export const ThemeContext = createContext();
 
-export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState({
-    textSize: 16,
-    textColor: '#00ffff',
-    bgColor: '#121212',
-    bgImage: '',
-  });
-
+export function ThemeProvider({ children }) {
   useEffect(() => {
-    const loadTheme = async () => {
-      const { value } = await Preferences.get({ key: 'tot_theme_settings' });
-      if (value) {
-        const savedTheme = JSON.parse(value);
-        setTheme({ ...theme, ...savedTheme });
-        applyThemeToDOM({ ...theme, ...savedTheme });
-      } else {
-        applyThemeToDOM(theme);
-      }
-    };
-    loadTheme();
+    const scale = localStorage.getItem('fleet_textScale') || '16';
+    const accent = localStorage.getItem('fleet_accent') || '#3b82f6';
+    const wallpaper = localStorage.getItem('fleet_wallpaper') || 'Deep Obsidian';
+    const customBg = localStorage.getItem('fleet_wallpaper_custom');
+    
+    // Apply Global Text Scale & Accent Color
+    document.documentElement.style.fontSize = `${scale}px`;
+    document.documentElement.style.setProperty('--accent', accent);
+    
+    // Apply Background Environment
+    if (wallpaper === 'Custom' && customBg) {
+        document.body.style.backgroundImage = `url(${customBg})`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundAttachment = 'fixed';
+    } else {
+        document.body.style.backgroundImage = 'none';
+        document.body.style.backgroundColor = wallpaper === 'Midnight Blue' ? '#000511' : (wallpaper === 'Deep Obsidian' ? '#0a0a0a' : '#000');
+    }
   }, []);
 
-  const applyThemeToDOM = (currentTheme) => {
-    const root = document.documentElement;
-    root.style.setProperty('--tot-text-size', `${currentTheme.textSize}px`);
-    root.style.setProperty('--tot-text-color', currentTheme.textColor);
-    
-    if (currentTheme.bgImage) {
-      root.style.setProperty('--tot-bg', `url(${currentTheme.bgImage})`);
-      root.style.backgroundSize = 'cover';
-      root.style.backgroundPosition = 'center center';
-      root.style.backgroundRepeat = 'no-repeat';
-      root.style.backgroundAttachment = 'fixed';
-    } else {
-      root.style.setProperty('--tot-bg', currentTheme.bgColor);
-      root.style.backgroundImage = 'none';
-    }
-  };
-
-  const updateTheme = async (newSettings) => {
-    const updatedTheme = { ...theme, ...newSettings };
-    setTheme(updatedTheme);
-    applyThemeToDOM(updatedTheme);
-    await Preferences.set({
-      key: 'tot_theme_settings',
-      value: JSON.stringify(updatedTheme),
-    });
-  };
-
-  return (
-    <ThemeContext.Provider value={{ theme, updateTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-};
+  return <ThemeContext.Provider value={{}}>{children}</ThemeContext.Provider>;
+}

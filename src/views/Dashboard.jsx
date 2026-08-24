@@ -9,17 +9,20 @@ import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admo
 
 function Dashboard() {
 
-  const [gearTaps, setGearTaps] = useState(0);
-  const handleGearTap = () => {
-    const t = gearTaps + 1;
-    setGearTaps(t);
+  const [devTaps, setDevTaps] = useState(0);
+  const handleTitleTap = () => {
+    const t = devTaps + 1;
+    setDevTaps(t);
     if (t >= 5) {
-      setGearTaps(0);
-      navigate('/settings');
+      localStorage.setItem('fleet_dev_mode', 'true');
+      alert('Developer Mode Unlocked: Wipe Data & Screenshot Shield exposed.');
+      setDevTaps(0);
     } else {
-      setTimeout(() => setGearTaps(0), 1500);
+      setTimeout(() => setDevTaps(0), 1500);
     }
   };
+
+  
 
   const navigate = useNavigate();
   const { alertCount } = useCalendar();
@@ -120,26 +123,22 @@ function Dashboard() {
 
   return (
     <div className="view-wrapper pb-safe">
-      <GhostTap />
-      <button onClick={handleGearTap} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
-        ⚙️
-      </button>
       
-      <header className="header" style={{ paddingTop: '40px' }}>
-        
-      <div 
-        onClick={() => navigate('/worldclock')}
-        style={{
-          position: 'absolute', top: '15px', left: '50%', transform: 'translateX(-50%)',
-          color: clockConfig.color, opacity: parseFloat(clockConfig.opacity),
-          fontSize: '1.1rem', fontWeight: '900', letterSpacing: '2px', cursor: 'pointer',
-          textShadow: `0 0 10px ${clockConfig.color}`, zIndex: 100
-        }}
-      >
-        {time.toLocaleTimeString('en-US', { timeZone: clockConfig.tz, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-      </div>
-        <h1 className="friendly-title" style={{ lineHeight: '1.2', paddingBottom: '10px' }}>T⚙️⚙️ls of the Trade</h1>
+      
+      
+      
+      <header className="header" style={{ position: 'relative', paddingTop: '40px', paddingBottom: '20px', textAlign: 'center' }}>
+        <div onClick={() => navigate('/worldclock')} style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', cursor: 'pointer', zIndex: 10 }}>
+          <span style={{ color: clockConfig.color, fontSize: '1.2rem', textShadow: `0 0 10px ${clockConfig.color}`, fontWeight: 'bold' }}>
+            {time.toLocaleTimeString('en-US', { timeZone: clockConfig.tz, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </span>
+        </div>
+        <button onClick={() => navigate('/settings')} style={{ position: 'absolute', top: '5px', right: '15px', background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', zIndex: 10 }}>
+          ⚙️
+        </button>
+        <h1 onClick={handleTitleTap} className="friendly-title" style={{ marginTop: '20px', cursor: 'pointer', lineHeight: '1.2' }}>T⚙️⚙️ls of the Trade</h1>
       </header>
+
 
       <div className="grid-container" style={{ marginTop: '40px' }}>
         {tools.map((tool) => (
