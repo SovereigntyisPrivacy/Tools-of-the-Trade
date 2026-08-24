@@ -276,7 +276,7 @@ function TimesheetUI() {
                         return (
                           <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #222' }}>
                             <div>
-                              <div style={{ color: '#a855f7', fontWeight: 'bold' }}>{emp.name || \`Worker (\${emp.empNum})\`}</div>
+                              <div style={{ color: '#a855f7', fontWeight: 'bold' }}>{emp.name || `Worker (${emp.empNum})`}</div>
                               <div style={{ color: '#888', fontSize: '0.8em' }}>{otHrs > 0 ? <span style={{color: '#f59e0b'}}>OT Triggered ({otHrs.toFixed(1)}h)</span> : 'Regular Time'}</div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
@@ -327,7 +327,7 @@ function TimesheetUI() {
                         return (
                           <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #222' }}>
                             <div>
-                              <div style={{ color: '#f59e0b', fontWeight: 'bold' }}>{emp.name || \`Worker (\${emp.empNum})\`}</div>
+                              <div style={{ color: '#f59e0b', fontWeight: 'bold' }}>{emp.name || `Worker (${emp.empNum})`}</div>
                               <div style={{ color: '#888', fontSize: '0.8em' }}>Straight Pay (No OT)</div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
