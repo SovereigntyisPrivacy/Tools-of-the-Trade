@@ -22,15 +22,6 @@ export default function MyShiftTracker() {
     return (mins2 - mins1) / 60;
   };
 
-  const quickFill = () => {
-    const newShifts = {...myShifts};
-    // Pre-fills a standard 4:00 PM to 10:00 PM block for fast logging
-    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].forEach(day => {
-        newShifts[day] = { in: '16:00', out: '22:00' };
-    });
-    setMyShifts(newShifts);
-  };
-
   let totalHrs = 0;
   Object.values(myShifts).forEach(s => totalHrs += calcHrs(s.in, s.out));
   
@@ -38,7 +29,13 @@ export default function MyShiftTracker() {
   const regHrs = Math.min(totalHrs, 40);
   const otHrs = Math.max(0, totalHrs - 40);
   const grossPay = (regHrs * rate) + (otHrs * rate * 1.5);
-  const estNetPay = grossPay * 0.82; // Rough 18% tax deduction estimate
+  
+  // Hard Tax Itemization
+  const socSec = grossPay * 0.062; // FICA 6.2%
+  const medicare = grossPay * 0.0145; // Medicare 1.45%
+  const fedTax = grossPay * 0.10; // Est. Federal 10%
+  const stateTax = grossPay * 0.025; // Est. State 2.5%
+  const estNetPay = grossPay - (socSec + medicare + fedTax + stateTax);
 
   const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', textAlign: 'center' };
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
@@ -69,7 +66,6 @@ export default function MyShiftTracker() {
         <div style={cardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
              <h3 style={{ margin: 0, color: '#fff' }}>This Week's Shifts</h3>
-             <button onClick={quickFill} style={{ background: '#222', color: '#00ffff', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8em' }}>⚡ Quick Fill</button>
           </div>
           
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
@@ -89,16 +85,33 @@ export default function MyShiftTracker() {
 
         <div style={{ ...cardStyle, background: '#000' }}>
             <h3 style={{ margin: '0 0 15px 0', color: '#a855f7', textAlign: 'center', textTransform: 'uppercase' }}>Paycheck Estimator</h3>
+            
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #222', paddingBottom: '10px', marginBottom: '10px' }}>
                 <span style={{ color: '#888' }}>Regular Pay ({regHrs.toFixed(1)}h)</span>
                 <span style={{ color: '#fff' }}>${(regHrs * rate).toFixed(2)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #333', paddingBottom: '10px', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '15px' }}>
                 <span style={{ color: '#888' }}>Overtime Pay ({otHrs.toFixed(1)}h)</span>
                 <span style={{ color: '#f59e0b' }}>${(otHrs * rate * 1.5).toFixed(2)}</span>
             </div>
+
+            <div style={{ color: '#aaa', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '10px', fontWeight: 'bold' }}>Standard Deductions</div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '0.9em' }}>
+                <span style={{ color: '#ef4444' }}>Social Security (FICA 6.2%)</span><span style={{ color: '#ef4444' }}>-${socSec.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '0.9em' }}>
+                <span style={{ color: '#ef4444' }}>Medicare (1.45%)</span><span style={{ color: '#ef4444' }}>-${medicare.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '0.9em' }}>
+                <span style={{ color: '#ef4444' }}>Federal Tax (Est. 10%)</span><span style={{ color: '#ef4444' }}>-${fedTax.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '15px', borderBottom: '1px dashed #333', marginBottom: '15px', fontSize: '0.9em' }}>
+                <span style={{ color: '#ef4444' }}>State Tax (Est. 2.5%)</span><span style={{ color: '#ef4444' }}>-${stateTax.toFixed(2)}</span>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ color: '#fff' }}>Est. Net Pay (~18% Tax)</strong>
+                <strong style={{ color: '#fff' }}>Est. Net Pay</strong>
                 <strong style={{ color: '#00cc66', fontSize: '1.5em' }}>${estNetPay.toFixed(2)}</strong>
             </div>
         </div>

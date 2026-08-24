@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCalendar } from '../core/CalendarContext';
 
 export default function SOPEngine() {
   const navigate = useNavigate();
+  const { addReminder } = useCalendar();
 
   const [sops, setSops] = useState(() => {
     const saved = localStorage.getItem('fleet_sops');
@@ -11,6 +13,9 @@ export default function SOPEngine() {
 
   const [expanded, setExpanded] = useState({});
   const [showModal, setShowModal] = useState(false);
+  const [scheduleModal, setScheduleModal] = useState(null); // Holds SOP ID when scheduling
+  const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().split('T')[0]);
+  
   const [newTitle, setNewTitle] = useState('');
   const [newTasks, setNewTasks] = useState('');
 
@@ -21,7 +26,6 @@ export default function SOPEngine() {
     const taskList = newTasks.split('\n').filter(t => t.trim() !== '').map(t => ({ text: t.trim(), done: false }));
     const newId = `sop_${Date.now()}`;
     setSops([...sops, { id: newId, title: newTitle, tasks: taskList }]);
-    // Auto-expand newly created SOPs
     setExpanded({ ...expanded, [newId]: true });
     setShowModal(false); setNewTitle(''); setNewTasks('');
   };
@@ -38,6 +42,15 @@ export default function SOPEngine() {
   const resetSOP = (sopId) => setSops(sops.map(s => s.id === sopId ? { ...s, tasks: s.tasks.map(t => ({...t, done: false})) } : s));
   const deleteSOP = (sopId) => setSops(sops.filter(s => s.id !== sopId));
   const toggleExpand = (sopId) => setExpanded({ ...expanded, [sopId]: !expanded[sopId] });
+
+  const executeSchedule = () => {
+      const targetSOP = sops.find(s => s.id === scheduleModal);
+      if (targetSOP && scheduleDate) {
+          addReminder(scheduleDate, `[SOP DUE] ${targetSOP.title}`, 'SOP Engine', 'High');
+          alert('SOP sent to Master Calendar!');
+      }
+      setScheduleModal(null);
+  };
 
   // --- COLOR SYNTAX PARSER ---
   const parseColor = (text) => {
@@ -59,6 +72,15 @@ export default function SOPEngine() {
       </header>
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
+        
+        {/* PERMANENT SYNTAX LEGEND */}
+        <div style={{ background: '#000', border: '1px dashed #333', borderRadius: '8px', padding: '10px', marginBottom: '15px', fontSize: '0.8em', display: 'flex', justifyContent: 'space-between', textAlign: 'center' }}>
+            <span style={{color:'#ef4444'}}><strong>[R]</strong> Red</span>
+            <span style={{color:'#f59e0b'}}><strong>[Y]</strong> Yellow</span>
+            <span style={{color:'#00cc66'}}><strong>[G]</strong> Green</span>
+            <span style={{color:'#3b82f6'}}><strong>[B]</strong> Blue</span>
+        </div>
+
         <button onClick={() => setShowModal(true)} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>+ Build New Procedure</button>
 
         {sops.map(sop => {
@@ -73,45 +95,46 @@ export default function SOPEngine() {
                   <span style={{ color: '#555', fontSize: '1.2em' }}>{isExpanded ? '▲' : '▼'}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={() => resetSOP(sop.id)} style={{ background: '#222', color: '#00ffff', border: 'none', padding: '6px 10px', borderRadius: '6px', fontSize: '0.8em' }}>Reset</button>
+                    <button onClick={() => resetSOP(sop.id)} style={{ background: '#222', color: '#fff', border: '1px solid #333', padding: '6px 10px', borderRadius: '6px', fontSize: '0.8em' }}>Reset</button>
                     <button onClick={() => deleteSOP(sop.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.2em' }}>×</button>
                 </div>
               </div>
 
-              {/* Progress bar stays visible even when collapsed */}
               <div style={{ background: '#222', height: '6px', borderRadius: '3px', marginBottom: isExpanded ? '15px' : '0', overflow: 'hidden' }}>
                 <div style={{ background: progress === 100 ? '#00cc66' : '#3b82f6', height: '100%', width: `${progress}%`, transition: 'width 0.3s ease' }} />
               </div>
 
-              {isExpanded && sop.tasks.map((task, i) => {
-                const parsed = parseColor(task.text);
-                return (
-                  <div key={i} onClick={() => toggleTask(sop.id, i)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid #222', cursor: 'pointer' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '4px', border: `2px solid ${task.done ? '#00cc66' : '#555'}`, background: task.done ? '#00cc66' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 'bold', flexShrink: 0 }}>
-                        {task.done && '✓'}
-                    </div>
-                    <div style={{ color: task.done ? '#555' : parsed.color, textDecoration: task.done ? 'line-through' : 'none', flex: 1, fontWeight: parsed.color !== '#fff' && !task.done ? 'bold' : 'normal' }}>
-                        {parsed.text}
-                    </div>
-                  </div>
-                );
-              })}
+              {isExpanded && (
+                  <>
+                    {sop.tasks.map((task, i) => {
+                        const parsed = parseColor(task.text);
+                        return (
+                        <div key={i} onClick={() => toggleTask(sop.id, i)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid #222', cursor: 'pointer' }}>
+                            <div style={{ width: '24px', height: '24px', borderRadius: '4px', border: `2px solid ${task.done ? '#00cc66' : '#555'}`, background: task.done ? '#00cc66' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 'bold', flexShrink: 0 }}>
+                                {task.done && '✓'}
+                            </div>
+                            <div style={{ color: task.done ? '#555' : parsed.color, textDecoration: task.done ? 'line-through' : 'none', flex: 1, fontWeight: parsed.color !== '#fff' && !task.done ? 'bold' : 'normal' }}>
+                                {parsed.text}
+                            </div>
+                        </div>
+                        );
+                    })}
+                    <button onClick={() => setScheduleModal(sop.id)} style={{ width: '100%', padding: '10px', background: 'transparent', border: '1px dashed #a855f7', color: '#a855f7', borderRadius: '8px', marginTop: '15px', fontWeight: 'bold' }}>📅 Schedule to Master Calendar</button>
+                  </>
+              )}
             </div>
           );
         })}
       </div>
 
+      {/* --- ADD SOP MODAL --- */}
       {showModal && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '20px' }}>
           <h2 style={{ color: '#fff', marginTop: 0 }}>New Procedure</h2>
           <input type="text" placeholder="E.g. Closing Duties" value={newTitle} onChange={e=>setNewTitle(e.target.value)} style={inputStyle} />
           
           <div style={{ color: '#aaa', fontSize: '0.85em', marginBottom: '10px', lineHeight: '1.4' }}>
-            <strong>Color Codes:</strong> Prefix lines with 
-            <span style={{color:'#ef4444', fontWeight:'bold'}}> [R] </span> for Red, 
-            <span style={{color:'#f59e0b', fontWeight:'bold'}}> [Y] </span> for Yellow, 
-            <span style={{color:'#00cc66', fontWeight:'bold'}}> [G] </span> for Green, or 
-            <span style={{color:'#3b82f6', fontWeight:'bold'}}> [B] </span> for Blue.
+            <strong>Note:</strong> Prefix lines with a color bracket (e.g. <strong>[R]</strong>, <strong>[Y]</strong>) to colorize that specific task.
           </div>
           
           <textarea placeholder="[R] Lock the front doors&#10;[Y] Count the register&#10;[G] Clock out" value={newTasks} onChange={e=>setNewTasks(e.target.value)} style={{ ...inputStyle, flex: 1, resize: 'none', fontFamily: 'monospace' }} />
@@ -119,6 +142,20 @@ export default function SOPEngine() {
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '15px', background: '#222', color: '#fff', border: 'none', borderRadius: '8px' }}>Cancel</button>
             <button onClick={handleAddSOP} style={{ flex: 1, padding: '15px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Save SOP</button>
+          </div>
+        </div>
+      )}
+
+      {/* --- SCHEDULE MODAL --- */}
+      {scheduleModal && (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '20px', justifyContent: 'center' }}>
+          <h2 style={{ color: '#fff', marginTop: 0, textAlign: 'center' }}>Schedule Execution</h2>
+          <label style={{ color: '#a855f7', fontSize: '0.8em', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px' }}>Target Date</label>
+          <input type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} style={inputStyle} />
+          
+          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+            <button onClick={() => setScheduleModal(null)} style={{ flex: 1, padding: '15px', background: '#222', color: '#fff', border: 'none', borderRadius: '8px' }}>Cancel</button>
+            <button onClick={executeSchedule} style={{ flex: 1, padding: '15px', background: '#a855f7', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Sync to Calendar</button>
           </div>
         </div>
       )}
