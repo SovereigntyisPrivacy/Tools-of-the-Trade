@@ -35,21 +35,21 @@ export default function Settings() {
     try { if (newState) await PrivacyScreen.enable(); else await PrivacyScreen.disable(); } catch (e) {}
   };
 
-  const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
-  const labelStyle = { color: '#888', fontSize: '0.8em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '10px', display: 'block' };
+  const cardStyle = { background: 'rgba(17, 17, 17, 0.85)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
+  const labelStyle = { color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '10px', display: 'block' };
 
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'transparent' }}>
-      <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px', background: '#0a0a0a' }}>
+      <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(10, 10, 10, 0.9)', backdropFilter: 'blur(10px)' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
         <h2 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>System Settings</h2>
       </header>
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
         
-        <div style={{ background: 'linear-gradient(45deg, #111, #1a0033)', border: '1px solid #a855f7', borderRadius: '12px', padding: '20px', marginBottom: '20px', textAlign: 'center' }}>
+        <div style={{ background: 'linear-gradient(45deg, rgba(17,17,17,0.9), rgba(26,0,51,0.9))', backdropFilter: 'blur(10px)', border: '1px solid #a855f7', borderRadius: '12px', padding: '20px', marginBottom: '20px', textAlign: 'center' }}>
           <h3 style={{ margin: '0 0 5px 0', color: '#a855f7', textTransform: 'uppercase', letterSpacing: '2px' }}>Sovereign Tools</h3>
-          <p style={{ color: '#aaa', fontSize: '0.85em', margin: '0 0 15px 0', lineHeight: '1.4' }}>Get military-grade AES-256 encryption, Shizuku telemetry eradication, and offline mesh networking.</p>
+          <p style={{ color: '#ccc', fontSize: '0.85em', margin: '0 0 15px 0', lineHeight: '1.4' }}>Get military-grade AES-256 encryption, Shizuku telemetry eradication, and offline mesh networking.</p>
           <a href="https://github.com/xNoOnex/SovereignTools1" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', background: '#a855f7', color: '#fff', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>Upgrade Security</a>
         </div>
 
@@ -67,14 +67,19 @@ export default function Settings() {
             <label style={labelStyle}>Wallpaper Environment</label>
             <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                 {['Default Dark', 'Midnight Blue', 'Deep Obsidian'].map(bg => (
-                    <button key={bg} onClick={() => applyTheme('fleet_wallpaper', bg)} style={{ flex: 1, padding: '10px 5px', background: wallpaper === bg ? accent : '#222', color: wallpaper === bg ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.75em' }}>{bg}</button>
+                    <button key={bg} onClick={() => applyTheme('fleet_wallpaper', bg)} style={{ flex: 1, padding: '10px 5px', background: wallpaper === bg ? accent : 'rgba(34,34,34,0.8)', color: wallpaper === bg ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.75em' }}>{bg}</button>
                 ))}
-                <label style={{ flex: 1, padding: '10px 5px', background: wallpaper === 'Custom' ? accent : '#222', color: wallpaper === 'Custom' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.75em', textAlign: 'center', cursor: 'pointer' }}>
+                <label style={{ flex: 1, padding: '10px 5px', background: wallpaper === 'Custom' ? accent : 'rgba(34,34,34,0.8)', color: wallpaper === 'Custom' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.75em', textAlign: 'center', cursor: 'pointer' }}>
                     Gallery
                     <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
                 </label>
             </div>
         </div>
+
+        {/* --- RESTORED SUPPORT BUTTON --- */}
+        <button onClick={() => navigate('/support')} style={{ width: '100%', padding: '15px', background: 'rgba(34, 34, 34, 0.85)', backdropFilter: 'blur(10px)', color: '#fff', border: '1px solid #444', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>
+            ☕ Support Creator
+        </button>
 
         {/* --- HIDDEN DEVELOPER TOOLS --- */}
         {devMode && (
@@ -84,11 +89,11 @@ export default function Settings() {
                   <h3 style={{ margin: 0, color: shield ? '#00cc66' : '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>{shield ? '🔒' : '🔓'} Screenshot Shield</h3>
                   <button onClick={toggleShield} style={{ background: shield ? '#00cc66' : '#ef4444', color: '#000', border: 'none', padding: '6px 15px', borderRadius: '6px', fontWeight: 'bold' }}>{shield ? 'ACTIVE' : 'DISABLED'}</button>
                 </div>
-                <p style={{ color: '#aaa', fontSize: '0.85em', margin: 0 }}>Blocks OS screen capture and recording.</p>
+                <p style={{ color: '#ccc', fontSize: '0.85em', margin: 0 }}>Blocks OS screen capture and recording.</p>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                  <button onClick={() => { if (window.confirm('Wipe data?')) { localStorage.clear(); window.location.reload(); } }} style={{ flex: 1, padding: '15px', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', fontWeight: 'bold' }}>Wipe Data</button>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  <button onClick={() => { if (window.confirm('Wipe data?')) { localStorage.clear(); window.location.reload(); } }} style={{ flex: 1, padding: '15px', background: 'rgba(255, 0, 0, 0.1)', backdropFilter: 'blur(10px)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', fontWeight: 'bold' }}>Wipe Data</button>
               </div>
             </>
         )}
