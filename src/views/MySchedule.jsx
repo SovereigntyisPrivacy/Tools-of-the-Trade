@@ -7,37 +7,62 @@ export default function MySchedule() {
   // --- STATE ---
   const [rate, setRate] = useState(() => parseFloat(localStorage.getItem('fleet_hourly_rate')) || 15.00);
   const [taxProfile, setTaxProfile] = useState(() => localStorage.getItem('fleet_tax_profile') || 'W2_AZ');
-  
+
   const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  
+  // Upgraded State to support arrays of shifts (v2)
   const [shifts, setShifts] = useState(() => {
-      const saved = localStorage.getItem('fleet_shifts');
-      return saved ? JSON.parse(saved) : days.reduce((acc, day) => ({ ...acc, [day]: { start: '', end: '' } }), {});
+    const saved = localStorage.getItem('fleet_shifts_v2');
+    if (saved) return JSON.parse(saved);
+    return days.reduce((acc, day) => ({ ...acc, [day]: [{ id: Date.now() + Math.random(), start: '', end: '' }] }), {});
   });
 
   useEffect(() => { localStorage.setItem('fleet_hourly_rate', rate.toString()); }, [rate]);
   useEffect(() => { localStorage.setItem('fleet_tax_profile', taxProfile); }, [taxProfile]);
-  useEffect(() => { localStorage.setItem('fleet_shifts', JSON.stringify(shifts)); }, [shifts]);
+  useEffect(() => { localStorage.setItem('fleet_shifts_v2', JSON.stringify(shifts)); }, [shifts]);
 
-  const updateShift = (day, field, value) => {
-      setShifts({ ...shifts, [day]: { ...shifts[day], [field]: value } });
+  // --- SHIFT CONTROLS ---
+  const updateShift = (day, id, field, value) => {
+    setShifts({
+      ...shifts,
+      [day]: shifts[day].map(s => s.id === id ? { ...s, [field]: value } : s)
+    });
+  };
+
+  const addShift = (day) => {
+    setShifts({
+      ...shifts,
+      [day]: [...shifts[day], { id: Date.now() + Math.random(), start: '', end: '' }]
+    });
+  };
+
+  const removeShift = (day, id) => {
+    setShifts({
+      ...shifts,
+      [day]: shifts[day].filter(s => s.id !== id)
+    });
   };
 
   const clearWeek = () => {
-      setShifts(days.reduce((acc, day) => ({ ...acc, [day]: { start: '', end: '' } }), {}));
+    setShifts(days.reduce((acc, day) => ({ ...acc, [day]: [{ id: Date.now() + Math.random(), start: '', end: '' }] }), {}));
   };
 
   // --- TIME MATH ENGINE ---
   const calculateHours = (start, end) => {
-      if (!start || !end) return 0;
-      const [sh, sm] = start.split(':').map(Number);
-      const [eh, em] = end.split(':').map(Number);
-      let diff = (eh + em/60) - (sh + sm/60);
-      if (diff < 0) diff += 24; // Handle overnight shifts seamlessly
-      return diff;
+    if (!start || !end) return 0;
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let diff = (eh + em/60) - (sh + sm/60);
+    if (diff < 0) diff += 24; // Handle overnight shifts seamlessly
+    return diff;
   };
 
   let totalHours = 0;
-  days.forEach(day => { totalHours += calculateHours(shifts[day].start, shifts[day].end); });
+  days.forEach(day => {
+    shifts[day].forEach(shift => {
+      totalHours += calculateHours(shift.start, shift.end);
+    });
+  });
 
   const regHours = Math.min(totalHours, 40);
   const otHours = Math.max(totalHours - 40, 0);
@@ -70,8 +95,7 @@ export default function MySchedule() {
         
         {/* HEADER STATS */}
         <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', borderTop: '4px solid var(--accent, #3b82f6)' }}>
-            <div>
-                <div style={{ color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase', fontWeight: 'bold' }}>My Hourly Rate</div>
+            <div style={{ color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase', fontWeight: 'bold' }}>My Hourly Rate
                 <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
                     <span style={{ color: '#00cc66', fontWeight: 'bold', marginRight: '5px', fontSize: '1.2em' }}>$</span>
                     <input type="number" value={rate || ''} onChange={e => setRate(parseFloat(e.target.value) || 0)} style={{ ...inputStyle, width: '80px', fontSize: '1.2em', fontWeight: 'bold', padding: '4px 8px' }} />
@@ -86,20 +110,32 @@ export default function MySchedule() {
         {/* SHIFT INPUTS */}
         <div style={{ ...cardStyle }}>
             <h3 style={{ color: 'var(--text-accent, #00cc66)', margin: '0 0 15px 0' }}>This Week's Shifts</h3>
+            
             {days.map(day => (
-                <div key={day} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <span style={{ fontWeight: 'bold', width: '40px' }}>{day}</span>
-                    <input type="time" value={shifts[day].start} onChange={e => updateShift(day, 'start', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
-                    <span style={{ margin: '0 10px', color: '#888' }}>to</span>
-                    <input type="time" value={shifts[day].end} onChange={e => updateShift(day, 'end', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
-                    <span style={{ width: '45px', textAlign: 'right', color: '#555', fontSize: '0.85em', fontFamily: 'monospace' }}>
-                        - {calculateHours(shifts[day].start, shifts[day].end).toFixed(1)}h
-                    </span>
+                <div key={day} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px dashed #333' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '1.1em', width: '50px' }}>{day}</span>
+                        <button onClick={() => addShift(day)} style={{ background: 'transparent', color: '#00cc66', border: '1px solid #00cc66', borderRadius: '6px', fontSize: '0.8em', padding: '4px 10px', fontWeight: 'bold' }}>+ Add Shift</button>
+                    </div>
+                    
+                    {shifts[day].map((shift) => (
+                        <div key={shift.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                            <input type="time" value={shift.start} onChange={e => updateShift(day, shift.id, 'start', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                            <span style={{ margin: '0 10px', color: '#888' }}>to</span>
+                            <input type="time" value={shift.end} onChange={e => updateShift(day, shift.id, 'end', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                            {shifts[day].length > 1 && (
+                                <button onClick={() => removeShift(day, shift.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', marginLeft: '10px', fontSize: '1.5em' }}>×</button>
+                            )}
+                        </div>
+                    ))}
+                    
+                    <div style={{ textAlign: 'right', color: '#555', fontSize: '0.85em', fontFamily: 'monospace' }}>
+                        Day Total: {shifts[day].reduce((sum, s) => sum + calculateHours(s.start, s.end), 0).toFixed(1)}h
+                    </div>
                 </div>
             ))}
-            <button onClick={clearWeek} style={{ width: '100%', padding: '12px', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>
-                Clear Week
-            </button>
+            
+            <button onClick={clearWeek} style={{ width: '100%', padding: '12px', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>Clear Week</button>
         </div>
 
         {/* PAYCHECK ESTIMATOR */}
@@ -132,12 +168,13 @@ export default function MySchedule() {
             <div style={dedStyle}><span>Medicare (1.45%)</span><span>-${med.toFixed(2)}</span></div>
             <div style={dedStyle}><span>Federal Tax (Est. {taxProfile === 'W2_HIGH' ? '22%' : '10%'})</span><span>-${fed.toFixed(2)}</span></div>
             <div style={dedStyle}><span>State Tax (AZ 2.5%)</span><span>-${state.toFixed(2)}</span></div>
-
+            
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #444', marginTop: '15px', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.2em' }}>
                 <span style={{ color: '#fff' }}>Est. Net Pay</span>
                 <span style={{ color: '#00cc66' }}>${netPay.toFixed(2)}</span>
             </div>
         </div>
+
       </div>
     </div>
   );
