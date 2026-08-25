@@ -97,7 +97,7 @@ export default function MySchedule() {
         <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', borderTop: '4px solid var(--accent, #3b82f6)' }}>
             <div style={{ color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase', fontWeight: 'bold' }}>My Hourly Rate
                 <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
-                    <span style={{ color: '#00cc66', fontWeight: 'bold', marginRight: '5px', fontSize: '1.2em' }}>$</span>
+                    <span style={{ color: 'var(--text-accent, #00cc66)', fontWeight: 'bold', marginRight: '5px', fontSize: '1.2em' }}>$</span>
                     <input type="number" value={rate || ''} onChange={e => setRate(parseFloat(e.target.value) || 0)} style={{ ...inputStyle, width: '80px', fontSize: '1.2em', fontWeight: 'bold', padding: '4px 8px' }} />
                 </div>
             </div>
@@ -115,11 +115,12 @@ export default function MySchedule() {
                 <div key={day} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px dashed #333' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <span style={{ fontWeight: 'bold', fontSize: '1.1em', width: '50px' }}>{day}</span>
-                        <button onClick={() => addShift(day)} style={{ background: 'transparent', color: '#00cc66', border: '1px solid #00cc66', borderRadius: '6px', fontSize: '0.8em', padding: '4px 10px', fontWeight: 'bold' }}>+ Add Shift</button>
+                        <button onClick={() => addShift(day)} style={{ background: 'transparent', color: 'var(--text-accent, #00cc66)', border: '1px solid var(--text-accent, #00cc66)', borderRadius: '6px', fontSize: '0.8em', padding: '4px 10px', fontWeight: 'bold' }}>+ Add Shift</button>
                     </div>
                     
-                    {shifts[day].map((shift) => (
+                    {shifts[day].map((shift, index) => (
                         <div key={shift.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                            {shifts[day].length > 1 && <span style={{ color: '#555', fontSize: '0.8em', marginRight: '10px' }}>#{index + 1}</span>}
                             <input type="time" value={shift.start} onChange={e => updateShift(day, shift.id, 'start', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
                             <span style={{ margin: '0 10px', color: '#888' }}>to</span>
                             <input type="time" value={shift.end} onChange={e => updateShift(day, shift.id, 'end', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
@@ -171,7 +172,7 @@ export default function MySchedule() {
             
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #444', marginTop: '15px', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.2em' }}>
                 <span style={{ color: '#fff' }}>Est. Net Pay</span>
-                <span style={{ color: '#00cc66' }}>${netPay.toFixed(2)}</span>
+                <span style={{ color: 'var(--text-accent, #00cc66)' }}>${netPay.toFixed(2)}</span>
             </div>
         </div>
 

@@ -21,8 +21,8 @@ export default function QuickCalc() {
   const labelStyle = { color: '#00ffff', fontSize: '0.85em', fontWeight: 'bold', textTransform: 'uppercase' };
 
   return (
-    <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+    <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(10, 10, 10, 0.9)', backdropFilter: 'blur(10px)' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
         <h2 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>Quick Tax & Tip</h2>
       </header>
@@ -42,8 +42,8 @@ export default function QuickCalc() {
         </div>
 
         {/* STATE TAX PRESETS */}
-        <div style={{ marginBottom: '20px', background: '#111', padding: '15px', borderRadius: '12px', border: '1px solid #333' }}>
-             <label style={{...labelStyle, color: '#aaa', display: 'block', marginBottom: '8px'}}>State Sales Tax Selector</label>
+        <div style={{ marginBottom: '20px', background: 'rgba(17,17,17,0.85)', backdropFilter: 'blur(10px)', padding: '15px', borderRadius: '12px', border: '1px solid #333' }}>
+             <label style={{...labelStyle, color: '#aaa', display: 'block', marginBottom: '8px'}}>State Sales Tax Preset</label>
              <select 
                 onChange={(e) => setTax(e.target.value)}
                 style={{ width: '100%', padding: '12px', background: '#222', color: '#fff', border: '1px solid #444', borderRadius: '6px', fontSize: '1em', outline: 'none' }}
@@ -99,7 +99,7 @@ export default function QuickCalc() {
                 <option value="6.0">WV (6.0%)</option>
                 <option value="5.0">WI (5.0%)</option>
                 <option value="4.0">WY (4.0%)</option>
-                <option value="0.0">Washington DC (6.0%)</option>
+                <option value="6.0">Washington DC (6.0%)</option>
              </select>
         </div>
 
@@ -130,7 +130,7 @@ export default function QuickCalc() {
         </div>
 
         {/* GRAND TOTAL CARD */}
-        <div style={{ background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '20px', marginBottom: '20px' }}>
+        <div style={{ background: 'rgba(17,17,17,0.85)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid #333', padding: '20px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', marginBottom: '8px' }}>
                 <span>Subtotal:</span><span>${b.toFixed(2)}</span>
             </div>
@@ -147,7 +147,7 @@ export default function QuickCalc() {
         </div>
 
         {/* SPLIT THE BILL */}
-        <div style={{ background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: 'rgba(17,17,17,0.85)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid #333', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
                 <div style={{ color: '#00ffff', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase' }}>Split Bill</div>
                 <div style={{ color: '#888', fontSize: '0.9em' }}>{split} {split === 1 ? 'Person' : 'People'}</div>
