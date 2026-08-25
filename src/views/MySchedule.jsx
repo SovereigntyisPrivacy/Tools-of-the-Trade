@@ -96,27 +96,31 @@ export default function MySchedule() {
             {days.map(day => {
                 const dayTotal = shifts[day].reduce((sum, s) => sum + calculateHours(s.start, s.end), 0);
                 return (
-                    <div key={day} style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
-                        {shifts[day].map((shift, i) => (
-                            <div key={shift.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span style={{ fontWeight: 'bold', width: '40px', color: i === 0 ? '#fff' : 'transparent' }}>
-                                    {i === 0 ? day : ''}
-                                </span>
-                                <input type="time" value={shift.start} onChange={e => updateShift(day, shift.id, 'start', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
-                                <span style={{ margin: '0 10px', color: '#888' }}>to</span>
-                                <input type="time" value={shift.end} onChange={e => updateShift(day, shift.id, 'end', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
-                                
-                                <span style={{ width: '45px', textAlign: 'right', fontFamily: 'monospace' }}>
-                                    {i === 0 ? (
-                                        <span onClick={() => addShift(day)} style={{ color: dayTotal > 0 ? '#00cc66' : '#555', cursor: 'pointer', fontSize: '1.1em', fontWeight: 'bold' }}>
-                                            {dayTotal > 0 ? dayTotal.toFixed(1) : '+'}
-                                        </span>
-                                    ) : (
-                                        <span onClick={() => removeShift(day, shift.id)} style={{ color: '#ef4444', cursor: 'pointer', fontSize: '1.5em', lineHeight: '0' }}>×</span>
-                                    )}
-                                </span>
+                    <div key={day} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px dashed #333' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontWeight: 'bold', fontSize: '1.1em', width: '40px' }}>{day}</span>
+                                <button onClick={() => addShift(day)} style={{ background: 'transparent', color: '#00cc66', border: '1px solid #333', borderRadius: '4px', fontSize: '0.7em', padding: '2px 6px' }}>+ ADD</button>
                             </div>
-                        ))}
+                            <div style={{ color: '#555', fontSize: '0.85em', fontFamily: 'monospace' }}>
+                                {dayTotal > 0 ? `${dayTotal.toFixed(1)}h` : '-'}
+                            </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {shifts[day].map((shift, i) => (
+                                <div key={shift.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                    <input type="time" value={shift.start} onChange={e => updateShift(day, shift.id, 'start', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                                    <span style={{ margin: '0 10px', color: '#888' }}>to</span>
+                                    <input type="time" value={shift.end} onChange={e => updateShift(day, shift.id, 'end', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                                    {shifts[day].length > 1 ? (
+                                        <button onClick={() => removeShift(day, shift.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', marginLeft: '10px', fontSize: '1.5em' }}>×</button>
+                                    ) : (
+                                        <div style={{ width: '30px', marginLeft: '10px' }}></div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 );
             })}
