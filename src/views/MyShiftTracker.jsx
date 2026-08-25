@@ -4,115 +4,160 @@ import { useNavigate } from 'react-router-dom';
 export default function MyShiftTracker() {
   const navigate = useNavigate();
 
-  const [myRate, setMyRate] = useState(() => localStorage.getItem('my_hourly_rate') || '15.00');
-  const [myShifts, setMyShifts] = useState(() => {
-    const saved = localStorage.getItem('my_personal_shifts');
-    return saved ? JSON.parse(saved) : { Mon: {in:'', out:''}, Tue: {in:'', out:''}, Wed: {in:'', out:''}, Thu: {in:'', out:''}, Fri: {in:'', out:''}, Sat: {in:'', out:''}, Sun: {in:'', out:''} };
+  const [rate, setRate] = useState(() => parseFloat(localStorage.getItem('fleet_hourly_rate')) || 15.00);
+  const [taxProfile, setTaxProfile] = useState(() => localStorage.getItem('fleet_tax_profile') || 'W2_AZ');
+
+  const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  
+  const [shifts, setShifts] = useState(() => {
+    const saved = localStorage.getItem('fleet_shifts_v2');
+    if (saved) return JSON.parse(saved);
+    return days.reduce((acc, day) => ({ ...acc, [day]: [{ id: Date.now() + Math.random(), start: '', end: '' }] }), {});
   });
 
-  useEffect(() => { localStorage.setItem('my_hourly_rate', myRate); }, [myRate]);
-  useEffect(() => { localStorage.setItem('my_personal_shifts', JSON.stringify(myShifts)); }, [myShifts]);
+  useEffect(() => { localStorage.setItem('fleet_hourly_rate', rate.toString()); }, [rate]);
+  useEffect(() => { localStorage.setItem('fleet_tax_profile', taxProfile); }, [taxProfile]);
+  useEffect(() => { localStorage.setItem('fleet_shifts_v2', JSON.stringify(shifts)); }, [shifts]);
 
-  const calcHrs = (inTime, outTime) => {
-    if (!inTime || !outTime) return 0;
-    const [h1, m1] = inTime.split(':').map(Number);
-    const [h2, m2] = outTime.split(':').map(Number);
-    let mins1 = h1 * 60 + m1; let mins2 = h2 * 60 + m2;
-    if (mins2 < mins1) mins2 += 24 * 60; 
-    return (mins2 - mins1) / 60;
+  const updateShift = (day, id, field, value) => {
+    setShifts({ ...shifts, [day]: shifts[day].map(s => s.id === id ? { ...s, [field]: value } : s) });
   };
 
-  let totalHrs = 0;
-  Object.values(myShifts).forEach(s => totalHrs += calcHrs(s.in, s.out));
-  
-  const rate = parseFloat(myRate) || 0;
-  const regHrs = Math.min(totalHrs, 40);
-  const otHrs = Math.max(0, totalHrs - 40);
-  const grossPay = (regHrs * rate) + (otHrs * rate * 1.5);
-  
-  // Hard Tax Itemization
-  const socSec = grossPay * 0.062; // FICA 6.2%
-  const medicare = grossPay * 0.0145; // Medicare 1.45%
-  const fedTax = grossPay * 0.10; // Est. Federal 10%
-  const stateTax = grossPay * 0.025; // Est. State 2.5%
-  const estNetPay = grossPay - (socSec + medicare + fedTax + stateTax);
+  const addShift = (day) => {
+    setShifts({ ...shifts, [day]: [...shifts[day], { id: Date.now() + Math.random(), start: '', end: '' }] });
+  };
 
-  const inputStyle = { width: '100%', padding: '10px', background: '#000', border: '1px solid #333', borderRadius: '8px', color: '#fff', textAlign: 'center' };
-  const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
+  const removeShift = (day, id) => {
+    setShifts({ ...shifts, [day]: shifts[day].filter(s => s.id !== id) });
+  };
+
+  const clearWeek = () => {
+    setShifts(days.reduce((acc, day) => ({ ...acc, [day]: [{ id: Date.now() + Math.random(), start: '', end: '' }] }), {}));
+  };
+
+  const calculateHours = (start, end) => {
+    if (!start || !end) return 0;
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let diff = (eh + em/60) - (sh + sm/60);
+    if (diff < 0) diff += 24; 
+    return diff;
+  };
+
+  let totalHours = 0;
+  days.forEach(day => {
+    shifts[day].forEach(shift => {
+      totalHours += calculateHours(shift.start, shift.end);
+    });
+  });
+
+  const regHours = Math.min(totalHours, 40);
+  const otHours = Math.max(totalHours - 40, 0);
+  const regPay = regHours * rate;
+  const otPay = otHours * rate * 1.5;
+  const grossPay = regPay + otPay;
+
+  const isW2 = taxProfile.startsWith('W2');
+  const fica = isW2 ? grossPay * 0.062 : 0;
+  const med = isW2 ? grossPay * 0.0145 : 0;
+  const fed = isW2 ? grossPay * (taxProfile === 'W2_HIGH' ? 0.22 : 0.10) : 0;
+  const state = isW2 ? grossPay * 0.025 : 0; 
+  const netPay = grossPay - fica - med - fed - state;
+
+  const cardStyle = { background: 'rgba(17, 17, 17, 0.85)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
+  const inputStyle = { background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#fff', padding: '8px', borderRadius: '6px', outline: 'none' };
+  const dedStyle = { display: 'flex', justifyContent: 'space-between', color: isW2 ? '#ef4444' : '#555', marginBottom: '6px', fontSize: '0.9em' };
 
   return (
-    <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+    <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(10, 10, 10, 0.9)', backdropFilter: 'blur(10px)' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
-        <h2 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>My Schedule</h2>
+        <h2 style={{ margin: 0, color: 'var(--text-accent, #00cc66)' }}>My Schedule</h2>
       </header>
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
         
-        <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase' }}>My Hourly Rate</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{color: '#00cc66', fontSize: '1.2em'}}>$</span>
-                <input type="number" value={myRate} onChange={e=>setMyRate(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#00cc66', fontSize: '1.5em', fontWeight: 'bold', width: '80px', padding: 0 }} />
+        <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', borderTop: '4px solid var(--accent, #3b82f6)' }}>
+            <div>
+                <div style={{ color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase', fontWeight: 'bold' }}>My Hourly Rate</div>
+                <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
+                    <span style={{ color: '#00cc66', fontWeight: 'bold', marginRight: '5px', fontSize: '1.2em' }}>$</span>
+                    <input type="number" value={rate || ''} onChange={e => setRate(parseFloat(e.target.value) || 0)} style={{ ...inputStyle, width: '80px', fontSize: '1.2em', fontWeight: 'bold', padding: '4px 8px' }} />
+                </div>
             </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase' }}>Total Hours</div>
-            <strong style={{ color: totalHrs > 40 ? '#f59e0b' : '#3b82f6', fontSize: '1.5em' }}>{totalHrs.toFixed(1)}</strong>
-          </div>
+            <div style={{ textAlign: 'right' }}>
+                <div style={{ color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase', fontWeight: 'bold' }}>Total Hours</div>
+                <div style={{ color: 'var(--accent, #3b82f6)', fontSize: '1.8em', fontWeight: 'bold' }}>{totalHours.toFixed(1)}</div>
+            </div>
         </div>
 
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-             <h3 style={{ margin: 0, color: '#fff' }}>This Week's Shifts</h3>
-          </div>
-          
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
-            const s = myShifts[day]; const hrs = calcHrs(s.in, s.out);
-            return (
-              <div key={day} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                <div style={{ width: '35px', color: '#aaa', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase' }}>{day}</div>
-                <input type="time" value={s.in} onChange={e => setMyShifts({...myShifts, [day]: {...s, in: e.target.value}})} style={{ ...inputStyle, color: '#00ffff' }} />
-                <span style={{ color: '#555' }}>to</span>
-                <input type="time" value={s.out} onChange={e => setMyShifts({...myShifts, [day]: {...s, out: e.target.value}})} style={{ ...inputStyle, color: '#f59e0b' }} />
-                <div style={{ width: '45px', textAlign: 'right', color: hrs > 0 ? '#00cc66' : '#555', fontWeight: 'bold' }}>{hrs > 0 ? hrs.toFixed(1) : '-'}</div>
-              </div>
-            )
-          })}
-          <button onClick={() => setMyShifts({ Mon: {in:'', out:''}, Tue: {in:'', out:''}, Wed: {in:'', out:''}, Thu: {in:'', out:''}, Fri: {in:'', out:''}, Sat: {in:'', out:''}, Sun: {in:'', out:''} })} style={{ width: '100%', padding: '10px', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', marginTop: '10px' }}>Clear Week</button>
+        <div style={{ ...cardStyle }}>
+            <h3 style={{ color: 'var(--text-accent, #00cc66)', margin: '0 0 15px 0' }}>This Week's Shifts</h3>
+            
+            {days.map(day => {
+                const dayTotal = shifts[day].reduce((sum, s) => sum + calculateHours(s.start, s.end), 0);
+                return (
+                    <div key={day} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px dashed #333' }}>
+                        <span style={{ fontWeight: 'bold', width: '40px', fontSize: '1.1em' }}>{day}</span>
+                        
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {shifts[day].map((shift, i) => (
+                                <div key={shift.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                    <input type="time" value={shift.start} onChange={e => updateShift(day, shift.id, 'start', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                                    <span style={{ margin: '0 10px', color: '#888' }}>to</span>
+                                    <input type="time" value={shift.end} onChange={e => updateShift(day, shift.id, 'end', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                                    {shifts[day].length > 1 ? (
+                                        <button onClick={() => removeShift(day, shift.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', marginLeft: '10px', fontSize: '1.5em' }}>×</button>
+                                    ) : (
+                                        <div style={{ width: '22px', marginLeft: '10px' }}></div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <span style={{ width: '50px', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
+                            <span style={{ color: '#555', fontSize: '0.85em', fontFamily: 'monospace' }}>{dayTotal > 0 ? dayTotal.toFixed(1) : '-'}</span>
+                            <button onClick={() => addShift(day)} style={{ background: '#222', color: '#00cc66', border: '1px solid #444', borderRadius: '4px', fontSize: '0.7em', padding: '4px 6px', fontWeight: 'bold', cursor: 'pointer' }}>+ ADD</button>
+                        </span>
+                    </div>
+                );
+            })}
+            
+            <button onClick={clearWeek} style={{ width: '100%', padding: '12px', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>Clear Week</button>
         </div>
 
-        <div style={{ ...cardStyle, background: '#000' }}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#a855f7', textAlign: 'center', textTransform: 'uppercase' }}>Paycheck Estimator</h3>
+        <div style={{ ...cardStyle }}>
+            <h3 style={{ color: 'var(--text-accent, #00cc66)', margin: '0 0 15px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>Paycheck Estimator</h3>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #222', paddingBottom: '10px', marginBottom: '10px' }}>
-                <span style={{ color: '#888' }}>Regular Pay ({regHrs.toFixed(1)}h)</span>
-                <span style={{ color: '#fff' }}>${(regHrs * rate).toFixed(2)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', color: '#ccc' }}>
+                <span>Regular Pay ({regHours.toFixed(1)}h)</span>
+                <span>${regPay.toFixed(2)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '15px' }}>
-                <span style={{ color: '#888' }}>Overtime Pay ({otHrs.toFixed(1)}h)</span>
-                <span style={{ color: '#f59e0b' }}>${(otHrs * rate * 1.5).toFixed(2)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', color: '#ccc' }}>
+                <span>Overtime Pay ({otHours.toFixed(1)}h)</span>
+                <span style={{ color: otHours > 0 ? '#f59e0b' : '#ccc' }}>${otPay.toFixed(2)}</span>
             </div>
 
-            <div style={{ color: '#aaa', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '10px', fontWeight: 'bold' }}>Standard Deductions</div>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '0.9em' }}>
-                <span style={{ color: '#ef4444' }}>Social Security (FICA 6.2%)</span><span style={{ color: '#ef4444' }}>-${socSec.toFixed(2)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '0.9em' }}>
-                <span style={{ color: '#ef4444' }}>Medicare (1.45%)</span><span style={{ color: '#ef4444' }}>-${medicare.toFixed(2)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '0.9em' }}>
-                <span style={{ color: '#ef4444' }}>Federal Tax (Est. 10%)</span><span style={{ color: '#ef4444' }}>-${fedTax.toFixed(2)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '15px', borderBottom: '1px dashed #333', marginBottom: '15px', fontSize: '0.9em' }}>
-                <span style={{ color: '#ef4444' }}>State Tax (Est. 2.5%)</span><span style={{ color: '#ef4444' }}>-${stateTax.toFixed(2)}</span>
+            <div style={{ padding: '10px 0', borderTop: '1px solid #333', borderBottom: '1px solid #333', marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#aaa', fontSize: '0.8em', textTransform: 'uppercase', fontWeight: 'bold' }}>Tax Profile</span>
+                <select value={taxProfile} onChange={e => setTaxProfile(e.target.value)} style={{ background: '#222', color: 'var(--text-accent, #00cc66)', border: '1px solid #444', padding: '6px 10px', borderRadius: '6px', outline: 'none', fontSize: '0.9em', fontWeight: 'bold' }}>
+                    <option value="W2_AZ">W2 - AZ Standard</option>
+                    <option value="W2_HIGH">W2 - High Fed Bracket</option>
+                    <option value="1099">1099 / Independent</option>
+                    <option value="CASH">Cash / None</option>
+                </select>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ color: '#fff' }}>Est. Net Pay</strong>
-                <strong style={{ color: '#00cc66', fontSize: '1.5em' }}>${estNetPay.toFixed(2)}</strong>
+            <div style={{ color: '#fff', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.85em', marginBottom: '10px' }}>Standard Deductions</div>
+            
+            <div style={dedStyle}><span>Social Security (FICA 6.2%)</span><span>-${fica.toFixed(2)}</span></div>
+            <div style={dedStyle}><span>Medicare (1.45%)</span><span>-${med.toFixed(2)}</span></div>
+            <div style={dedStyle}><span>Federal Tax (Est. {taxProfile === 'W2_HIGH' ? '22%' : '10%'})</span><span>-${fed.toFixed(2)}</span></div>
+            <div style={dedStyle}><span>State Tax (AZ 2.5%)</span><span>-${state.toFixed(2)}</span></div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #444', marginTop: '15px', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.2em' }}>
+                <span style={{ color: '#fff' }}>Est. Net Pay</span>
+                <span style={{ color: '#00cc66' }}>${netPay.toFixed(2)}</span>
             </div>
         </div>
       </div>
