@@ -1,194 +1,159 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCalendar } from '../core/CalendarContext';
 
 export default function BudgetEngine() {
   const navigate = useNavigate();
-  const { addReminder } = useCalendar();
-  const [showPreview, setShowPreview] = useState(false);
+  const [activeTab, setActiveTab] = useState('calc');
 
-  // --- MULTI-PAYCHECK STATE ---
+  // Load saved data or set defaults matching your screenshot
   const [incomes, setIncomes] = useState(() => {
-    const saved = localStorage.getItem('fleet_budget_incomes');
+    const saved = localStorage.getItem('fleet_incomes');
     if (saved) return JSON.parse(saved);
-    
-    // Auto-migrate old single netIncome into the new array format
-    const oldNet = parseFloat(localStorage.getItem('fleet_budget_net')) || 2500;
-    return [{ id: 'inc_default', name: 'Primary Paycheck', amount: oldNet, date: '' }];
+    return [{ id: 1, name: 'Primary Paycheck', amount: '2500', date: '2026-08-01' }];
   });
 
-  const [envelopes, setEnvelopes] = useState(() => {
-    const saved = localStorage.getItem('fleet_budget_envs');
-    const parsed = saved ? JSON.parse(saved) : [];
-    // Auto-migrate old bills to link to the default paycheck
-    return parsed.map(e => ({ ...e, dueDate: e.dueDate || '', recurrence: e.recurrence || 'Monthly', incomeId: e.incomeId || 'inc_default' }));
+  const [bills, setBills] = useState(() => {
+    const saved = localStorage.getItem('fleet_bills');
+    if (saved) return JSON.parse(saved);
+    return [{ id: 1, name: 'New Bill', amount: '600', linkedIncome: '1', frequency: 'Monthly', date: '2026-08-06' }];
   });
 
-  useEffect(() => { localStorage.setItem('fleet_budget_incomes', JSON.stringify(incomes)); }, [incomes]);
-  useEffect(() => { localStorage.setItem('fleet_budget_envs', JSON.stringify(envelopes)); }, [envelopes]);
+  // Save changes automatically
+  useEffect(() => { localStorage.setItem('fleet_incomes', JSON.stringify(incomes)); }, [incomes]);
+  useEffect(() => { localStorage.setItem('fleet_bills', JSON.stringify(bills)); }, [bills]);
 
-  // --- INCOME HANDLERS ---
-  const addIncome = () => {
-      setIncomes([...incomes, { id: `inc_${Date.now()}`, name: 'New Paycheck', amount: 0, date: '' }]);
-      setShowPreview(false);
-  };
-  const updateIncome = (id, field, value) => setIncomes(incomes.map(i => i.id === id ? { ...i, [field]: field === 'amount' ? (parseFloat(value) || 0) : value } : i));
+  // Math Engine
+  const globalCash = incomes.reduce((sum, inc) => sum + (parseFloat(inc.amount) || 0), 0);
+  const totalBills = bills.reduce((sum, bill) => sum + (parseFloat(bill.amount) || 0), 0);
+  const unassignedCash = globalCash - totalBills;
+
+  // Handlers
+  const addIncome = () => setIncomes([...incomes, { id: Date.now(), name: '', amount: '', date: '' }]);
   const removeIncome = (id) => setIncomes(incomes.filter(i => i.id !== id));
-  
-  const syncIncomeToCalendar = (inc) => {
-      if (!inc.date) return alert("⚠️ Please set a date for this paycheck first!");
-      addReminder(inc.date, `[PAYDAY] ${inc.name} (+$${inc.amount})`, 'Cashflow Engine', 'Medium');
-      alert(`✅ Payday synced to Master Calendar!`);
-  };
+  const updateIncome = (id, field, value) => setIncomes(incomes.map(i => i.id === id ? { ...i, [field]: value } : i));
 
-  // --- BILL HANDLERS ---
-  const addEnvelope = () => {
-      setEnvelopes([...envelopes, { id: `env_${Date.now()}`, name: 'New Bill', amount: 0, dueDate: '', recurrence: 'Monthly', incomeId: incomes[0]?.id || '' }]);
-      setShowPreview(false);
-  };
-  const updateEnvelope = (id, field, value) => setEnvelopes(envelopes.map(e => e.id === id ? { ...e, [field]: field === 'amount' ? (parseFloat(value) || 0) : value } : e));
-  const removeEnvelope = (id) => setEnvelopes(envelopes.filter(e => e.id !== id));
-  
-  const syncToCalendar = (env) => {
-      if (!env.dueDate) return alert("⚠️ Please set a due date for this bill first!");
-      addReminder(env.dueDate, `[BILL: ${env.recurrence}] ${env.name} ($${env.amount})`, 'Cashflow Engine', 'High');
-      alert(`✅ ${env.name} synced to Master Calendar!`);
-  };
+  const addBill = () => setBills([...bills, { id: Date.now(), name: '', amount: '', linkedIncome: '', frequency: 'Monthly', date: '' }]);
+  const removeBill = (id) => setBills(bills.filter(b => b.id !== id));
+  const updateBill = (id, field, value) => setBills(bills.map(b => b.id === id ? { ...b, [field]: value } : b));
 
-  // --- GLOBAL MATH ---
-  const totalIncome = incomes.reduce((sum, inc) => sum + inc.amount, 0);
-  const totalAllocated = envelopes.reduce((sum, env) => sum + env.amount, 0);
-  const globalUnassigned = totalIncome - totalAllocated;
-
-  const cardStyle = { background: 'rgba(17, 17, 17, 0.85)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
+  // Styles
+  const inputStyle = { background: '#111', border: 'none', borderBottom: '1px solid #333', color: '#fff', padding: '8px', outline: 'none', width: '100%' };
+  const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
 
   return (
-    <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'transparent' }}>
-      <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(10, 10, 10, 0.9)', backdropFilter: 'blur(10px)' }}>
+    <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
+      <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
-        <h2 style={{ margin: 0, color: 'var(--text-accent, #3b82f6)', fontSize: '1.2em', textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>Budget Engine</h2>
+        <h2 style={{ margin: 0, color: '#3b82f6', fontSize: '1.2em' }}>Budget Engine</h2>
       </header>
+
+      {/* TABS */}
+      <div style={{ display: 'flex', gap: '10px', padding: '15px 15px 0 15px' }}>
+        <button onClick={() => setActiveTab('calc')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'calc' ? '#3b82f6' : '#222', color: activeTab === 'calc' ? '#fff' : '#888' }}>Ledger</button>
+        <button onClick={() => setActiveTab('info')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'info' ? '#10b981' : '#222', color: activeTab === 'info' ? '#fff' : '#888' }}>Guides & Tips</button>
+      </div>
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
         
-        {/* --- GLOBAL OVERVIEW --- */}
-        <div style={{ ...cardStyle, borderTop: '4px solid #00cc66', textAlign: 'center' }}>
-            <div style={{ color: '#aaa', textTransform: 'uppercase', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '10px' }}>Global Cash Pool</div>
-            <div style={{ color: '#fff', fontSize: '2.5em', fontWeight: 'bold', marginBottom: '15px' }}>
-                <span style={{ color: '#00cc66', marginRight: '5px' }}>$</span>{totalIncome.toFixed(2)}
-            </div>
-            
-            <div style={{ background: 'rgba(0,0,0,0.6)', padding: '15px', borderRadius: '8px', border: `1px solid ${globalUnassigned < 0 ? '#ef4444' : globalUnassigned === 0 ? '#333' : '#00ffff'}` }}>
-                <div style={{ color: '#888', textTransform: 'uppercase', fontSize: '0.8em', marginBottom: '5px' }}>Total Unassigned Cash</div>
-                <div style={{ fontSize: '2em', fontWeight: 'bold', fontFamily: 'monospace', color: globalUnassigned < 0 ? '#ef4444' : globalUnassigned === 0 ? '#aaa' : '#00ffff' }}>
-                    ${globalUnassigned.toFixed(2)}
+        {activeTab === 'calc' ? (
+          <>
+            {/* GLOBAL POOL */}
+            <div style={{ ...cardStyle, borderTop: '4px solid #10b981', textAlign: 'center' }}>
+                <h3 style={{ color: '#aaa', margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '1em' }}>Global Cash Pool</h3>
+                <div style={{ color: '#10b981', fontSize: '2em', fontWeight: 'bold', marginBottom: '20px' }}>
+                    <span style={{ fontSize: '0.8em' }}>$</span> {globalCash.toFixed(2)}
+                </div>
+                
+                <div style={{ border: '1px solid #00ffff', borderRadius: '8px', padding: '15px' }}>
+                    <div style={{ color: '#888', textTransform: 'uppercase', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '5px' }}>Total Unassigned Cash</div>
+                    <div style={{ color: '#00ffff', fontSize: '1.5em', fontWeight: 'bold' }}>${unassignedCash.toFixed(2)}</div>
                 </div>
             </div>
-        </div>
 
-        {/* --- DYNAMIC HEADER --- */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <button onClick={() => setShowPreview(!showPreview)} style={{ background: showPreview ? 'var(--accent, #3b82f6)' : 'transparent', color: showPreview ? '#000' : 'var(--text-accent, #3b82f6)', border: '1px solid var(--accent, #3b82f6)', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.85em' }}>
-                🧾 {showPreview ? 'Edit Ledgers' : 'Preview Ledgers'}
-            </button>
-            {!showPreview && (
-                <div style={{ display: 'flex', gap: '5px' }}>
-                    <button onClick={addIncome} style={{ background: '#00cc66', color: '#000', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.85em' }}>+ Income</button>
-                    <button onClick={addEnvelope} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.85em' }}>+ Bill</button>
-                </div>
-            )}
-        </div>
-
-        {/* --- ITEMIZED RECEIPT PREVIEW --- */}
-        {showPreview ? (
-            <div style={{ ...cardStyle, background: 'rgba(0, 0, 0, 0.85)', padding: '20px' }}>
-                {incomes.map(inc => {
-                    const linkedBills = envelopes.filter(e => e.incomeId === inc.id);
-                    const checkTotal = linkedBills.reduce((sum, b) => sum + b.amount, 0);
-                    const checkRemainder = inc.amount - checkTotal;
-                    
-                    return (
-                        <div key={`prev_${inc.id}`} style={{ marginBottom: '25px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #00cc66', paddingBottom: '5px', marginBottom: '10px' }}>
-                                <strong style={{ color: '#00cc66', textTransform: 'uppercase' }}>{inc.name} {inc.date && `(${inc.date})`}</strong>
-                                <strong style={{ color: '#fff' }}>${inc.amount.toFixed(2)}</strong>
-                            </div>
-                            {linkedBills.length === 0 ? (
-                                <div style={{ color: '#555', fontSize: '0.85em', fontStyle: 'italic', paddingLeft: '10px' }}>No bills assigned to this check.</div>
-                            ) : (
-                                linkedBills.map(bill => (
-                                    <div key={`pbill_${bill.id}`} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9em', marginBottom: '8px', paddingLeft: '10px' }}>
-                                        <span style={{ color: '#aaa' }}>- {bill.name} {bill.dueDate && `(${bill.dueDate})`}</span>
-                                        <span style={{ color: '#ef4444', fontFamily: 'monospace' }}>${bill.amount.toFixed(2)}</span>
-                                    </div>
-                                ))
-                            )}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', paddingTop: '5px', borderTop: '1px dashed #444', fontSize: '0.9em' }}>
-                                <span style={{ color: '#888' }}>Remaining Cash:</span>
-                                <strong style={{ color: checkRemainder < 0 ? '#ef4444' : '#00ffff', fontFamily: 'monospace' }}>${checkRemainder.toFixed(2)}</strong>
-                            </div>
-                        </div>
-                    );
-                })}
+            {/* CONTROLS */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                <button style={{ flex: 2, padding: '12px', background: '#0a0a0a', border: '1px solid #3b82f6', color: '#3b82f6', borderRadius: '8px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                    <span>🧾</span> Preview Ledgers
+                </button>
+                <button onClick={addIncome} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>+ Income</button>
+                <button onClick={addBill} style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>+ Bill</button>
             </div>
+
+            {/* INCOME SOURCES */}
+            <h3 style={{ color: '#3b82f6', margin: '0 0 15px 0', textTransform: 'uppercase', fontSize: '1em', textAlign: 'center' }}>Income Sources</h3>
+            {incomes.map(inc => (
+                <div key={inc.id} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
+                        <input type="text" value={inc.name} onChange={e => updateIncome(inc.id, 'name', e.target.value)} placeholder="Income Name" style={{ ...inputStyle, flex: 2, fontWeight: 'bold' }} />
+                        <span style={{ color: '#10b981', fontWeight: 'bold' }}>$</span>
+                        <input type="number" value={inc.amount} onChange={e => updateIncome(inc.id, 'amount', e.target.value)} placeholder="0.00" style={{ ...inputStyle, flex: 1 }} />
+                        <button onClick={() => removeIncome(inc.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.2em' }}>×</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <input type="date" value={inc.date} onChange={e => updateIncome(inc.id, 'date', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                        <button style={{ background: '#10b981', color: '#000', border: 'none', borderRadius: '6px', padding: '0 15px', fontWeight: 'bold' }}>Sync</button>
+                    </div>
+                </div>
+            ))}
+
+            {/* BILL LEDGER */}
+            <h3 style={{ color: '#3b82f6', margin: '25px 0 15px 0', textTransform: 'uppercase', fontSize: '1em', textAlign: 'center' }}>Bill Ledger</h3>
+            {bills.map(bill => (
+                <div key={bill.id} style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
+                        <input type="text" value={bill.name} onChange={e => updateBill(bill.id, 'name', e.target.value)} placeholder="Bill Name" style={{ ...inputStyle, flex: 2, fontWeight: 'bold' }} />
+                        <span style={{ color: '#10b981', fontWeight: 'bold' }}>$</span>
+                        <input type="number" value={bill.amount} onChange={e => updateBill(bill.id, 'amount', e.target.value)} placeholder="0.00" style={{ ...inputStyle, flex: 1 }} />
+                        <button onClick={() => removeBill(bill.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.2em' }}>×</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                        <select value={bill.linkedIncome} onChange={e => updateBill(bill.id, 'linkedIncome', e.target.value)} style={{ ...inputStyle, flex: 1, color: '#10b981' }}>
+                            <option value="">Select Income...</option>
+                            {incomes.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                        </select>
+                        <select value={bill.frequency} onChange={e => updateBill(bill.id, 'frequency', e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Bi-Weekly">Bi-Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <input type="date" value={bill.date} onChange={e => updateBill(bill.id, 'date', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                        <button style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', padding: '0 15px', fontWeight: 'bold' }}>Sync</button>
+                    </div>
+                </div>
+            ))}
+          </>
         ) : (
-            /* --- EDITABLE LEDGERS --- */
-            <div>
-                {/* INCOME SECTION */}
-                <h3 style={{ color: '#00cc66', fontSize: '0.85em', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Income Sources</h3>
-                {incomes.map(inc => (
-                    <div key={inc.id} style={{ background: 'rgba(17, 17, 17, 0.85)', backdropFilter: 'blur(10px)', padding: '12px', borderRadius: '12px', borderLeft: '4px solid #00cc66', marginBottom: '15px', borderTop: '1px solid #333', borderRight: '1px solid #333', borderBottom: '1px solid #333' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                            <input type="text" value={inc.name} onChange={e => updateIncome(inc.id, 'name', e.target.value)} style={{ flex: 1, minWidth: '0', background: 'transparent', border: 'none', borderBottom: '1px solid #444', color: '#fff', fontSize: '1.1em', fontWeight: 'bold', outline: 'none', paddingBottom: '4px' }} />
-                            <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '6px', border: '1px solid #444', flexShrink: 0 }}>
-                                <span style={{ color: '#00cc66', fontWeight: 'bold', marginRight: '4px' }}>$</span>
-                                <input type="number" value={inc.amount || ''} onChange={e => updateIncome(inc.id, 'amount', e.target.value)} placeholder="0" style={{ width: '70px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1em', fontWeight: 'bold', textAlign: 'right', outline: 'none' }} />
-                            </div>
-                            <button onClick={() => removeIncome(inc.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.4em', padding: '0 5px', flexShrink: 0 }}>×</button>
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
-                            <input type="date" value={inc.date} onChange={e => updateIncome(inc.id, 'date', e.target.value)} style={{ flex: 1, minWidth: '0', background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#aaa', padding: '8px', borderRadius: '6px', fontSize: '0.85em', outline: 'none' }} />
-                            <button onClick={() => syncIncomeToCalendar(inc)} style={{ background: '#00cc66', color: '#000', border: 'none', padding: '0 12px', borderRadius: '6px', fontSize: '0.85em', fontWeight: 'bold', flexShrink: 0 }}>Sync</button>
-                        </div>
-                    </div>
-                ))}
+          <div style={{ ...cardStyle, borderTop: '4px solid #10b981' }}>
+            <h3 style={{ color: '#10b981', margin: '0 0 15px 0', textAlign: 'center' }}>📖 Budgeting Field Guide</h3>
+            
+            <div style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
+              
+              <h4 style={{ color: '#00ffff', margin: '0 0 5px 0', borderBottom: '1px solid #333', paddingBottom: '5px' }}>Zero-Based Budgeting</h4>
+              <p style={{ margin: '0 0 15px 0' }}>The golden rule of this engine: Your <strong>Total Unassigned Cash</strong> should always be exactly $0.00. Every single dollar you earn needs a job before the month begins. If you have $200 left over after bills, it shouldn't sit in "Unassigned"—give it a job by creating a "Savings" or "Emergency Fund" bill to zero it out.</p>
 
-                {/* BILLS SECTION */}
-                <h3 style={{ color: 'var(--text-accent, #3b82f6)', fontSize: '0.85em', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px', marginTop: '20px' }}>Bill Ledger</h3>
-                {envelopes.map(env => (
-                    <div key={env.id} style={{ background: 'rgba(17, 17, 17, 0.85)', backdropFilter: 'blur(10px)', padding: '12px', borderRadius: '12px', borderLeft: '4px solid var(--accent, #3b82f6)', marginBottom: '12px', borderTop: '1px solid #333', borderRight: '1px solid #333', borderBottom: '1px solid #333' }}>
-                        
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                            <input type="text" value={env.name} onChange={e => updateEnvelope(env.id, 'name', e.target.value)} style={{ flex: 1, minWidth: '0', background: 'transparent', border: 'none', borderBottom: '1px solid #444', color: '#fff', fontSize: '1.1em', fontWeight: 'bold', outline: 'none', paddingBottom: '4px' }} />
-                            <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '6px', border: '1px solid #444', flexShrink: 0 }}>
-                                <span style={{ color: '#00cc66', fontWeight: 'bold', marginRight: '4px' }}>$</span>
-                                <input type="number" value={env.amount || ''} onChange={e => updateEnvelope(env.id, 'amount', e.target.value)} placeholder="0" style={{ width: '65px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1em', fontWeight: 'bold', textAlign: 'right', outline: 'none' }} />
-                            </div>
-                            <button onClick={() => removeEnvelope(env.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.4em', padding: '0 5px', flexShrink: 0 }}>×</button>
-                        </div>
+              <h4 style={{ color: '#00ffff', margin: '0 0 5px 0', borderBottom: '1px solid #333', paddingBottom: '5px' }}>Paycheck Routing (The Sync Feature)</h4>
+              <p style={{ margin: '0 0 15px 0' }}>Most budgets fail because they only look at monthly totals, ignoring cash flow. If all your bills are due on the 1st, but you get paid on the 15th and 30th, you will overdraft. Use the dropdown in the Bill Ledger to link specific bills to specific paychecks so you always know which check covers which liability.</p>
 
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch', marginBottom: '8px' }}>
-                            <select value={env.incomeId || ''} onChange={e => updateEnvelope(env.id, 'incomeId', e.target.value)} style={{ flex: 1, minWidth: '0', background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#00cc66', padding: '8px', borderRadius: '6px', fontSize: '0.85em', outline: 'none' }}>
-                                <option value="">Select Paycheck...</option>
-                                {incomes.map(inc => (
-                                    <option key={`opt_${inc.id}`} value={inc.id}>{inc.name}</option>
-                                ))}
-                            </select>
-                            <select value={env.recurrence || 'Monthly'} onChange={e => updateEnvelope(env.id, 'recurrence', e.target.value)} style={{ flex: 1, minWidth: '0', background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#aaa', padding: '8px', borderRadius: '6px', fontSize: '0.85em', outline: 'none' }}>
-                                <option value="One-Time">One-Time</option>
-                                <option value="Weekly">Weekly</option>
-                                <option value="Bi-Weekly">Bi-Weekly</option>
-                                <option value="Monthly">Monthly</option>
-                            </select>
-                        </div>
-                        
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
-                            <input type="date" value={env.dueDate} onChange={e => updateEnvelope(env.id, 'dueDate', e.target.value)} style={{ flex: 1, minWidth: '0', background: 'rgba(0,0,0,0.6)', border: '1px solid #444', color: '#aaa', padding: '8px', borderRadius: '6px', fontSize: '0.85em', outline: 'none' }} />
-                            <button onClick={() => syncToCalendar(env)} style={{ background: 'var(--accent, #3b82f6)', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '6px', fontSize: '0.85em', fontWeight: 'bold', flexShrink: 0 }}>Sync</button>
-                        </div>
-                    </div>
-                ))}
+              <h4 style={{ color: '#00ffff', margin: '0 0 5px 0', borderBottom: '1px solid #333', paddingBottom: '5px' }}>The 50/30/20 Baseline</h4>
+              <ul style={{ paddingLeft: '20px', margin: '0 0 15px 0' }}>
+                  <li style={{ marginBottom: '5px' }}><strong>50% Needs:</strong> Rent, utilities, groceries, gas, insurance.</li>
+                  <li style={{ marginBottom: '5px' }}><strong>30% Wants:</strong> Dining out, entertainment, hobbies.</li>
+                  <li><strong>20% Deployment:</strong> Debt payoff, savings, or investing.</li>
+              </ul>
+
+              <h4 style={{ color: '#00ffff', margin: '0 0 5px 0', borderBottom: '1px solid #333', paddingBottom: '5px' }}>Sinking Funds</h4>
+              <p style={{ margin: '0 0 20px 0' }}>Don't let annual bills (like car registration or Prime subscriptions) blindside you. If a bill is $120 a year, create a monthly bill in this ledger for $10 and stash that cash aside. When the annual bill hits, the money is already waiting.</p>
+
+              <div style={{ border: '1px solid #3b82f6', background: 'rgba(59, 130, 246, 0.1)', padding: '15px', borderRadius: '8px', textAlign: 'justify' }}>
+                <h4 style={{ color: '#3b82f6', margin: '0 0 10px 0', textAlign: 'center', textTransform: 'uppercase' }}>🔒 Local First Privacy</h4>
+                This tool is completely isolated. Since this application processes local state variables on your device, absolutely none of your income sources, bill ledgers, or financial mapping data are transmitted to the cloud or aggregated by external servers. Treat this device as your private financial ledger.
+              </div>
+
             </div>
+          </div>
         )}
       </div>
     </div>
