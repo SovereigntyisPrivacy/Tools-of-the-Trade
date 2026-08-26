@@ -11,7 +11,7 @@ export default function LearningHub() {
   const [activeWiccaTab, setActiveWiccaTab] = useState('lunar');
   const [activeEntityTab, setActiveEntityTab] = useState('goddesses');
   
-  // Anime Filter State
+  // Anime Filter State - Defaulted to 'A'
   const [activeLetter, setActiveLetter] = useState('A');
   const [expandedItem, setExpandedItem] = useState(null);
 
@@ -84,36 +84,42 @@ export default function LearningHub() {
   const animeDB = [
     { title: 'A Certain Magical Index', genre: 'Sci-Fi / Fantasy', era: '2000s', desc: 'In a city of espers, a boy with the power to negate any ability meets a nun running from sorcerers.' },
     { title: 'A Certain Scientific Railgun', genre: 'Sci-Fi / Action', era: '2000s', desc: 'A spin-off of Magical Index focusing on Mikoto Misaka, the third strongest esper in Academy City.' },
+    { title: 'A Lull in the Sea (Nagi-Asu)', genre: 'Drama / Romance', era: '2010s', desc: 'Middle school students from a village beneath the sea must attend school on the surface after their school closes.' },
+    { title: 'A Place Further Than the Universe', genre: 'Adventure / Slice of Life', era: '2010s', desc: 'Four high school girls embark on a journey to Antarctica to find a missing mother.' },
     { title: 'A Silent Voice', genre: 'Drama / Romance', era: '2010s', desc: 'A former bully tries to make amends with a deaf girl he tormented in elementary school.' },
     { title: 'Afro Samurai', genre: 'Action / Samurai', era: '2000s', desc: 'A samurai seeks revenge against the man who killed his father, fighting his way to the Number One headband.' },
     { title: 'Aggretsuko', genre: 'Comedy / Slice of Life', era: '2010s', desc: 'A frustrated red panda accountant deals with her stressful corporate life by singing death metal at karaoke.' },
+    { title: 'Ahiru no Sora', genre: 'Sports / Drama', era: '2010s', desc: 'A short but passionate basketball player works to revive his high school\'s delinquent-filled basketball club.' },
+    { title: 'Air', genre: 'Drama / Supernatural', era: '2000s', desc: 'A traveling showman arrives in a seaside town and meets a girl with a tragic, mystical destiny.' },
     { title: 'Air Gear', genre: 'Sports / Sci-Fi', era: '2000s', desc: 'A street punk discovers the underground world of motorized inline skates called Air Trecks.' },
     { title: 'Akagi', genre: 'Thriller / Gambling', era: '2000s', desc: 'A genius teenager dives into the dangerous world of high-stakes yakuza Mahjong.' },
-    { title: 'Akame ga Kill!', genre: 'Dark Fantasy / Action', era: '2010s', desc: 'A young villager travels to the capital to raise money for his home, only to discover deep corruption and join a group of assassins known as Night Raid.' },
+    { title: 'Akame ga Kill!', genre: 'Dark Fantasy / Action', era: '2010s', desc: 'A young villager travels to the capital to raise money for his home, only to discover deep corruption and join an assassin group.' },
+    { title: 'Akatsuki no Yona (Yona of the Dawn)', genre: 'Fantasy / Adventure', era: '2010s', desc: 'A sheltered princess flees her kingdom after a coup and searches for four legendary dragon warriors to reclaim her throne.' },
     { title: 'Akira', genre: 'Cyberpunk', era: '1980s', desc: 'A secret military project endangers Neo-Tokyo when it turns a biker gang member into a rampaging psychic psychopath.' },
+    { title: 'Aldnoah.Zero', genre: 'Mecha / Sci-Fi', era: '2010s', desc: 'Tensions ignite into all-out interplanetary war between Earth and the technologically advanced Vers Empire of Mars.' },
     { title: 'Amagi Brilliant Park', genre: 'Comedy / Fantasy', era: '2010s', desc: 'A narcissistic high schooler is forced to manage a failing amusement park populated by actual magical creatures.' },
     { title: 'Angel Beats!', genre: 'Drama / Supernatural', era: '2010s', desc: 'In an afterlife high school, teens who experienced trauma in life form a rebellion against God before they can reincarnate.' },
-    { title: 'Anohana: The Flower We Saw That Day', genre: 'Drama / Supernatural', era: '2010s', desc: 'A group of childhood friends drift apart after a tragedy, only to be brought back together when the ghost of their friend appears.' },
+    { title: 'Anohana: The Flower We Saw That Day', genre: 'Drama / Supernatural', era: '2010s', desc: 'A group of childhood friends drift apart after a tragedy, only to reunite when the ghost of their friend appears.' },
     { title: 'Another', genre: 'Horror / Mystery', era: '2010s', desc: 'A transfer student uncovers a deadly curse plaguing his new class, where ignoring a mysterious girl is the only way to survive.' },
+    { title: 'Ao Ashi', genre: 'Sports', era: '2020s', desc: 'A talented but unrefined soccer player from a small town joins a prestigious youth academy in Tokyo.' },
+    { title: 'Ao Haru Ride', genre: 'Romance / Drama', era: '2010s', desc: 'A high school girl reunites with her middle school crush, but discovers his personality has completely changed.' },
     { title: 'Appleseed', genre: 'Sci-Fi / Cyberpunk', era: '1980s-2000s', desc: 'In a post-apocalyptic utopian city, a human soldier and her cyborg partner uncover a conspiracy involving bioroids.' },
+    { title: 'Aquarion', genre: 'Mecha / Sci-Fi', era: '2000s', desc: 'Reincarnated warriors pilot a legendary mechanical angel to defend Earth from mythical entities called Shadow Angels.' },
     { title: 'Aria the Animation', genre: 'Sci-Fi / Slice of Life', era: '2000s', desc: 'On a terraformed Mars, a young woman trains to become a gondolier in a peaceful, watery replica of Venice.' },
     { title: 'Arifureta: From Commonplace to World\'s Strongest', genre: 'Isekai / Fantasy', era: '2010s', desc: 'An ordinary otaku is betrayed and falls into an abyss, forcing him to ruthlessly adapt and survive.' },
-    { title: 'Assassination Classroom', genre: 'Action / Comedy', era: '2010s', desc: 'A class of misfits is tasked with assassinating their alien teacher, who threatens to destroy Earth but is ironically the best teacher they\'ve ever had.' },
+    { title: 'Arslan Senki', genre: 'Action / Adventure', era: '2010s', desc: 'A young prince must gather allies and build an army to take back his conquered kingdom of Pars.' },
+    { title: 'Asobi Asobase', genre: 'Comedy', era: '2010s', desc: 'Three middle school girls form the "Pastimers Club," leading to chaotic, absurd, and painfully hilarious situations.' },
+    { title: 'Assassination Classroom', genre: 'Action / Comedy', era: '2010s', desc: 'A class of misfits is tasked with assassinating their alien teacher, who threatens to destroy Earth.' },
     { title: 'Astra Lost in Space', genre: 'Sci-Fi / Mystery', era: '2010s', desc: 'A group of students on a space camp trip are suddenly teleported millions of light-years away and must survive the journey home.' },
     { title: 'Astro Boy', genre: 'Sci-Fi / Mecha', era: '1960s', desc: 'The foundational classic about a powerful robot boy created by a brilliant scientist to replace his deceased son.' },
     { title: 'Attack on Titan', genre: 'Dark Fantasy / Action', era: '2010s-2020s', desc: 'Humanity lives inside cities surrounded by enormous walls that protect them from gigantic man-eating humanoids called Titans.' },
     { title: 'Azumanga Daioh', genre: 'Comedy / Slice of Life', era: '2000s', desc: 'The everyday surreal and comedic lives of six eccentric high school girls and their teachers.' },
     
-    // Non-A placeholders preserved
+    // Non-A Placeholders to test the filter
     { title: 'Cowboy Bebop', genre: 'Sci-Fi / Western', era: '1990s', desc: 'The futuristic misadventures and tragedies of an easygoing bounty hunter and his partners.' },
-    { title: 'Dragon Ball Z', genre: 'Shonen / Action', era: '1980s-1990s', desc: 'The adventures of Goku who, along with his companions, defends the Earth against an assortment of villains.' },
-    { title: 'Fullmetal Alchemist: Brotherhood', genre: 'Fantasy / Adventure', era: '2000s', desc: 'Two brothers search for a Philosopher\'s Stone after a forbidden attempt to revive their mother goes horribly awry.' },
-    { title: 'Kidnapped Dragons', genre: 'Fantasy / Slice of Life', era: 'Web Novel', desc: 'A regressor is tasked with raising dragon hatchlings to prevent the apocalypse.' },
     { title: 'Lookism', genre: 'Drama / Action', era: '2010s-2020s', desc: 'A high school student navigates society and gang warfare while switching between two entirely different bodies.' },
-    { title: 'My Hero Academia', genre: 'Shonen / Superhero', era: '2010s-2020s', desc: 'A boy without powers enrolls in a prestigious hero academy to learn what it truly means to be a hero.' },
-    { title: 'Neon Genesis Evangelion', genre: 'Mecha / Psychological', era: '1990s', desc: 'A teenage boy finds himself recruited as a member of an elite team of mecha pilots to fight monstrous angels.' },
-    { title: 'One Piece', genre: 'Adventure / Shonen', era: '1990s-Present', desc: 'Monkey D. Luffy and his pirate crew traverse the Grand Line to find the greatest treasure ever left.' },
-    { title: 'Viral Hit', genre: 'Action / Martial Arts', era: '2020s', desc: 'A scrawny high schooler learns how to fight from a mysterious channel and begins broadcasting street fights.' }
+    { title: 'My Hero Academia', genre: 'Shonen / Superhero', era: '2010s-2020s', desc: 'A boy without powers enrolls in a prestigious hero academy.' },
+    { title: 'One Piece', genre: 'Adventure / Shonen', era: '1990s-Present', desc: 'Monkey D. Luffy and his pirate crew traverse the Grand Line.' }
   ].sort((a, b) => a.title.localeCompare(b.title));
 
   const filteredAnime = activeLetter === 'All' ? animeDB : animeDB.filter(a => a.title.toUpperCase().startsWith(activeLetter));
