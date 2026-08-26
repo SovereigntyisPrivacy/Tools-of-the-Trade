@@ -11,7 +11,7 @@ export default function LearningHub() {
   const [activeWiccaTab, setActiveWiccaTab] = useState('lunar');
   
   // School & Quiz State
-  const [activeGrade, setActiveGrade] = useState('4th');
+  const [activeGrade, setActiveGrade] = useState('GED');
   const [expandedItem, setExpandedItem] = useState(null);
   
   const [quizActive, setQuizActive] = useState(false);
@@ -19,7 +19,7 @@ export default function LearningHub() {
   const [score, setScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
 
-  const gradesList = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', 'GED'];
+  const gradesList = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', 'GED'];
 
   // --- SUPERNATURAL DATABASES ---
   const tarotDeck = [
@@ -35,8 +35,8 @@ export default function LearningHub() {
   ];
 
   const sabbatsDB = [
-    { name: 'Samhain', date: 'Oct 31st', type: 'Greater Sabbat / Fire Festival', desc: '(Pronounced Sowin). Marks the pagan New Year, Halloween or All Hallows Eve. Was the final harvest for our ancestors.' },
-    { name: 'Yule', date: 'Dec 21st or 22nd', type: 'Lesser Sabbat / Solar Festival', desc: 'Winter Solstice. Shortest day of the year. Celebrated as the rebirth of the sun.' }
+    { name: 'Samhain', date: 'Oct 31st', type: 'Greater Sabbat / Fire Festival', desc: '(Pronounced Sowin). Marks the pagan New Year, Halloween or All Hallows Eve.' },
+    { name: 'Yule', date: 'Dec 21st or 22nd', type: 'Lesser Sabbat / Solar Festival', desc: 'Winter Solstice. Shortest day of the year.' }
   ];
 
   const lunarDB = [
@@ -47,134 +47,78 @@ export default function LearningHub() {
   // --- SCHOOL CURRICULUM ---
   const schoolCurriculum = {
     'K': { 
-      math: [
-        { topic: 'Counting 1-20', content: 'Practice: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20.' },
-        { topic: 'Basic Shapes', content: 'Circle (round), Square (4 equal sides), Triangle (3 sides).' },
-        { topic: 'Simple Addition', content: 'Adding means putting things together. 1 + 1 = 2.' }
-      ],
-      science: [
-        { topic: 'The Five Senses', content: 'Sight (Eyes), Hearing (Ears), Smell (Nose), Taste (Tongue), Touch (Hands).' },
-        { topic: 'Living vs. Non-Living', content: 'Living things grow and breathe (Trees, Dogs). Non-living things do not (Rocks, Cars).' }
-      ],
-      language: [
-        { topic: 'The Alphabet', content: 'There are 26 letters. The letter after A is B. Vowels are A, E, I, O, U.' },
-        { topic: 'Sight Words', content: 'Words you should recognize instantly: The, And, Is, It, We, To, You, He, I.' }
-      ],
-      history: [
-        { topic: 'Community Helpers', content: 'Firefighters put out fires. Doctors keep us healthy. Teachers help us learn.' },
-        { topic: 'Time & Days', content: 'There are 7 days in a week.' }
-      ]
+      math: [{ topic: 'Counting 1-20', content: 'Practice: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20.' }, { topic: 'Basic Shapes', content: 'Circle, Square, Triangle.' }],
+      science: [{ topic: 'The Five Senses', content: 'Sight, Hearing, Smell, Taste, Touch.' }],
+      language: [{ topic: 'The Alphabet', content: 'There are 26 letters.' }],
+      history: [{ topic: 'Community Helpers', content: 'Firefighters put out fires. Doctors keep us healthy.' }]
     },
     '1st': { 
-      math: [
-        { topic: 'Addition & Subtraction (0-20)', content: 'Adding is combining (10 + 5 = 15). Subtraction is taking away (15 - 5 = 10).' },
-        { topic: 'Place Value', content: 'Numbers are made of Tens and Ones. In 42, there are 4 Tens and 2 Ones.' },
-        { topic: 'Telling Time', content: 'The short hand is the Hour, the long hand is the Minute. There are 60 minutes in 1 hour.' }
-      ],
-      science: [
-        { topic: 'Plant Life Cycles', content: 'Plants start as a Seed, grow roots, sprout into a Seedling, and become an Adult.' },
-        { topic: 'Sky Patterns', content: 'The Sun gives us light and warmth during the day. The Moon is out at night.' }
-      ],
-      language: [
-        { topic: 'Sentences & Punctuation', content: 'A sentence always ends with punctuation like a Period (.).' },
-        { topic: 'Nouns & Verbs', content: 'A Noun is a person, place, or thing (Apple). A Verb is an action word (Run).' }
-      ],
-      history: [
-        { topic: 'Past vs. Present', content: 'The Past is what happened before. The Present is happening now.' },
-        { topic: 'Maps & Globes', content: 'A globe is a round model of the Earth.' }
-      ]
+      math: [{ topic: 'Addition (0-20)', content: 'Adding is combining (10 + 5 = 15).' }, { topic: 'Place Value', content: 'In 42, there are 4 Tens and 2 Ones.' }],
+      science: [{ topic: 'Plant Life Cycles', content: 'Seed -> Seedling -> Adult Plant.' }],
+      language: [{ topic: 'Sentences', content: 'A sentence ends with a Period (.).' }, { topic: 'Nouns & Verbs', content: 'Noun: Person, place, thing. Verb: Action.' }],
+      history: [{ topic: 'Past vs. Present', content: 'The Past is before. The Present is now.' }]
     },
     '2nd': { 
-      math: [
-        { topic: 'Two-Digit Arithmetic', content: 'Adding larger numbers requires stacking them. 25 + 14 = 39. Always start with the ones column.' },
-        { topic: 'Money', content: 'A Penny is 1¢. A Nickel is 5¢. A Dime is 10¢. A Quarter is 25¢. 4 Quarters make 1 Dollar ($1.00).' },
-        { topic: 'Measurement', content: 'We measure length in inches or centimeters. There are 12 inches in 1 foot.' }
-      ],
-      science: [
-        { topic: 'States of Matter', content: 'Solid (keeps its shape, like ice). Liquid (flows, like water). Gas (spreads out, like steam).' },
-        { topic: 'Ecosystems', content: 'A community of living and non-living things working together, like a Forest or a Desert.' }
-      ],
-      chemistry: [
-        { topic: 'Reversible vs Irreversible Changes', content: 'Melting ice is a reversible change. Burning wood is an irreversible change (it becomes ash).' }
-      ],
-      history: [
-        { topic: 'Local Geography & Map Skills', content: 'A Compass Rose shows directions: North, South, East, West.' },
-        { topic: 'Civics', content: 'A Mayor is the leader of a city. A Governor leads a state. A President leads a country.' }
-      ]
+      math: [{ topic: 'Money', content: 'Penny 1¢, Nickel 5¢, Dime 10¢, Quarter 25¢. 4 Quarters = $1.00.' }],
+      science: [{ topic: 'States of Matter', content: 'Solid, Liquid, Gas.' }],
+      history: [{ topic: 'Civics', content: 'A Mayor leads a city. A Governor leads a state. A President leads a country.' }]
     },
     '3rd': { 
-      math: [
-        { topic: 'Multiplication', content: 'Multiplication is fast addition. 4 x 5 means four groups of five, which equals 20.' },
-        { topic: 'Fractions', content: 'A fraction shows parts of a whole. In 1/2, the top number is the Numerator, and the bottom is the Denominator.' },
-        { topic: 'Geometry', content: 'Perimeter is the distance around the outside of a shape. Area is the space inside.' }
-      ],
-      science: [
-        { topic: 'Life Cycles', content: 'Metamorphosis is a drastic physical change in an animal\'s life, like a caterpillar turning into a butterfly.' },
-        { topic: 'Forces & Motion', content: 'A Force is a push or a pull on an object. Gravity is a force that pulls things to Earth.' },
-        { topic: 'Magnets', content: 'Magnets have a North and South pole. Opposite poles Attract. Like poles Repel.' }
-      ],
-      chemistry: [
-        { topic: 'Atoms & Molecules', content: 'An Atom is the smallest building block of all matter. When two or more atoms bond, they form a Molecule.' }
-      ],
-      history: [
-        { topic: 'World Geography', content: 'There are 7 continents: North America, South America, Europe, Africa, Asia, Australia, and Antarctica.' },
-        { topic: 'Ancient Civilizations', content: 'Ancient Egypt was built along the Nile River and is famous for building the Pyramids.' }
-      ]
+      math: [{ topic: 'Multiplication', content: '4 x 5 means four groups of five (20).' }, { topic: 'Fractions', content: 'In 1/2, 1 is the Numerator, 2 is the Denominator.' }],
+      science: [{ topic: 'Forces & Magnets', content: 'Opposite poles Attract. Like poles Repel.' }],
+      history: [{ topic: 'Geography', content: 'There are 7 continents: North America, South America, Europe, Africa, Asia, Australia, Antarctica.' }]
     },
     '4th': {
-      math: [
-        { topic: 'Multi-Digit Multiplication', content: 'Multiplying larger numbers (e.g., 23 x 14) requires multiplying each digit and adding the partial products.' },
-        { topic: 'Equivalent Fractions', content: 'Fractions that look different but have the same value. Example: 1/2 is the same as 2/4 or 4/8.' },
-        { topic: 'Lines & Angles', content: 'A Right Angle is exactly 90 degrees (like the corner of a square). Parallel lines never intersect.' }
-      ],
-      science: [
-        { topic: 'Energy Transfer', content: 'Energy cannot be created or destroyed, only transferred. Examples include heat, light, and sound energy.' },
-        { topic: 'The Rock Cycle', content: 'Rocks change over time. Igneous (from magma), Sedimentary (from pressed sand/pebbles), Metamorphic (changed by heat/pressure).' }
-      ],
-      chemistry: [
-        { topic: 'Solutions & Mixtures', content: 'A Solute (like salt) dissolves into a Solvent (like water) to create a Solution (saltwater).' }
-      ],
-      history: [
-        { topic: 'State History & Colonization', content: 'The first permanent English settlement in the Americas was Jamestown, founded in 1607.' },
-        { topic: 'Westward Expansion', content: 'Pioneers traveled west across North America using trails like the Oregon Trail during the 1800s.' }
-      ]
+      math: [{ topic: 'Geometry', content: 'A Right Angle is exactly 90 degrees. Parallel lines never intersect.' }],
+      science: [{ topic: 'Energy Transfer', content: 'Energy cannot be created or destroyed, only transferred.' }],
+      history: [{ topic: 'Colonization', content: 'Jamestown was the first permanent English settlement (1607).' }]
     },
     '5th': {
-      math: [
-        { topic: 'Decimal Operations', content: 'Adding, subtracting, and multiplying numbers with decimals. Always line up the decimal point when adding!' },
-        { topic: 'Volume', content: 'Volume measures the space inside a 3D object. Formula: Length x Width x Height.' },
-        { topic: 'Coordinate Planes', content: 'A grid with an X-axis (horizontal) and Y-axis (vertical). The origin is at (0,0).' }
-      ],
-      science: [
-        { topic: 'Cell Structure', content: 'Cells are the basic units of life. The Nucleus is the brain of the cell, and the Mitochondria is the powerhouse.' },
-        { topic: 'The Solar System', content: 'The Sun is at the center. The order of planets: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune.' }
-      ],
-      chemistry: [
-        { topic: 'Physical vs. Chemical Changes', content: 'Physical: Changes appearance but not the substance (tearing paper). Chemical: Creates a new substance (rusting iron).' }
-      ],
-      history: [
-        { topic: 'The American Revolution', content: 'The 13 Colonies fought against Great Britain for independence. The Declaration of Independence was signed in 1776.' },
-        { topic: 'The U.S. Constitution', content: 'The supreme law of the US, featuring 3 branches of government: Executive, Legislative, and Judicial.' }
-      ]
+      math: [{ topic: 'Volume', content: 'Volume = Length x Width x Height.' }, { topic: 'Coordinate Planes', content: 'X-axis is horizontal, Y-axis is vertical. Origin is (0,0).' }],
+      science: [{ topic: 'Cells', content: 'The Nucleus is the brain. The Mitochondria is the powerhouse.' }],
+      history: [{ topic: 'American Revolution', content: 'The Declaration of Independence was signed in 1776.' }]
     },
     '6th': {
-      math: [
-        { topic: 'Ratios & Rates', content: 'A ratio compares two quantities (e.g., 3 apples for every 2 oranges = 3:2). A unit rate is a ratio per 1 unit (e.g., 60 miles per 1 hour).' },
-        { topic: 'Algebraic Expressions', content: 'Using letters (variables) to represent numbers. Example: "Five more than x" is written as x + 5.' },
-        { topic: 'Negative Numbers', content: 'Numbers less than zero. They are located to the left of zero on a number line.' }
-      ],
-      science: [
-        { topic: 'Plate Tectonics', content: 'The Earth\'s crust is divided into massive plates that move, causing earthquakes, volcanoes, and forming mountains.' },
-        { topic: 'Thermal Energy', content: 'Heat transfers in three ways: Conduction (direct contact), Convection (fluids/gases), and Radiation (waves).' }
-      ],
-      chemistry: [
-        { topic: 'The Periodic Table', content: 'A chart organizing all known elements. Oxygen is O, Carbon is C. Columns are "Groups" and rows are "Periods".' },
-        { topic: 'Atomic Structure', content: 'Atoms have a nucleus containing Protons (positive) and Neutrons (neutral), surrounded by Electrons (negative).' }
-      ],
-      history: [
-        { topic: 'Ancient Civilizations II', content: 'Mesopotamia (land between the Tigris and Euphrates rivers) is known as the cradle of civilization.' },
-        { topic: 'Ancient Rome & Greece', content: 'Greece gave us early democracy and the Olympics. Rome gave us the Republic and massive engineering like aqueducts.' }
-      ]
+      math: [{ topic: 'Ratios', content: 'A ratio compares two quantities (e.g., 3:2).' }, { topic: 'Negative Numbers', content: 'Numbers less than zero.' }],
+      science: [{ topic: 'Plate Tectonics', content: 'Earth\'s moving crust causes earthquakes and forms mountains.' }],
+      chemistry: [{ topic: 'Atoms', content: 'Protons (+), Neutrons (neutral), Electrons (-).' }],
+      history: [{ topic: 'Ancient Civilizations', content: 'Mesopotamia is the cradle of civilization. Greece gave us early democracy.' }]
+    },
+    '7th': {
+      math: [{ topic: 'Proportions & Inequalities', content: 'An inequality compares values. "x > 5" means x is strictly greater than 5. A proportion states two ratios are equal.' }],
+      science: [{ topic: 'Genetics', content: 'DNA carries genetic information. Dominant traits mask recessive traits. A Punnett square predicts probability.' }],
+      chemistry: [{ topic: 'The Periodic Table', content: 'Elements are arranged by atomic number. Groups (columns) share similar chemical properties.' }],
+      history: [{ topic: 'Medieval History', content: 'Feudalism was a social system where land was exchanged for military service and labor.' }]
+    },
+    '8th': {
+      math: [{ topic: 'Linear Equations', content: 'The slope-intercept form is $y=mx+b$, where $m$ is the slope (rise over run) and $b$ is the y-intercept.' }],
+      science: [{ topic: 'Waves', content: 'Electromagnetic waves do not require a medium (e.g., light). Mechanical waves do (e.g., sound).' }],
+      chemistry: [{ topic: 'Chemical Reactions', content: 'Reactants turn into Products. The Law of Conservation of Mass states matter cannot be created or destroyed in a reaction.' }],
+      history: [{ topic: 'The Civil War', content: 'Fought between the Union (North) and Confederacy (South) from 1861-1865 over state rights and slavery.' }]
+    },
+    '9th': {
+      math: [{ topic: 'Algebra I (Quadratics)', content: 'The standard form is $ax^2+bx+c=0$. The quadratic formula is $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$.' }],
+      science: [{ topic: 'Cellular Biology', content: 'Mitosis creates two identical daughter cells. Meiosis creates four unique sex cells (gametes).' }],
+      chemistry: [{ topic: 'Molar Mass', content: 'A mole is $6.022 \times 10^{23}$ particles. Molar mass converts between grams and moles.' }],
+      language: [{ topic: 'Literary Devices', content: 'Metaphors directly compare without "like" or "as". Foreshadowing hints at future plot events.' }]
+    },
+    '10th': {
+      math: [{ topic: 'Geometry', content: 'The Pythagorean Theorem for right triangles is $a^2+b^2=c^2$. The area of a circle is $A=\pi r^2$.' }],
+      science: [{ topic: 'Earth & Space', content: 'Stars fuse hydrogen into helium. Supernovas forge heavier elements.' }],
+      history: [{ topic: 'World War II', content: 'Fought from 1939-1945. The Axis (Germany, Italy, Japan) vs. the Allies (US, UK, USSR).' }],
+      language: [{ topic: 'Rhetoric', content: 'Ethos (credibility), Pathos (emotion), Logos (logic).' }]
+    },
+    '11th': {
+      math: [{ topic: 'Algebra II', content: 'Logarithms are the inverse of exponentials. If $b^y = x$, then $\log_b(x) = y$.' }],
+      science: [{ topic: 'Ecology', content: 'Carrying capacity is the maximum population size an environment can sustain indefinitely.' }],
+      chemistry: [{ topic: 'Acids & Bases', content: 'The pH scale ranges from 0-14. Less than 7 is acidic, 7 is neutral (pure water), greater than 7 is basic.' }],
+      history: [{ topic: 'The Cold War', content: 'A geopolitical standoff between the US (Capitalism) and USSR (Communism) involving nuclear proliferation and proxy wars.' }]
+    },
+    'GED': {
+      math: [{ topic: 'GED Math Core', content: 'You must master linear equations ($y=mx+b$), interpreting graphs, applying geometry formulas ($A=\frac{1}{2}bh$ for triangles), and basic probability.' }],
+      science: [{ topic: 'GED Science Core', content: 'Focus on scientific method, interpreting data, and core formulas. Newton\'s Second Law is $F=ma$. Photosynthesis is $$6CO_2+6H_2O\rightarrow C_6H_{12}O_6+6O_2$$' }],
+      history: [{ topic: 'GED Social Studies', content: 'Focus on Civics, Economics, and US History. The Constitution separates power to prevent tyranny. Supply and Demand dictate market prices.' }],
+      language: [{ topic: 'GED Reading & Language Arts', content: 'You must be able to identify the main idea, evaluate the strength of an author\'s argument, and identify bias or logical fallacies in text.' }]
     }
   };
 
@@ -207,13 +151,13 @@ export default function LearningHub() {
       { q: 'What is 25 + 14?', options: ['30', '39', '41', '49'], answer: '39' },
       { q: 'How many quarters make 1 Dollar?', options: ['2', '3', '4', '10'], answer: '4' },
       { q: 'What state of matter is water?', options: ['Solid', 'Liquid', 'Gas', 'Plasma'], answer: 'Liquid' },
-      { q: 'Which of these is an ecosystem?', options: ['A Forest', 'A Car', 'A House', 'A Book'], answer: 'A Forest' },
       { q: 'Who is the leader of a city or town?', options: ['President', 'Governor', 'Mayor', 'Teacher'], answer: 'Mayor' },
       { q: 'What shows directions on a map?', options: ['Compass Rose', 'Legend', 'Scale', 'Title'], answer: 'Compass Rose' },
       { q: 'Is melting ice a reversible change?', options: ['Yes', 'No', 'Sometimes', 'Never'], answer: 'Yes' },
       { q: 'What type of change is burning wood?', options: ['Reversible', 'Irreversible', 'Temporary', 'Liquid'], answer: 'Irreversible' },
       { q: 'How many inches are in 1 foot?', options: ['10', '12', '24', '36'], answer: '12' },
-      { q: 'Which coin is worth 10¢?', options: ['Penny', 'Nickel', 'Dime', 'Quarter'], answer: 'Dime' }
+      { q: 'Which coin is worth 10¢?', options: ['Penny', 'Nickel', 'Dime', 'Quarter'], answer: 'Dime' },
+      { q: 'Which of these is an ecosystem?', options: ['A Forest', 'A Car', 'A House', 'A Book'], answer: 'A Forest' }
     ],
     '3rd': [
       { q: 'What is 4 x 5?', options: ['9', '16', '20', '25'], answer: '20' },
@@ -262,9 +206,82 @@ export default function LearningHub() {
       { q: 'Which ancient civilization gave us early democracy?', options: ['Rome', 'Egypt', 'China', 'Greece'], answer: 'Greece' },
       { q: 'Which number is smaller than -5?', options: ['-2', '0', '-10', '4'], answer: '-10' },
       { q: 'On the periodic table, what are the vertical columns called?', options: ['Rows', 'Periods', 'Groups', 'Sectors'], answer: 'Groups' }
+    ],
+    '7th': [
+      { q: 'If x > 5, which of the following is a possible value for x?', options: ['4', '5', '6', '-5'], answer: '6' },
+      { q: 'What diagram is used to predict genetic probabilities?', options: ['Venn Diagram', 'Pie Chart', 'Punnett Square', 'Histogram'], answer: 'Punnett Square' },
+      { q: 'Which trait masks a recessive trait?', options: ['Hidden', 'Dominant', 'Neutral', 'Passive'], answer: 'Dominant' },
+      { q: 'A proportion states that two ratios are...', options: ['Unequal', 'Opposites', 'Equal', 'Negative'], answer: 'Equal' },
+      { q: 'Elements in the same Group on the Periodic Table share...', options: ['Atomic Mass', 'Chemical Properties', 'Proton count', 'Nothing'], answer: 'Chemical Properties' },
+      { q: 'Feudalism is a system based on the exchange of land for...', options: ['Money', 'Military Service & Labor', 'Titles', 'Religious freedom'], answer: 'Military Service & Labor' },
+      { q: 'In genetics, DNA stands for Deoxyribonucleic...', options: ['Atom', 'Acid', 'Base', 'Alloy'], answer: 'Acid' },
+      { q: 'What is a mathematical sentence that contains an equals sign called?', options: ['Expression', 'Variable', 'Equation', 'Inequality'], answer: 'Equation' },
+      { q: 'What carries genetic information in living things?', options: ['RNA', 'DNA', 'Proteins', 'Lipids'], answer: 'DNA' },
+      { q: 'Which period in history is associated with knights, lords, and peasants?', options: ['Renaissance', 'Industrial', 'Medieval', 'Modern'], answer: 'Medieval' }
+    ],
+    '8th': [
+      { q: 'In the equation y = mx + b, what does "m" represent?', options: ['Y-intercept', 'Variable', 'Slope', 'Origin'], answer: 'Slope' },
+      { q: 'Which type of wave does NOT require a medium to travel?', options: ['Sound', 'Mechanical', 'Electromagnetic', 'Ocean'], answer: 'Electromagnetic' },
+      { q: 'The Law of Conservation of Mass states that matter cannot be...', options: ['Heated or Cooled', 'Created or Destroyed', 'Solid or Liquid', 'Mixed'], answer: 'Created or Destroyed' },
+      { q: 'The US Civil War was fought between the Union and the...', options: ['British', 'French', 'Confederacy', 'Spanish'], answer: 'Confederacy' },
+      { q: 'In a chemical reaction, the starting materials are called...', options: ['Products', 'Yields', 'Reactants', 'Isotopes'], answer: 'Reactants' },
+      { q: 'What is the y-intercept in the equation y = 2x + 4?', options: ['2', 'x', 'y', '4'], answer: '4' },
+      { q: 'Which war took place from 1861 to 1865 in America?', options: ['Revolutionary War', 'WWI', 'Civil War', 'Vietnam War'], answer: 'Civil War' },
+      { q: 'Rise over run is the formula for calculating...', options: ['Area', 'Slope', 'Volume', 'Perimeter'], answer: 'Slope' },
+      { q: 'Light is an example of what kind of wave?', options: ['Mechanical', 'Electromagnetic', 'Sound', 'Seismic'], answer: 'Electromagnetic' },
+      { q: 'In y = mx + b, what does "b" represent?', options: ['Slope', 'X-intercept', 'Y-intercept', 'Origin'], answer: 'Y-intercept' }
+    ],
+    '9th': [
+      { q: 'What is the standard form of a quadratic equation?', options: ['y=mx+b', 'ax^2+bx+c=0', 'a^2+b^2=c^2', 'A=pi*r^2'], answer: 'ax^2+bx+c=0' },
+      { q: 'Which process creates two identical daughter cells?', options: ['Meiosis', 'Osmosis', 'Mitosis', 'Photosynthesis'], answer: 'Mitosis' },
+      { q: 'A mole contains approximately how many particles?', options: ['1 Million', '6.022 x 10^23', '3.14', '100'], answer: '6.022 x 10^23' },
+      { q: 'Which literary device compares two things without using "like" or "as"?', options: ['Simile', 'Foreshadowing', 'Metaphor', 'Hyperbole'], answer: 'Metaphor' },
+      { q: 'Meiosis is the process of creating what kind of cells?', options: ['Skin cells', 'Brain cells', 'Identical cells', 'Sex cells (gametes)'], answer: 'Sex cells (gametes)' },
+      { q: 'What hints at future events in a story?', options: ['Flashback', 'Foreshadowing', 'Metaphor', 'Irony'], answer: 'Foreshadowing' },
+      { q: 'What is used to convert between grams and moles?', options: ['Atomic radius', 'Molar mass', 'Volume', 'Density'], answer: 'Molar mass' },
+      { q: 'What shape does a graphed quadratic equation make?', options: ['Straight line', 'Circle', 'Parabola (U-shape)', 'Wave'], answer: 'Parabola (U-shape)' },
+      { q: 'Which formula solves for x in a quadratic equation?', options: ['Pythagorean', 'Quadratic Formula', 'Slope-intercept', 'Distance formula'], answer: 'Quadratic Formula' },
+      { q: 'If a cell has 46 chromosomes, how many will a daughter cell have after mitosis?', options: ['23', '46', '92', '0'], answer: '46' }
+    ],
+    '10th': [
+      { q: 'What is the Pythagorean Theorem?', options: ['A=pi*r^2', 'y=mx+b', 'a^2+b^2=c^2', 'F=ma'], answer: 'a^2+b^2=c^2' },
+      { q: 'How do stars generate energy?', options: ['Fission', 'Burning coal', 'Fusing hydrogen into helium', 'Reflecting light'], answer: 'Fusing hydrogen into helium' },
+      { q: 'Which countries made up the Axis powers in WWII?', options: ['US, UK, USSR', 'Germany, Italy, Japan', 'France, China, Spain', 'Germany, Russia, France'], answer: 'Germany, Italy, Japan' },
+      { q: 'In rhetoric, what does "Logos" appeal to?', options: ['Emotion', 'Credibility', 'Logic', 'Fear'], answer: 'Logic' },
+      { q: 'What is the formula for the area of a circle?', options: ['A=pi*r^2', 'A=2*pi*r', 'A=l*w', 'A=1/2*b*h'], answer: 'A=pi*r^2' },
+      { q: 'What event forged the heavy elements in the universe?', options: ['Big Bang', 'Supernovas', 'Black Holes', 'Solar Flares'], answer: 'Supernovas' },
+      { q: 'What year did WWII end?', options: ['1918', '1939', '1945', '1965'], answer: '1945' },
+      { q: 'In rhetoric, "Ethos" relies on establishing what?', options: ['Logic', 'Anger', 'Credibility/Authority', 'Sadness'], answer: 'Credibility/Authority' },
+      { q: 'The Pythagorean Theorem only applies to what kind of triangles?', options: ['Isosceles', 'Equilateral', 'Right', 'Scalene'], answer: 'Right' },
+      { q: 'Which rhetoric technique appeals to the audience\'s emotions?', options: ['Logos', 'Pathos', 'Ethos', 'Mythos'], answer: 'Pathos' }
+    ],
+    '11th': [
+      { q: 'What is the mathematical inverse of an exponential function?', options: ['Derivative', 'Integral', 'Logarithm', 'Polynomial'], answer: 'Logarithm' },
+      { q: 'What is the maximum population size an environment can sustain called?', options: ['Growth rate', 'Carrying capacity', 'Death rate', 'Biome limit'], answer: 'Carrying capacity' },
+      { q: 'On the pH scale, a value of 2 is considered...', options: ['Neutral', 'Basic', 'Acidic', 'Alkaline'], answer: 'Acidic' },
+      { q: 'The Cold War was primarily a standoff between the US and...', options: ['China', 'Germany', 'The USSR', 'Japan'], answer: 'The USSR' },
+      { q: 'If b^y = x, then log_b(x) = ?', options: ['b', 'x', 'y', '1'], answer: 'y' },
+      { q: 'Pure water has a pH of exactly...', options: ['0', '7', '14', '10'], answer: '7' },
+      { q: 'Which economic system was the USSR promoting during the Cold War?', options: ['Capitalism', 'Feudalism', 'Communism', 'Monarchy'], answer: 'Communism' },
+      { q: 'A substance with a pH of 12 is a...', options: ['Strong Acid', 'Weak Acid', 'Neutral', 'Base'], answer: 'Base' },
+      { q: 'What does "proxy war" mean in the context of the Cold War?', options: ['Nuclear war', 'Wars fought through supported third parties', 'Cyber warfare', 'Trade embargoes'], answer: 'Wars fought through supported third parties' },
+      { q: 'In a log equation log_10(100) = 2, what is the base?', options: ['2', '10', '100', '0'], answer: '10' }
+    ],
+    'GED': [
+      { q: 'According to Newton\'s Second Law, Force equals Mass times...', options: ['Velocity', 'Acceleration', 'Gravity', 'Energy'], answer: 'Acceleration' },
+      { q: 'In economics, if Supply is low and Demand is high, what happens to the Price?', options: ['It drops', 'It stays the same', 'It rises', 'It becomes free'], answer: 'It rises' },
+      { q: 'Which equation represents a linear relationship?', options: ['y=x^2', 'y=mx+b', 'A=pi*r^2', 'E=mc^2'], answer: 'y=mx+b' },
+      { q: 'What is the primary purpose of the US Constitution separating government powers?', options: ['To save money', 'To prevent tyranny (Checks & Balances)', 'To speed up laws', 'To elect presidents faster'], answer: 'To prevent tyranny (Checks & Balances)' },
+      { q: 'What gas do plants take in during photosynthesis?', options: ['Oxygen', 'Nitrogen', 'Carbon Dioxide (CO2)', 'Helium'], answer: 'Carbon Dioxide (CO2)' },
+      { q: 'When evaluating an author\'s argument, you should look out for...', options: ['Page count', 'Logical fallacies and bias', 'Font size', 'Chapter titles'], answer: 'Logical fallacies and bias' },
+      { q: 'What is the formula for the area of a triangle?', options: ['A=bh', 'A=1/2*bh', 'A=pi*r^2', 'A=L+W'], answer: 'A=1/2*bh' },
+      { q: 'What are the products of photosynthesis?', options: ['Water and Light', 'Carbon Dioxide and Soil', 'Glucose (Sugar) and Oxygen', 'Heat and Nitrogen'], answer: 'Glucose (Sugar) and Oxygen' },
+      { q: 'In reading comprehension, the "main idea" is...', options: ['A minor detail', 'The central point the author is making', 'The last sentence', 'The author\'s name'], answer: 'The central point the author is making' },
+      { q: 'If a car accelerates at 5 m/s^2 and has a mass of 1000 kg, what is the Force? (F=ma)', options: ['200 N', '1005 N', '5000 N', '50000 N'], answer: '5000 N' }
     ]
   };
 
+  // --- ACTIONS ---
   const toggleExpand = (name) => setExpandedItem(expandedItem === name ? null : name);
 
   const handleAnswer = (opt, correct) => {
@@ -330,7 +347,7 @@ export default function LearningHub() {
             {schoolCurriculum[activeGrade] ? (
               <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b', padding: '0' }}>
                 <div style={{ background: '#f59e0b', color: '#000', padding: '15px', borderRadius: '10px 10px 0 0', fontWeight: 'bold', fontSize: '1.1em', textTransform: 'uppercase', textAlign: 'center' }}>
-                  Grade {activeGrade} Curriculum
+                  {activeGrade === 'GED' ? 'GED Capstone Curriculum' : `Grade ${activeGrade} Curriculum`}
                 </div>
 
                 <div style={{ padding: '20px' }}>
@@ -352,13 +369,13 @@ export default function LearningHub() {
                   
                   {quizzes[activeGrade] && (
                     <button onClick={() => setQuizActive(true)} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginTop: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
-                      📝 Take Grade {activeGrade} Final Exam
+                      📝 Take {activeGrade === 'GED' ? 'GED Practice' : `Grade ${activeGrade}`} Exam
                     </button>
                   )}
                 </div>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '30px', color: '#666', fontStyle: 'italic' }}>Curriculum for Grade {activeGrade} is under construction.</div>
+              <div style={{ textAlign: 'center', padding: '30px', color: '#666', fontStyle: 'italic' }}>Curriculum for {activeGrade} is under construction.</div>
             )}
           </div>
         )}
@@ -395,7 +412,7 @@ export default function LearningHub() {
                   <div style={{ color: '#fff', fontSize: '1.2em', marginBottom: '20px' }}>You scored {score} out of {quizzes[activeGrade].length}.</div>
                   <div style={{ color: '#888', marginBottom: '20px', fontSize: '0.9em' }}>Required to pass: {passThreshold} ({Math.round((passThreshold/quizzes[activeGrade].length)*100)}%)</div>
                   <p style={{ color: '#ccc', marginBottom: '30px' }}>
-                    {hasPassed ? `Great job! You have mastered the Grade ${activeGrade} curriculum.` : 'Please review the reference books and try the exam again.'}
+                    {hasPassed ? `Great job! You have mastered the ${activeGrade} curriculum.` : 'Please review the reference books and try the exam again.'}
                   </p>
                   <button onClick={resetQuiz} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '15px 30px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>
                     Return to Books
