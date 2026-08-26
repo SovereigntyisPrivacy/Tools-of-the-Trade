@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ChronosHub() {
   const navigate = useNavigate();
-  const [activeMainTab, setActiveMainTab] = useState('hos'); // hos, contractor, history
+  const [activeMainTab, setActiveMainTab] = useState('hos'); 
 
   // --- HOS LOGS STATE ---
   const [shiftSeconds, setShiftSeconds] = useState(14 * 3600);
@@ -17,45 +17,41 @@ export default function ChronosHub() {
 
   // --- CONTRACTOR STATE ---
   const [fixedFee, setFixedFee] = useState(800);
-  const [discount, setDiscount] = useState(0); // NEW: Discount
-  const [jobNotes, setJobNotes] = useState(''); // NEW: Job Notes
+  const [discount, setDiscount] = useState(0); 
+  const [jobNotes, setJobNotes] = useState(''); 
   const [materials, setMaterials] = useState([]);
   const [matName, setMatName] = useState('');
   const [matCost, setMatCost] = useState('');
   const [matQty, setMatQty] = useState('');
   const [matSn, setMatSn] = useState('');
-  
   const [crew, setCrew] = useState([]);
   const [crewName, setCrewName] = useState('');
   const [crewRate, setCrewRate] = useState('');
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [receiptTab, setReceiptTab] = useState('customer'); // customer, operator
+  const [receiptTab, setReceiptTab] = useState('customer');
 
-  // --- MASTER HOS TIMER LOGIC ---
+  // --- ARCHIVE STATE ---
+  const [dotArchives, setDotArchives] = useState([]);
+  const [invoiceArchives, setInvoiceArchives] = useState([]);
+
+  // --- MASTER TIMER LOGIC ---
   useEffect(() => {
     let interval;
     if (isShiftActive) {
       interval = setInterval(() => {
         setShiftSeconds(prevShift => {
           const nextShift = prevShift - 1;
-          
           setDriveSeconds(prevDrive => {
             let nextDrive = isDriving ? prevDrive - 1 : prevDrive;
-            // DOT RULE: Drive clock cannot exceed remaining 14-hour shift clock
-            if (nextShift < nextDrive) {
-              nextDrive = nextShift;
-            }
+            if (nextShift < nextDrive) nextDrive = nextShift; // Drive cannot exceed Shift
             return Math.max(0, nextDrive);
           });
-          
           return Math.max(0, nextShift);
         });
 
-        // Tick Crew Timers
         setCrew(prevCrew => prevCrew.map(c => 
           c.isActive ? { ...c, elapsed: c.elapsed + 1 } : c
         ));
-
       }, 1000);
     }
     return () => clearInterval(interval);
@@ -80,17 +76,9 @@ export default function ChronosHub() {
 
   // --- HOS ACTIONS ---
   const addHosLog = (event, status, loc = logLocation, note = logNotes) => {
-    const newLog = {
-      id: Date.now(),
-      time: formatAMPM(new Date()),
-      event,
-      status,
-      location: loc || 'Location Not Set',
-      notes: note
-    };
+    const newLog = { id: Date.now(), time: formatAMPM(new Date()), event, status, location: loc || 'Location Not Set', notes: note };
     setHosLogs([newLog, ...hosLogs]);
-    setLogLocation('');
-    setLogNotes('');
+    setLogLocation(''); setLogNotes('');
   };
 
   const toggleShift = () => {
@@ -98,8 +86,7 @@ export default function ChronosHub() {
       setIsShiftActive(true);
       addHosLog('Shift Started', 'ON DUTY');
     } else {
-      setIsShiftActive(false);
-      setIsDriving(false);
+      setIsShiftActive(false); setIsDriving(false);
       addHosLog('Shift Ended', 'OFF DUTY');
     }
   };
@@ -116,7 +103,7 @@ export default function ChronosHub() {
   };
 
   const takeBreak = (mins) => {
-    if (!isShiftActive) return;
+    if (!isShiftActive) return alert("Start shift first.");
     setIsDriving(false);
     addHosLog(`Started ${mins} Min Break`, 'OFF DUTY');
   };
@@ -124,42 +111,66 @@ export default function ChronosHub() {
   // --- CONTRACTOR ACTIONS ---
   const addMaterial = () => {
     if (!matName || !matCost || !matQty) return;
-    setMaterials([...materials, { 
-      id: Date.now(), name: matName, cost: parseFloat(matCost), qty: parseInt(matQty), sn: matSn 
-    }]);
+    setMaterials([...materials, { id: Date.now(), name: matName, cost: parseFloat(matCost), qty: parseInt(matQty), sn: matSn }]);
     setMatName(''); setMatCost(''); setMatQty(''); setMatSn('');
   };
 
   const addCrew = () => {
     if (!crewName || !crewRate) return;
-    setCrew([...crew, { 
-      id: Date.now(), name: crewName, rate: parseFloat(crewRate), elapsed: 0, isActive: false 
-    }]);
+    setCrew([...crew, { id: Date.now(), name: crewName, rate: parseFloat(crewRate), elapsed: 0, isActive: false }]);
     setCrewName(''); setCrewRate('');
   };
 
-  const toggleCrew = (id) => {
-    setCrew(crew.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c));
-  };
-
+  const toggleCrew = (id) => setCrew(crew.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c));
   const toggleAllCrew = () => {
     const anyActive = crew.some(c => c.isActive);
     setCrew(crew.map(c => ({ ...c, isActive: !anyActive })));
   };
 
-  // --- CALCULATIONS ---
+  // --- CALCULATIONS (FIXED) ---
   const totalMaterials = materials.reduce((acc, m) => acc + (m.cost * m.qty), 0);
   const totalCrewPayout = crew.reduce((acc, c) => acc + ((c.elapsed / 3600) * c.rate), 0);
-  
-  // Gross Billable is Flat Fee + Materials - Discount
-  const grossBillable = (parseFloat(fixedFee) || 0) + totalMaterials - (parseFloat(discount) || 0);
+  const grossBillable = (parseFloat(fixedFee) || 0) + totalMaterials + totalCrewPayout - (parseFloat(discount) || 0);
+
+  // --- ARCHIVING & EXPORTING ---
+  const archiveDOT = () => {
+    if (hosLogs.length === 0) return alert("No logs to save.");
+    setDotArchives([{ date: new Date().toLocaleDateString(), logs: hosLogs }, ...dotArchives]);
+    setHosLogs([]); setShowHosModal(false); alert("DOT Log Archived to History.");
+  };
+
+  const archiveInvoice = () => {
+    if (grossBillable === 0) return alert("No financials to save.");
+    setInvoiceArchives([{ date: new Date().toLocaleDateString(), total: grossBillable.toFixed(2), fee: fixedFee, materials, crew }, ...invoiceArchives]);
+    setMaterials([]); setCrew([]); setJobNotes(''); setShowReceiptModal(false); alert("Invoice Archived to History.");
+  };
+
+  const exportCSV = (type) => {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    if (type === 'dot') {
+      csvContent += "Date,Time,Event,Status,Location\n";
+      dotArchives.forEach(arc => {
+        arc.logs.forEach(l => csvContent += `"${arc.date}","${l.time}","${l.event}","${l.status}","${l.location}"\n`);
+      });
+    } else {
+      csvContent += "Date,Total Billed,Fixed Fee,Materials Count,Crew Count\n";
+      invoiceArchives.forEach(arc => {
+        csvContent += `"${arc.date}","$${arc.total}","$${arc.fee}","${arc.materials.length}","${arc.crew.length}"\n`;
+      });
+    }
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${type}_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // --- STYLES ---
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
   const inputStyle = { background: '#000', color: '#fff', border: '1px solid #333', padding: '10px', borderRadius: '6px', width: '100%' };
   const btnStyle = (bg, color) => ({ background: bg, color: color, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', width: '100%', fontSize: '1em' });
-  const labelStyle = { color: '#888', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px', display: 'block' };
-
 
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
@@ -193,13 +204,8 @@ export default function ChronosHub() {
                   <div style={{ color: '#10b981', fontSize: '1.5em', fontWeight: 'bold', fontFamily: 'monospace' }}>{formatTime(shiftSeconds)}</div>
                 </div>
               </div>
-              
-              <button onClick={toggleShift} style={{ ...btnStyle('#222', '#fff'), marginBottom: '10px' }}>
-                {isShiftActive ? 'END 14-HOUR SHIFT' : 'START 14-HOUR SHIFT'}
-              </button>
-              <button onClick={toggleDrive} style={btnStyle(isDriving ? '#ef4444' : '#10b981', '#fff')}>
-                {isDriving ? 'STOP DRIVING' : 'START DRIVING'}
-              </button>
+              <button onClick={toggleShift} style={{ ...btnStyle('#222', '#fff'), marginBottom: '10px' }}>{isShiftActive ? 'END 14-HOUR SHIFT' : 'START 14-HOUR SHIFT'}</button>
+              <button onClick={toggleDrive} style={btnStyle(isDriving ? '#ef4444' : '#10b981', '#fff')}>{isDriving ? 'STOP DRIVING' : 'START DRIVING'}</button>
             </div>
 
             <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b', textAlign: 'center' }}>
@@ -235,13 +241,11 @@ export default function ChronosHub() {
 
             <div style={{ ...cardStyle, borderTop: '4px solid #10b981' }}>
               <h3 style={{ color: '#10b981', margin: '0 0 15px 0', textTransform: 'uppercase', textAlign: 'center' }}>Job Financials</h3>
-              <label style={labelStyle}>Fixed Service Fee ($)</label>
+              <label style={{ color: '#888', fontSize: '0.85em', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Fixed Service Fee ($)</label>
               <input type="number" value={fixedFee} onChange={(e) => setFixedFee(e.target.value)} style={{ ...inputStyle, marginBottom: '15px' }} />
-              
-              <label style={labelStyle}>Apply Discount (-$)</label>
+              <label style={{ color: '#888', fontSize: '0.85em', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Apply Discount (-$)</label>
               <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} placeholder="0.00" style={{ ...inputStyle, marginBottom: '15px', borderColor: '#ef4444' }} />
-
-              <label style={labelStyle}>Invoice Notes / Terms</label>
+              <label style={{ color: '#888', fontSize: '0.85em', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Invoice Notes / Terms</label>
               <textarea value={jobNotes} onChange={(e) => setJobNotes(e.target.value)} placeholder="e.g. Discount applied for delayed start..." style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} />
             </div>
 
@@ -256,7 +260,6 @@ export default function ChronosHub() {
                 <input type="text" placeholder="S/N (Optional)" value={matSn} onChange={(e) => setMatSn(e.target.value)} style={inputStyle} />
                 <button onClick={addMaterial} style={{ background: '#f59e0b', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>+ Add Material</button>
               </div>
-              
               {materials.map(m => (
                 <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#0a0a0a', padding: '10px', borderRadius: '6px', borderLeft: '2px solid #f59e0b', marginBottom: '8px' }}>
                   <span>{m.name} (x{m.qty}) - <span style={{ color: '#10b981' }}>${(m.cost * m.qty).toFixed(2)}</span></span>
@@ -268,22 +271,17 @@ export default function ChronosHub() {
             <div style={{ ...cardStyle, borderTop: '4px solid #10b981' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <h3 style={{ color: '#10b981', margin: 0, textTransform: 'uppercase' }}>Crew</h3>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={toggleAllCrew} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold' }}>Start/Stop All</button>
-                </div>
+                <button onClick={toggleAllCrew} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold' }}>Start/Stop All</button>
               </div>
-              
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <input type="text" placeholder="Worker Name" value={crewName} onChange={(e) => setCrewName(e.target.value)} style={{ ...inputStyle, flex: 2 }} />
-                <input type="number" placeholder="Rate/hr" value={crewRate} onChange={(e) => setCrewRate(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                <input type="text" placeholder="Name" value={crewName} onChange={(e) => setCrewName(e.target.value)} style={{ ...inputStyle, flex: 2 }} />
+                <input type="number" placeholder="Rate" value={crewRate} onChange={(e) => setCrewRate(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
                 <button onClick={addCrew} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', fontWeight: 'bold' }}>+ Add</button>
               </div>
-
               {crew.map(c => (
                 <div key={c.id} style={{ background: '#0a0a0a', padding: '15px', borderRadius: '8px', borderLeft: `2px solid ${c.isActive ? '#10b981' : '#444'}`, marginBottom: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <strong style={{ color: '#fff' }}>{c.name}</strong>
-                    <span style={{ color: '#888' }}>${c.rate}/hr</span>
+                    <strong style={{ color: '#fff' }}>{c.name}</strong><span style={{ color: '#888' }}>${c.rate}/hr</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
@@ -291,9 +289,7 @@ export default function ChronosHub() {
                       <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.9em' }}>Earned: ${((c.elapsed / 3600) * c.rate).toFixed(2)}</div>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
-                      <button onClick={() => toggleCrew(c.id)} style={{ background: c.isActive ? '#ef4444' : '#10b981', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>
-                        {c.isActive ? 'Stop' : 'Start'}
-                      </button>
+                      <button onClick={() => toggleCrew(c.id)} style={{ background: c.isActive ? '#ef4444' : '#10b981', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>{c.isActive ? 'Stop' : 'Start'}</button>
                       <button onClick={() => setCrew(crew.filter(x => x.id !== c.id))} style={{ background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '8px 12px', borderRadius: '6px' }}>×</button>
                     </div>
                   </div>
@@ -305,9 +301,35 @@ export default function ChronosHub() {
 
         {/* --- HISTORY VIEW --- */}
         {activeMainTab === 'history' && (
-          <div style={{ textAlign: 'center', color: '#888', fontStyle: 'italic', padding: '30px' }}>
-            Local device archiving engine active. Saves will appear here.
-          </div>
+          <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
+              <h3 style={{ color: '#a855f7', textAlign: 'center', marginBottom: '15px', textTransform: 'uppercase' }}>DOT Log Archives</h3>
+              {dotArchives.length === 0 ? <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No DOT logs saved.</p> : (
+                <>
+                  {dotArchives.map((arc, idx) => (
+                    <div key={idx} style={{ background: '#0a0a0a', padding: '15px', borderRadius: '8px', borderLeft: '2px solid #a855f7', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                      <strong style={{ color: '#fff' }}>Shift: {arc.date}</strong><span style={{ color: '#a855f7', fontWeight: 'bold' }}>{arc.logs.length} Entries</span>
+                    </div>
+                  ))}
+                  <button onClick={() => exportCSV('dot')} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>📤 Export Logs (CSV)</button>
+                </>
+              )}
+            </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #10b981' }}>
+              <h3 style={{ color: '#10b981', textAlign: 'center', marginBottom: '15px', textTransform: 'uppercase' }}>Invoice Archives</h3>
+              {invoiceArchives.length === 0 ? <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No Invoices saved.</p> : (
+                <>
+                  {invoiceArchives.map((arc, idx) => (
+                    <div key={idx} style={{ background: '#0a0a0a', padding: '15px', borderRadius: '8px', borderLeft: '2px solid #10b981', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                      <strong style={{ color: '#fff' }}>Job: {arc.date}</strong><span style={{ color: '#10b981', fontWeight: 'bold' }}>${arc.total}</span>
+                    </div>
+                  ))}
+                  <button onClick={() => exportCSV('invoice')} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>📤 Export Invoices (CSV)</button>
+                </>
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -320,20 +342,13 @@ export default function ChronosHub() {
           </div>
           
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            <button style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📅 Sync to Calendar</button>
-            <button style={{ flex: 1, background: '#a855f7', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Archive Shift</button>
+            <button onClick={archiveDOT} style={{ flex: 1, background: '#a855f7', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Archive Shift</button>
           </div>
 
           <div style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '4px' }}>
             <h3 style={{ textAlign: 'center', margin: '0 0 15px 0' }}>Date: {new Date().toLocaleDateString()}</h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #000' }}>
-                  <th style={{ padding: '8px' }}>TIME</th>
-                  <th style={{ padding: '8px' }}>STATUS / EVENT</th>
-                  <th style={{ padding: '8px' }}>LOCATION / REMARKS</th>
-                </tr>
-              </thead>
+              <thead><tr style={{ borderBottom: '2px solid #000' }}><th style={{ padding: '8px' }}>TIME</th><th style={{ padding: '8px' }}>STATUS / EVENT</th><th style={{ padding: '8px' }}>LOCATION / REMARKS</th></tr></thead>
               <tbody>
                 {hosLogs.map(log => (
                   <tr key={log.id} style={{ borderBottom: '1px dashed #ccc' }}>
@@ -356,37 +371,31 @@ export default function ChronosHub() {
             <button onClick={() => setShowReceiptModal(false)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
             <button onClick={() => setReceiptTab('customer')} style={{ flex: 1, background: receiptTab === 'customer' ? '#fff' : '#222', color: receiptTab === 'customer' ? '#000' : '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Customer View</button>
             <button onClick={() => setReceiptTab('operator')} style={{ flex: 1, background: receiptTab === 'operator' ? '#3b82f6' : '#222', color: receiptTab === 'operator' ? '#fff' : '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Operator View</button>
           </div>
+
+          <button onClick={archiveInvoice} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>💾 Archive Job</button>
 
           {receiptTab === 'customer' ? (
             <div style={{ background: '#fff', color: '#000', padding: '20px', borderRadius: '8px' }}>
               <h2 style={{ color: '#10b981', textAlign: 'center', margin: '0 0 5px 0', textTransform: 'uppercase' }}>INVOICE</h2>
               <h4 style={{ textAlign: 'center', margin: '0 0 20px 0', color: '#666' }}>{new Date().toLocaleDateString()}</h4>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}>
-                <span>Service Fee</span><span>${parseFloat(fixedFee).toFixed(2)}</span>
-              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}><span>Service Fee</span><span>${parseFloat(fixedFee).toFixed(2)}</span></div>
               
               {discount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', color: '#ef4444', marginBottom: '15px' }}>
-                  <span>Discount Applied</span><span>-${parseFloat(discount).toFixed(2)}</span>
-                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', color: '#ef4444', marginBottom: '15px' }}><span>Discount Applied</span><span>-${parseFloat(discount).toFixed(2)}</span></div>
               )}
 
               <h4 style={{ textAlign: 'center', textTransform: 'uppercase', color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>Materials & Hardware</h4>
               {materials.map(m => (
-                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}>
-                  <span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span>
-                </div>
+                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}><span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span></div>
               ))}
 
               <h4 style={{ textAlign: 'center', textTransform: 'uppercase', color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Labor</h4>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '20px' }}>
-                <span>Site Labor (Total)</span><span>${totalCrewPayout.toFixed(2)}</span>
-              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '20px' }}><span>Site Labor (Total)</span><span>${totalCrewPayout.toFixed(2)}</span></div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #000', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.3em' }}>
                 <span>TOTAL DUE</span><span>${grossBillable.toFixed(2)}</span>
@@ -401,17 +410,12 @@ export default function ChronosHub() {
           ) : (
             <div style={{ background: '#111', padding: '20px', borderRadius: '8px', border: '1px solid #333' }}>
               <h3 style={{ color: '#10b981', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Internal Cost Breakdown</h3>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '20px', fontSize: '1.1em' }}>
-                <span>Flat Fee:</span><span>${parseFloat(fixedFee).toFixed(2)}</span>
-              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '20px', fontSize: '1.1em' }}><span>Flat Fee:</span><span>${parseFloat(fixedFee).toFixed(2)}</span></div>
 
               <h4 style={{ color: '#f59e0b', textAlign: 'center', textTransform: 'uppercase' }}>Materials & S/N</h4>
               {materials.map(m => (
                 <div key={m.id} style={{ marginBottom: '15px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '1.1em' }}>
-                    <span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span>
-                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '1.1em' }}><span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span></div>
                   <div style={{ textAlign: 'center', color: '#666', fontSize: '0.9em' }}>S/N: {m.sn || 'N/A'}</div>
                 </div>
               ))}
@@ -419,14 +423,12 @@ export default function ChronosHub() {
               <h4 style={{ color: '#10b981', textAlign: 'center', textTransform: 'uppercase', marginTop: '20px' }}>Crew Payouts</h4>
               {crew.map(c => (
                 <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '10px', fontSize: '1.1em' }}>
-                  <span>{c.name || 'Unnamed'} (${c.rate}/hr)</span>
-                  <span style={{ color: '#10b981' }}>${((c.elapsed / 3600) * c.rate).toFixed(2)}</span>
+                  <span>{c.name || 'Unnamed'} (${c.rate}/hr)</span><span style={{ color: '#10b981' }}>${((c.elapsed / 3600) * c.rate).toFixed(2)}</span>
                 </div>
               ))}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px dashed #444', paddingTop: '15px', marginTop: '20px', fontWeight: 'bold', fontSize: '1.2em' }}>
-                <span style={{ color: '#888' }}>GROSS BILLABLE:</span>
-                <span style={{ color: '#10b981' }}>${grossBillable.toFixed(2)}</span>
+                <span style={{ color: '#888' }}>GROSS BILLABLE:</span><span style={{ color: '#10b981' }}>${grossBillable.toFixed(2)}</span>
               </div>
             </div>
           )}
