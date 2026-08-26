@@ -22,7 +22,7 @@ export default function BudgetEngine() {
   const [incDate, setIncDate] = useState('');
   const [incFreq, setIncFreq] = useState('None');
 
-  // Bill Form (Now with Photo support)
+  // Bill Form
   const [billName, setBillName] = useState('');
   const [billAmount, setBillAmount] = useState('');
   const [billDate, setBillDate] = useState('');
@@ -101,26 +101,16 @@ export default function BudgetEngine() {
     const targetDate = item.date || item.dueDate;
     if (!targetDate) return alert("Please set a date before syncing.");
     
-    // Update local state to show it is synced
     if (type === 'income') setIncomes(incomes.map(i => i.id === item.id ? { ...i, isSynced: true } : i));
     else setBills(bills.map(b => b.id === item.id ? { ...b, isSynced: true } : b));
 
-    // Push to a global array for the Master Calendar wrapper to scan
     const existingEvents = JSON.parse(localStorage.getItem('tot_calendar_events')) || [];
-    const newEvent = {
-      id: `${type}_${item.id}`,
-      title: type === 'income' ? `Payday: ${item.name}` : `Bill Due: ${item.name}`,
-      date: targetDate,
-      frequency: item.frequency,
-      amount: item.amount,
-      type: type,
-      source: 'BudgetEngine'
-    };
+    const newEvent = { id: `${type}_${item.id}`, title: type === 'income' ? `Payday: ${item.name}` : `Bill Due: ${item.name}`, date: targetDate, frequency: item.frequency, amount: item.amount, type: type, source: 'BudgetEngine' };
     localStorage.setItem('tot_calendar_events', JSON.stringify([...existingEvents.filter(e => e.id !== newEvent.id), newEvent]));
     alert(`${item.name} pushed to Master Calendar successfully!`);
   };
 
-  // --- ARCHIVING & EXPORT ---
+  // --- ARCHIVING & BULLETPROOF EXPORTS ---
   const archiveBudget = () => {
     if (totalPool === 0 && usedCash === 0) return alert("Nothing to archive.");
     if (window.confirm("Archive this budget and wipe the current ledger clean for the next cycle?")) {
@@ -144,6 +134,14 @@ export default function BudgetEngine() {
     return csv;
   };
 
+  const downloadCSVFile = () => {
+    const blob = new Blob([getCSVString()], { type: 'text/csv;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `budget_export_${Date.now()}.csv`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  };
+
   const shareCSV = async () => {
     try {
       const file = new File([getCSVString()], `budget_export_${Date.now()}.csv`, { type: 'text/csv' });
@@ -153,6 +151,11 @@ export default function BudgetEngine() {
         window.open(`mailto:?subject=Budget Export&body=${encodeURIComponent("Attached is the requested data:\n\n" + getCSVString())}`);
       }
     } catch (err) { console.error("Share failed", err); }
+  };
+
+  const copyCSVToClipboard = () => {
+    navigator.clipboard.writeText(getCSVString());
+    alert("CSV Data securely copied to your clipboard!");
   };
 
   const cardStyle = { background: 'rgba(17, 17, 17, 0.95)', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
@@ -177,7 +180,6 @@ export default function BudgetEngine() {
 
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
         
-        {/* --- MAIN DASHBOARD (CLEAN VIEW) --- */}
         {activeTab === 'dashboard' && (
           <>
             <div style={{ ...cardStyle, textAlign: 'center', border: '1px solid #a855f7', marginTop: '10px' }}>
@@ -203,7 +205,6 @@ export default function BudgetEngine() {
           </>
         )}
 
-        {/* --- DETAILED LEDGER TAB --- */}
         {activeTab === 'ledger' && (
           <>
             <h3 style={{ color: '#a855f7', textAlign: 'center', textTransform: 'uppercase', margin: '20px 0 15px 0' }}>Income Sources</h3>
@@ -356,14 +357,18 @@ export default function BudgetEngine() {
         </div>
       )}
 
-      {/* --- EXPORT MODAL --- */}
+      {/* --- EXPORT MODAL (TRIPLE FALLBACK) --- */}
       {showExportModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#111', padding: '25px', borderRadius: '12px', border: '1px solid #3b82f6', width: '100%' }}>
             <h2 style={{ color: '#3b82f6', marginTop: 0, textAlign: 'center', textTransform: 'uppercase' }}>Export Controls</h2>
             <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '25px', fontSize: '0.9em' }}>Select how you want to export your encrypted budget data.</p>
-            <button onClick={shareCSV} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '25px' }}>📤 Native Share / Email (CSV)</button>
-            <button onClick={() => setShowExportModal(false)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
+            
+            <button onClick={downloadCSVFile} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '10px' }}>📥 Download Excel (.CSV)</button>
+            <button onClick={shareCSV} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '10px' }}>📧 Email / Share (.CSV)</button>
+            <button onClick={copyCSVToClipboard} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '25px' }}>📋 Copy Raw Data</button>
+            
+            <button onClick={() => setShowExportModal(false)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px dashed #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
           </div>
         </div>
       )}
