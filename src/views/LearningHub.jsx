@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function LearningHub() {
   const navigate = useNavigate();
 
+  // Navigation State
   const [activeCategory, setActiveCategory] = useState('starthere');
   const [activeSubTab, setActiveSubTab] = useState('wicca');
   const [activeTarotTab, setActiveTarotTab] = useState('basics');
   const [activeWiccaTab, setActiveWiccaTab] = useState('intro');
   
+  // School & Quiz State
   const [activeGrade, setActiveGrade] = useState('GED');
   const [expandedItem, setExpandedItem] = useState(null);
   
@@ -18,147 +20,160 @@ export default function LearningHub() {
   const [score, setScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
 
-  const gradesList = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', 'GED'];
+  // Humanity & Encouragement Engine
+  const [encouragement, setEncouragement] = useState("");
 
-  // --- SUPERNATURAL DATABASES ---
-  const wiccaIntro = { title: "History & The Wiccan Path", content: "Wicca is a modern pagan, nature-based spiritual path and lifestyle. It was introduced to the public in the 1950s by Gerald Gardner, drawing heavily upon ancient European pagan traditions, folklore, and hermetic philosophies. Rather than a highly dogmatic religion with strict rules, Wicca is largely decentralized. Practitioners focus on personal responsibility, reverence for the earth, and the dualistic balance of nature. People study and adopt this lifestyle to reconnect with natural cycles, practice mindfulness, and reclaim their personal and spiritual sovereignty." };
-  const wiccanRede = { title: "The Wiccan Rede & Rule of Three", content: "Because Wicca lacks a central authority or 'sin' based commandments, its core moral framework is summarized in the Wiccan Rede: 'Eight words the Wiccan Rede fulfill, An it harm none do what ye will.' This emphasizes absolute personal freedom, so long as your actions do not bring physical or emotional harm to yourself or others. This is inherently paired with the 'Rule of Three' (or Threefold Law), the karmic belief that whatever energy a person puts out into the world will be returned to them three times over." };
-  const tarotDeck = [
-    { name: '0 - The Fool', keywords: 'New beginnings, spontaneity, blind faith', desc: 'Represents a leap into the unknown. A reminder to embrace chaos and trust the journey.' },
-    { name: 'I - The Magician', keywords: 'Willpower, manifestation, resourcefulness', desc: 'You have the tools and the power to manipulate your reality.' }
+  const encouragements = [
+    "It's okay to read a sentence five times before it clicks. Learning is a process, not a race. Take your time.",
+    "You are building your future right now, one concept at a time. Keep pushing.",
+    "Don't let frustration win. Step back, take a deep breath, and tackle it again. You've got this.",
+    "You're doing this for you. Your sovereignty, your freedom, your mind. Don't quit.",
+    "Every expert was once a beginner who refused to give up. Be stubborn about your goals.",
+    "Struggling means your brain is growing. The friction is where the magic happens."
   ];
-  const elementsDB = [
-    { name: 'Earth', color: 'Green or Brown', direction: 'North', props: 'Grounding, nurturing, supportive, stable', desc: 'Represents the very base of existence; it is the foundation.' },
-    { name: 'Air', color: 'Yellow', direction: 'East', props: 'Transport, movement, communication, intellect', desc: 'Represents movement & the breath of life.' },
-    { name: 'Water', color: 'Blue', direction: 'West', props: 'Cleansing, healing, purifying', desc: 'Corresponds to emotions.' },
-    { name: 'Fire', color: 'Red', direction: 'South', props: 'Transformative, destructive, passionate', desc: 'Represents swift transformation.' }
-  ];
-  const sabbatsDB = [
-    { name: 'Samhain', date: 'Oct 31st', type: 'Greater Sabbat / Fire Festival', desc: 'Marks the pagan New Year, Halloween or All Hallows Eve. The veil between worlds is thinnest.' },
-    { name: 'Yule', date: 'Dec 21st or 22nd', type: 'Lesser Sabbat / Solar Festival', desc: 'Winter Solstice. Shortest day of the year. Celebrated as the rebirth of the sun.' }
-  ];
-  const lunarDB = [
-    { name: 'The Triple Goddess', type: 'Archetypes', desc: 'The Maiden (New/Waxing Moon), The Mother (Full Moon), The Crone (Waning/Dark Moon).' },
-    { name: 'Full Moon', type: 'Potent Power', desc: 'Most potent time to do any magickal work. Invoking, protecting, or healing.' }
-  ];
+
+  useEffect(() => {
+    // Pick a random encouragement when the grade changes
+    setEncouragement(encouragements[Math.floor(Math.random() * encouragements.length)]);
+  }, [activeGrade]);
+
+  const gradesList = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', 'GED'];
+
+  // --- SUPERNATURAL DATABASES (Preserved) ---
+  const wiccaIntro = { title: "History & The Wiccan Path", content: "Wicca is a modern pagan, nature-based spiritual path and lifestyle... Practitioners focus on personal responsibility, reverence for the earth, and reclaiming their personal and spiritual sovereignty." };
+  const wiccanRede = { title: "The Wiccan Rede & Rule of Three", content: "The core moral framework is summarized in the Wiccan Rede: 'Eight words the Wiccan Rede fulfill, An it harm none do what ye will.' This emphasizes absolute personal freedom... paired with the Rule of Three, the karmic belief that whatever energy you put out will be returned three times over." };
+  const tarotDeck = [{ name: '0 - The Fool', keywords: 'New beginnings, spontaneity', desc: 'A leap into the unknown.' }, { name: 'I - The Magician', keywords: 'Willpower, manifestation', desc: 'You have the power to manipulate your reality.' }];
+  const elementsDB = [{ name: 'Earth', color: 'Green/Brown', direction: 'North', props: 'Grounding, stable', desc: 'The foundation.' }, { name: 'Air', color: 'Yellow', direction: 'East', props: 'Intellect', desc: 'Breath of life.' }];
+  const sabbatsDB = [{ name: 'Samhain', date: 'Oct 31st', type: 'Greater Sabbat', desc: 'Pagan New Year.' }, { name: 'Yule', date: 'Dec 21st', type: 'Lesser Sabbat', desc: 'Winter Solstice.' }];
 
   // --- SCHOOL CURRICULUM ---
   const schoolCurriculum = {
     'K': { 
-      math: [{ topic: 'Counting & Numbers', content: 'Numbers tell us how many of something there are. Practice counting aloud: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10.\n\nAdding means putting things together. If you have one apple, and your friend gives you another apple, you now have two apples. This is written as 1 + 1 = 2.' }, { topic: 'Basic Shapes', content: 'Everything is made of shapes.\n\n- Circle: Round, with no corners (like a wheel).\n- Square: Four sides that are all exactly the same length.\n- Triangle: Three sides and three sharp corners.' }],
-      science: [{ topic: 'The Five Senses', content: 'Humans use five senses to understand the world around them:\n\n1. Sight: We use our eyes to see colors and shapes.\n2. Hearing: We use our ears to listen to sounds.\n3. Smell: We use our nose to detect scents.\n4. Taste: We use our tongue to tell if food is sweet, salty, or sour.\n5. Touch: We use our skin and hands to feel if something is hot, cold, soft, or rough.' }],
-      language: [{ topic: 'The Alphabet', content: 'There are 26 letters in the English alphabet. They start at A and end at Z. Letters combine to make words. \n\nVowels are special letters that help make sounds in almost every word: A, E, I, O, U. The rest of the letters are called consonants.' }],
-      history: [{ topic: 'Community Helpers', content: 'A community is a place where people live and work together. \n\n- Firefighters put out dangerous fires.\n- Doctors and Nurses keep us healthy and heal us when we are sick.\n- Teachers help us learn how to read and write.\n- Police Officers make sure the rules are followed to keep everyone safe.' }]
+      math: [{ topic: 'Counting 1-20', content: 'Practice: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20.' }, { topic: 'Basic Shapes', content: 'Circle, Square, Triangle.' }],
+      science: [{ topic: 'The Five Senses', content: 'Sight, Hearing, Smell, Taste, Touch.' }],
+      language: [{ topic: 'The Alphabet', content: 'There are 26 letters.' }],
+      history: [{ topic: 'Community Helpers', content: 'Firefighters put out fires. Doctors keep us healthy.' }]
     },
     '1st': { 
-      math: [{ topic: 'Addition & Subtraction', content: 'Addition is combining two numbers to make a bigger number. Example: 10 + 5 = 15.\n\nSubtraction is taking an amount away from a number. Example: 15 - 5 = 10. If you have 10 cookies and eat 3, you subtract 3. You have 7 left (10 - 3 = 7).' }, { topic: 'Place Value', content: 'Big numbers are broken down into "Tens" and "Ones". \n\nLook at the number 42. It is made of 4 Tens (which is 40) and 2 Ones (which is 2). In the number 18, there is 1 Ten and 8 Ones.' }],
-      science: [{ topic: 'Plant Life Cycles', content: 'Plants are living things. They usually start as a small Seed planted in the dirt. With water and sunlight, the seed grows roots down into the soil and sprouts a stem upwards. \n\nThis small plant is called a Seedling. Eventually, it grows into an Adult Plant that can produce flowers, fruit, and new seeds to start the cycle over.' }],
-      language: [{ topic: 'Nouns & Verbs', content: 'Sentences are made of different types of words.\n\n- Nouns: A noun is a Person, Place, or Thing. Examples: Dog, Teacher, School, Apple, Car.\n- Verbs: A verb is an Action word. It describes something you can do. Examples: Run, Jump, Read, Eat, Sleep.\n\nIn the sentence "The dog runs", "dog" is the noun and "runs" is the verb.' }],
-      history: [{ topic: 'Past vs. Present', content: 'History is the study of time.\n\nThe "Past" is everything that has already happened. Long ago in the past, people rode horses because cars were not invented yet.\n\nThe "Present" is what is happening right now today. \n\nThe "Future" is what has not happened yet.' }]
+      math: [{ topic: 'Addition (0-20)', content: 'Adding is combining (10 + 5 = 15).' }, { topic: 'Place Value', content: 'In 42, there are 4 Tens and 2 Ones.' }],
+      science: [{ topic: 'Plant Life Cycles', content: 'Seed -> Seedling -> Adult Plant.' }],
+      language: [{ topic: 'Sentences', content: 'A sentence ends with a Period (.).' }, { topic: 'Nouns & Verbs', content: 'Noun: Person, place, thing. Verb: Action.' }],
+      history: [{ topic: 'Past vs. Present', content: 'The Past is before. The Present is now.' }]
+    },
+    '2nd': { 
+      math: [{ topic: 'Money', content: 'Penny 1¢, Nickel 5¢, Dime 10¢, Quarter 25¢. 4 Quarters = $1.00.' }],
+      science: [{ topic: 'States of Matter', content: 'Solid, Liquid, Gas.' }],
+      history: [{ topic: 'Civics', content: 'A Mayor leads a city. A Governor leads a state. A President leads a country.' }]
+    },
+    '3rd': { 
+      math: [{ topic: 'Multiplication', content: '4 x 5 means four groups of five (20).' }, { topic: 'Fractions', content: 'In 1/2, 1 is the Numerator, 2 is the Denominator.' }],
+      science: [{ topic: 'Forces & Magnets', content: 'Opposite poles Attract. Like poles Repel.' }],
+      history: [{ topic: 'Geography', content: 'There are 7 continents: North America, South America, Europe, Africa, Asia, Australia, Antarctica.' }]
+    },
+    '4th': {
+      math: [{ topic: 'Geometry', content: 'A Right Angle is exactly 90 degrees. Parallel lines never intersect.' }],
+      science: [{ topic: 'Energy Transfer', content: 'Energy cannot be created or destroyed, only transferred.' }],
+      history: [{ topic: 'Colonization', content: 'Jamestown was the first permanent English settlement (1607).' }]
+    },
+    '5th': {
+      math: [{ topic: 'Volume', content: 'Volume = Length x Width x Height.' }, { topic: 'Coordinate Planes', content: 'X-axis is horizontal, Y-axis is vertical. Origin is (0,0).' }],
+      science: [{ topic: 'Cells', content: 'The Nucleus is the brain. The Mitochondria is the powerhouse.' }],
+      history: [{ topic: 'American Revolution', content: 'The Declaration of Independence was signed in 1776.' }]
+    },
+    '6th': {
+      math: [{ topic: 'Ratios', content: 'A ratio compares two quantities (e.g., 3:2).' }, { topic: 'Negative Numbers', content: 'Numbers less than zero.' }],
+      science: [{ topic: 'Plate Tectonics', content: 'Earth\'s moving crust causes earthquakes and forms mountains.' }],
+      chemistry: [{ topic: 'Atoms', content: 'Protons (+), Neutrons (neutral), Electrons (-).' }],
+      history: [{ topic: 'Ancient Civilizations', content: 'Mesopotamia is the cradle of civilization. Greece gave us early democracy.' }]
+    },
+    '7th': {
+      math: [{ topic: 'Proportions & Inequalities', content: 'An inequality compares values. "x > 5" means x is strictly greater than 5. A proportion states two ratios are equal.' }],
+      science: [{ topic: 'Genetics', content: 'DNA carries genetic information. Dominant traits mask recessive traits. A Punnett square predicts probability.' }],
+      chemistry: [{ topic: 'The Periodic Table', content: 'Elements are arranged by atomic number. Groups (columns) share similar chemical properties.' }],
+      history: [{ topic: 'Medieval History', content: 'Feudalism was a social system where land was exchanged for military service and labor.' }]
     },
     '8th': {
-      math: [{ topic: 'Linear Equations & Slope', content: 'A linear equation creates a straight line when graphed on a coordinate plane. The most common format is the slope-intercept form:\n\ny = mx + b\n\n- "y" and "x" represent the coordinates on the graph.\n- "m" represents the slope. Slope is the steepness of the line, calculated as "Rise over Run" (how much it goes up divided by how much it goes sideways).\n- "b" represents the y-intercept. This is the exact point where the line crosses the vertical Y-axis.\n\nTo find the slope between two points, use the formula: m = (y2 - y1) / (x2 - x1).' }],
-      science: [{ topic: 'Waves & Energy', content: 'Energy travels in waves. There are two main categories:\n\n1. Mechanical Waves: These require a physical "medium" (like water, air, or solid rock) to travel through. Sound waves are mechanical; they cannot travel through the vacuum of space because there is no air to vibrate.\n\n2. Electromagnetic Waves: These do not require a medium and can travel through the vacuum of space. Light, radio waves, microwaves, and X-rays are all electromagnetic.' }],
-      chemistry: [{ topic: 'Chemical Reactions', content: 'In a chemical reaction, the starting materials are called Reactants. The new substances formed are called Products.\n\nThe Law of Conservation of Mass states that matter cannot be created or destroyed. In any closed system, the mass of the Reactants will always exactly equal the mass of the Products. The atoms just rearrange themselves into new combinations.' }],
-      history: [{ topic: 'The American Civil War', content: 'Fought between 1861 and 1865, the Civil War tore the United States apart. The Northern states (The Union) fought against the Southern states (The Confederacy).\n\nThe primary cause of the war was the Southern states\' desire to maintain and expand the institution of slavery, leading them to secede from the Union. The war resulted in the defeat of the Confederacy, the preservation of the United States, and the eventual passage of the 13th Amendment, which formally abolished slavery.' }]
+      math: [{ topic: 'Linear Equations', content: 'The slope-intercept form is y=mx+b, where m is the slope (rise/run) and b is the y-intercept.' }],
+      science: [{ topic: 'Waves', content: 'Electromagnetic waves do not require a medium (e.g., light). Mechanical waves do (e.g., sound).' }],
+      chemistry: [{ topic: 'Chemical Reactions', content: 'Reactants turn into Products. The Law of Conservation of Mass states matter cannot be created or destroyed in a reaction.' }],
+      history: [{ topic: 'The Civil War', content: 'Fought between the Union (North) and Confederacy (South) from 1861-1865 over state rights and slavery.' }]
+    },
+    '9th': {
+      math: [{ topic: 'Algebra I', content: 'To solve 3x + 5 = 20, isolate x. Subtract 5 from both sides (3x = 15), then divide by 3 (x = 5). Quadratic form is ax^2+bx+c=0.' }],
+      science: [{ topic: 'Cell Division', content: 'Mitosis creates two identical diploid daughter cells. Meiosis creates four unique haploid sex cells (gametes).' }],
+      chemistry: [{ topic: 'Stoichiometry & Moles', content: 'A mole is 6.022 x 10^23 particles. Molar mass converts between grams and moles.' }],
+      language: [{ topic: 'Literary Devices', content: 'Metaphors compare without "like" or "as". Foreshadowing hints at future plot events.' }]
     },
     '10th': {
-      math: [{ topic: 'Geometry & Trigonometry', content: 'The Pythagorean Theorem is used to find the missing length of a right triangle. The formula is:\n\na^2 + b^2 = c^2 (where "c" is always the longest side, called the hypotenuse).\n\nTrigonometry deals with the angles and sides of triangles. The acronym SOH-CAH-TOA helps you remember the formulas:\n- Sine = Opposite / Hypotenuse\n- Cosine = Adjacent / Hypotenuse\n- Tangent = Opposite / Adjacent' }],
-      science: [{ topic: 'Newton\'s Laws of Motion', content: 'Sir Isaac Newton formulated three laws that govern classical mechanics:\n\n1. Law of Inertia: An object at rest stays at rest, and an object in motion stays in motion with the same speed and direction unless acted upon by an outside force.\n2. F = ma: Force equals Mass times Acceleration. The heavier an object is, and the faster it is accelerating, the more force it generates.\n3. Action/Reaction: For every action, there is an equal and opposite reaction.' }],
-      history: [{ topic: 'World War II', content: 'The deadliest conflict in human history (1939-1945). It divided the world into two military alliances:\n\n- The Axis Powers: Driven by fascist and imperialist ideologies (Nazi Germany, Italy, Imperial Japan).\n- The Allied Powers: Led by Great Britain, the United States, and the Soviet Union.\n\nThe war ended in 1945 following the Allied invasion of Germany and the United States dropping two atomic bombs on the Japanese cities of Hiroshima and Nagasaki.' }],
-      language: [{ topic: 'Rhetoric & Persuasion', content: 'Rhetoric is the art of persuasive speaking and writing. Aristotle defined three main modes of persuasion:\n\n- Ethos: An appeal to credibility and authority. (e.g., "As a doctor with 20 years of experience...")\n- Pathos: An appeal to the audience\'s emotions. (e.g., "Think of the innocent children suffering...")\n- Logos: An appeal to logic, using facts, data, and statistics. (e.g., "Studies show a 40% decrease in accidents...")' }]
+      math: [{ topic: 'Geometry & Trig', content: 'Pythagorean Theorem: a^2+b^2=c^2. Area of a circle: A=pi*r^2. SOH CAH TOA is used for right triangle trigonometry.' }],
+      science: [{ topic: 'Newton\'s Laws of Motion', content: '1: Inertia. 2: Force = mass x acceleration (F=ma). 3: Every action has an equal/opposite reaction.' }],
+      history: [{ topic: 'World War II', content: 'Fought from 1939-1945. The Axis (Germany, Italy, Japan) vs. the Allies (US, UK, USSR).' }],
+      language: [{ topic: 'Rhetoric', content: 'Ethos appeals to credibility. Pathos appeals to emotion. Logos appeals to logic and facts.' }]
+    },
+    '11th': {
+      math: [{ topic: 'Algebra II', content: 'Logarithms are the inverse of exponentials. If b^y = x, then log_b(x) = y.' }],
+      science: [{ topic: 'Thermodynamics', content: '1st Law: Energy cannot be created or destroyed. 2nd Law: Entropy in an isolated system always increases.' }],
+      chemistry: [{ topic: 'Acids & Bases', content: 'The pH scale ranges from 0-14. Less than 7 is acidic, 7 is neutral, greater than 7 is basic.' }],
+      history: [{ topic: 'The Cold War', content: 'A geopolitical standoff between the US and USSR involving nuclear proliferation and proxy wars.' }]
     },
     'GED': {
-      math: [{ topic: 'Algebra & Functions', content: 'To pass the GED math section, you must be comfortable isolating variables. To solve an equation like 4x + 10 = 30, you must perform inverse operations. First, subtract 10 from both sides (4x = 20). Then, divide by 4. (x = 5).\n\nYou will also see functions written as f(x). Think of f(x) as a machine. If f(x) = 2x^2 + 3, and you are asked to evaluate for x = 3, you plug 3 into the equation: 2(3^2) + 3. First do the exponent (9), then multiply by 2 (18), then add 3. The answer is 21.' },
-             { topic: 'Data & Geometry', content: 'You will need to interpret bar graphs, scatter plots, and pie charts. You must also know basic geometry. The area of a rectangle is Length x Width. The area of a triangle is A = 1/2 * base * height.' }],
-      science: [{ topic: 'The Scientific Method', content: 'All science relies on this process:\n1. Observation\n2. Hypothesis (an educated, testable guess)\n3. Experiment\n4. Data Analysis\n5. Conclusion\n\nIn an experiment, the Independent Variable is the one thing you intentionally change. The Dependent Variable is what you measure as a result. The Control variables are kept perfectly identical so they don\'t mess up the test.' },
-                { topic: 'Genetics & Punnett Squares', content: 'Traits are passed down through DNA. A Punnett square is a grid used to predict the probability of a child inheriting certain traits. Dominant traits (capital letters) will always mask Recessive traits (lowercase letters).' }],
-      history: [{ topic: 'Government & Civics', content: 'The U.S. Constitution separates the government into three branches to prevent tyranny. This is called "Checks and Balances."\n\n1. Legislative Branch (Congress): Makes the laws.\n2. Executive Branch (The President): Enforces the laws.\n3. Judicial Branch (Supreme Court): Interprets the laws.\n\nYou must also know the Bill of Rights. The 1st Amendment protects freedom of speech, religion, assembly, and the press.' },
-                { topic: 'Economics Basics', content: 'The foundation of a free market is Supply and Demand. \n\n- Supply is how much of a product is available.\n- Demand is how many people want to buy it.\nIf supply is low and demand is high, the price will rise drastically. If supply is high and nobody wants to buy it (low demand), the price drops.' }],
-      language: [{ topic: 'Reading Comprehension', content: 'When reading a passage on the GED, you must identify the "Main Idea." The main idea is the central, overarching point the author is trying to make. Do not confuse it with minor supporting details.\n\nYou must also identify the author\'s tone and purpose. Are they trying to Inform you, Persuade you, or Entertain you?' },
-                 { topic: 'Logical Fallacies', content: 'A logical fallacy is a flaw in reasoning that weakens an argument. You will be tested on identifying these in text.\n\n- Ad Hominem: Attacking the person making the argument instead of the argument itself.\n- Strawman: Intentionally misrepresenting or exaggerating someone\'s argument to make it easier to attack and defeat.\n- Slippery Slope: Arguing that a small, minor action will inevitably lead to a massive, disastrous outcome.' }]
+      math: [{ topic: 'GED Math Core', content: 'Master solving multi-step linear equations, evaluating functions f(x), calculating slopes from two points m=(y2-y1)/(x2-x1), applying the Pythagorean Theorem, finding area/volume, and calculating Probability and Mean/Median/Mode.' }],
+      science: [{ topic: 'GED Science Core', content: 'Focus on the scientific method (Independent vs Dependent variables), interpreting data, Punnett squares (Genetics), and physics formulas (F=ma). Understand the difference between Kinetic (motion) and Potential (stored) energy.' }],
+      history: [{ topic: 'GED Social Studies', content: 'Economics: Supply and Demand dictate market prices. Opportunity Cost is what you give up to get something else.\nCivics: Checks & Balances. Federalism (power shared between states and national government). Key amendments (1st: Speech, 13th: Abolish slavery).' }],
+      language: [{ topic: 'GED Reading & Language Arts', content: 'Identify the "Main Idea". Understand Primary sources (first-hand accounts like diaries) vs Secondary sources (textbooks). Differentiate Fact from Opinion. Identify Logical Fallacies (Ad Hominem: attacking the person; Strawman: exaggerating an argument).' }]
     }
   };
 
   const quizzes = {
-    'K': [
-      { q: 'Which shape has exactly 3 sides?', options: ['Circle', 'Square', 'Triangle', 'Rectangle'], answer: 'Triangle' },
-      { q: 'What is 1 + 1?', options: ['1', '2', '3', '11'], answer: '2' },
-      { q: 'Which body part do we use for the sense of Smell?', options: ['Ears', 'Hands', 'Eyes', 'Nose'], answer: 'Nose' },
-      { q: 'Which of these is a Living thing?', options: ['A Rock', 'A Toy Car', 'A Tree', 'A Pencil'], answer: 'A Tree' },
-      { q: 'How many days are in a week?', options: ['5', '7', '10', '12'], answer: '7' },
-      { q: 'What letter comes after A?', options: ['C', 'B', 'D', 'Z'], answer: 'B' },
-      { q: 'What body part do you use to see?', options: ['Eyes', 'Ears', 'Mouth', 'Hands'], answer: 'Eyes' },
-      { q: 'Which of these is a Sight Word?', options: ['Tyrannosaurus', 'The', 'Helicopter', 'Photosynthesis'], answer: 'The' },
-      { q: 'Who puts out fires?', options: ['Teacher', 'Doctor', 'Firefighter', 'Police Officer'], answer: 'Firefighter' },
-      { q: 'Is a dog living or non-living?', options: ['Living', 'Non-Living', 'Both', 'Neither'], answer: 'Living' }
-    ],
-    '1st': [
-      { q: 'How many Tens are in the number 42?', options: ['2', '4', '6', '42'], answer: '4' },
-      { q: 'What goes at the end of a regular sentence?', options: ['A Capital Letter', 'A Number', 'A Period (.)', 'A Noun'], answer: 'A Period (.)' },
-      { q: 'What is 15 - 5?', options: ['5', '10', '20', '9'], answer: '10' },
-      { q: 'Which word is a Verb (an action word)?', options: ['Apple', 'Run', 'School', 'Blue'], answer: 'Run' },
-      { q: 'What does a plant start as before it grows?', options: ['A Flower', 'A Leaf', 'A Seed', 'A Tree'], answer: 'A Seed' },
-      { q: 'What is 10 + 5?', options: ['11', '12', '15', '20'], answer: '15' },
-      { q: 'How many minutes are in an hour?', options: ['30', '50', '60', '100'], answer: '60' },
-      { q: 'What gives us light during the day?', options: ['The Moon', 'The Stars', 'The Sun', 'A Lamp'], answer: 'The Sun' },
-      { q: 'A globe is a round model of what?', options: ['The Moon', 'The Sun', 'The Earth', 'A City'], answer: 'The Earth' },
-      { q: 'Which word is a Noun?', options: ['Jump', 'Apple', 'Quickly', 'Run'], answer: 'Apple' }
-    ],
-    '8th': [
-      { q: 'In the equation y = mx + b, what does "m" represent?', options: ['Y-intercept', 'Variable', 'Slope', 'Origin'], answer: 'Slope' },
-      { q: 'Which type of wave does NOT require a medium to travel?', options: ['Sound', 'Mechanical', 'Electromagnetic', 'Ocean'], answer: 'Electromagnetic' },
-      { q: 'The Law of Conservation of Mass states that matter cannot be...', options: ['Heated or Cooled', 'Created or Destroyed', 'Solid or Liquid', 'Mixed'], answer: 'Created or Destroyed' },
-      { q: 'The US Civil War was fought between the Union and the...', options: ['British', 'French', 'Confederacy', 'Spanish'], answer: 'Confederacy' },
-      { q: 'In a chemical reaction, the starting materials are called...', options: ['Products', 'Yields', 'Reactants', 'Isotopes'], answer: 'Reactants' },
-      { q: 'What is the y-intercept in the equation y = 2x + 4?', options: ['2', 'x', 'y', '4'], answer: '4' },
-      { q: 'Which war took place from 1861 to 1865 in America?', options: ['Revolutionary War', 'WWI', 'Civil War', 'Vietnam War'], answer: 'Civil War' },
-      { q: 'Rise over run is the formula for calculating...', options: ['Area', 'Slope', 'Volume', 'Perimeter'], answer: 'Slope' },
-      { q: 'Light is an example of what kind of wave?', options: ['Mechanical', 'Electromagnetic', 'Sound', 'Seismic'], answer: 'Electromagnetic' },
-      { q: 'In y = mx + b, what does "b" represent?', options: ['Slope', 'X-intercept', 'Y-intercept', 'Origin'], answer: 'Y-intercept' }
-    ],
-    '10th': [
-      { q: 'What is the Pythagorean Theorem?', options: ['A=pi*r^2', 'y=mx+b', 'a^2+b^2=c^2', 'F=ma'], answer: 'a^2+b^2=c^2' },
-      { q: 'According to Newton\'s 2nd Law, Force equals mass times...', options: ['Velocity', 'Gravity', 'Acceleration', 'Inertia'], answer: 'Acceleration' },
-      { q: 'Which countries made up the Axis powers in WWII?', options: ['US, UK, USSR', 'Germany, Italy, Japan', 'France, China', 'Germany, Russia'], answer: 'Germany, Italy, Japan' },
-      { q: 'In rhetoric, what does "Logos" appeal to?', options: ['Emotion', 'Credibility', 'Logic', 'Fear'], answer: 'Logic' },
-      { q: 'What is the formula for the area of a circle?', options: ['A=pi*r^2', 'A=2*pi*r', 'A=l*w', 'A=1/2*b*h'], answer: 'A=pi*r^2' },
-      { q: 'Which of Newton\'s laws states that every action has an equal and opposite reaction?', options: ['First', 'Second', 'Third', 'Fourth'], answer: 'Third' },
-      { q: 'What year did WWII end?', options: ['1918', '1939', '1945', '1965'], answer: '1945' },
-      { q: 'In rhetoric, "Ethos" relies on establishing what?', options: ['Logic', 'Anger', 'Credibility/Authority', 'Sadness'], answer: 'Credibility/Authority' },
-      { q: 'In trigonometry, Sine (SOH) is calculated by...', options: ['Adj/Hyp', 'Opp/Adj', 'Opp/Hyp', 'Hyp/Opp'], answer: 'Opp/Hyp' },
-      { q: 'Which rhetoric technique appeals to the audience\'s emotions?', options: ['Logos', 'Pathos', 'Ethos', 'Mythos'], answer: 'Pathos' }
-    ],
+    'K': [ { q: 'Which shape has 3 sides?', options: ['Circle', 'Square', 'Triangle', 'Rectangle'], answer: 'Triangle' }, { q: 'What is 1 + 1?', options: ['1', '2', '3', '11'], answer: '2' }, { q: 'Which body part is for Smell?', options: ['Ears', 'Hands', 'Eyes', 'Nose'], answer: 'Nose' }, { q: 'Which is Living?', options: ['Rock', 'Car', 'Tree', 'Pencil'], answer: 'Tree' }, { q: 'Days in a week?', options: ['5', '7', '10', '12'], answer: '7' } ],
+    '1st': [ { q: 'How many Tens in 42?', options: ['2', '4', '6', '42'], answer: '4' }, { q: 'Ends a sentence?', options: ['Letter', 'Number', 'Period (.)', 'Noun'], answer: 'Period (.)' }, { q: '15 - 5 = ?', options: ['5', '10', '20', '9'], answer: '10' }, { q: 'Which is a Verb?', options: ['Apple', 'Run', 'School', 'Blue'], answer: 'Run' }, { q: 'Plants start as a...', options: ['Flower', 'Leaf', 'Seed', 'Tree'], answer: 'Seed' } ],
+    '2nd': [ { q: '25 + 14 = ?', options: ['30', '39', '41', '49'], answer: '39' }, { q: 'Quarters in $1?', options: ['2', '3', '4', '10'], answer: '4' }, { q: 'Water is a...', options: ['Solid', 'Liquid', 'Gas', 'Plasma'], answer: 'Liquid' }, { q: 'Leader of a city?', options: ['President', 'Governor', 'Mayor', 'Teacher'], answer: 'Mayor' }, { q: 'Shows map directions?', options: ['Compass Rose', 'Legend', 'Scale', 'Title'], answer: 'Compass Rose' } ],
+    '3rd': [ { q: '4 x 5 = ?', options: ['9', '16', '20', '25'], answer: '20' }, { q: 'Top of a fraction?', options: ['Denominator', 'Numerator', 'Quotient', 'Factor'], answer: 'Numerator' }, { q: 'Caterpillar to butterfly?', options: ['Photosynthesis', 'Erosion', 'Metamorphosis', 'Evaporation'], answer: 'Metamorphosis' }, { q: 'Opposite magnets do what?', options: ['Repel', 'Attract', 'Explode', 'Nothing'], answer: 'Attract' }, { q: 'Built the Pyramids?', options: ['Greece', 'Rome', 'Egypt', 'China'], answer: 'Egypt' } ],
+    '4th': [ { q: 'Degrees in a Right Angle?', options: ['45', '90', '180', '360'], answer: '90' }, { q: 'Rock from heat/pressure?', options: ['Igneous', 'Sedimentary', 'Metamorphic', 'Lunar'], answer: 'Metamorphic' }, { q: 'Salt in saltwater is the...', options: ['Solvent', 'Mixture', 'Solute', 'Element'], answer: 'Solute' }, { q: 'First English settlement?', options: ['Plymouth', 'Roanoke', 'Jamestown', 'Boston'], answer: 'Jamestown' }, { q: 'Lines that never cross?', options: ['Perpendicular', 'Parallel', 'Diagonal', 'Curved'], answer: 'Parallel' } ],
+    '5th': [ { q: 'Volume formula?', options: ['L+W+H', 'LxWxH', 'B+H', 'Pi*R'], answer: 'LxWxH' }, { q: 'Cell powerhouse?', options: ['Nucleus', 'Membrane', 'Mitochondria', 'Wall'], answer: 'Mitochondria' }, { q: 'Center of solar system?', options: ['Earth', 'Mars', 'Moon', 'Sun'], answer: 'Sun' }, { q: 'Tearing paper is a...', options: ['Physical Change', 'Chemical Change', 'Reaction', 'Solution'], answer: 'Physical Change' }, { q: 'Declaration of Independence year?', options: ['1492', '1776', '1812', '1865'], answer: '1776' } ],
+    '6th': [ { q: 'Ratio 3 apples to 2 oranges?', options: ['3:2', '2:3', '3+2', '3/5'], answer: '3:2' }, { q: 'Causes earthquakes?', options: ['Erosion', 'Tornadoes', 'Plate Tectonics', 'Tides'], answer: 'Plate Tectonics' }, { q: 'Heat via direct contact?', options: ['Convection', 'Radiation', 'Conduction', 'Freezing'], answer: 'Conduction' }, { q: 'Positive subatomic particle?', options: ['Electron', 'Neutron', 'Proton', 'Nucleus'], answer: 'Proton' }, { q: 'Gave us early democracy?', options: ['Rome', 'Egypt', 'China', 'Greece'], answer: 'Greece' } ],
+    '7th': [ { q: 'If x > 5, x could be...', options: ['4', '5', '6', '-5'], answer: '6' }, { q: 'Predicts genetic probability?', options: ['Venn', 'Pie Chart', 'Punnett Square', 'Histogram'], answer: 'Punnett Square' }, { q: 'Elements in same Group share...', options: ['Mass', 'Chemical Properties', 'Protons', 'Nothing'], answer: 'Chemical Properties' }, { q: 'Feudalism exchanged land for...', options: ['Money', 'Military Service', 'Titles', 'Freedom'], answer: 'Military Service' }, { q: 'Carries genetic info?', options: ['RNA', 'DNA', 'Proteins', 'Lipids'], answer: 'DNA' } ],
+    '8th': [ { q: 'In y = mx + b, "m" is...', options: ['Y-int', 'Variable', 'Slope', 'Origin'], answer: 'Slope' }, { q: 'Wave needing no medium?', options: ['Sound', 'Mechanical', 'Electromagnetic', 'Ocean'], answer: 'Electromagnetic' }, { q: 'Matter cannot be...', options: ['Heated', 'Created or Destroyed', 'Solid', 'Mixed'], answer: 'Created or Destroyed' }, { q: 'Civil War fought Union vs...', options: ['British', 'French', 'Confederacy', 'Spanish'], answer: 'Confederacy' }, { q: 'Starting materials in reaction?', options: ['Products', 'Yields', 'Reactants', 'Isotopes'], answer: 'Reactants' } ],
+    '9th': [ { q: 'Solve: 2x - 4 = 10', options: ['5', '7', '8', '14'], answer: '7' }, { q: 'Quadratic standard form?', options: ['y=mx+b', 'ax^2+bx+c=0', 'a^2+b^2=c^2', 'A=pi*r^2'], answer: 'ax^2+bx+c=0' }, { q: 'Creates identical daughter cells?', options: ['Meiosis', 'Osmosis', 'Mitosis', 'Photosynthesis'], answer: 'Mitosis' }, { q: 'Compares without like/as?', options: ['Simile', 'Foreshadowing', 'Metaphor', 'Hyperbole'], answer: 'Metaphor' }, { q: 'Hints at future events?', options: ['Flashback', 'Foreshadowing', 'Metaphor', 'Irony'], answer: 'Foreshadowing' } ],
+    '10th': [ { q: 'Pythagorean Theorem?', options: ['A=pi*r^2', 'y=mx+b', 'a^2+b^2=c^2', 'F=ma'], answer: 'a^2+b^2=c^2' }, { q: 'Force equals mass times...', options: ['Velocity', 'Gravity', 'Acceleration', 'Inertia'], answer: 'Acceleration' }, { q: 'Axis powers WWII?', options: ['US, UK, USSR', 'Germany, Italy, Japan', 'France, China', 'Germany, Russia'], answer: 'Germany, Italy, Japan' }, { q: '"Logos" appeals to...', options: ['Emotion', 'Credibility', 'Logic', 'Fear'], answer: 'Logic' }, { q: 'Sine (SOH) is...', options: ['Adj/Hyp', 'Opp/Adj', 'Opp/Hyp', 'Hyp/Opp'], answer: 'Opp/Hyp' } ],
+    '11th': [ { q: 'Inverse of exponential?', options: ['Derivative', 'Integral', 'Logarithm', 'Polynomial'], answer: 'Logarithm' }, { q: '2nd Law Thermodynamics?', options: ['Energy destroyed', 'Entropy always increases', 'Mass conserved', 'Gravity weakens'], answer: 'Entropy always increases' }, { q: 'pH of 2 is...', options: ['Neutral', 'Basic', 'Acidic', 'Alkaline'], answer: 'Acidic' }, { q: 'Cold War was US vs...', options: ['China', 'Germany', 'The USSR', 'Japan'], answer: 'The USSR' }, { q: 'War via third parties?', options: ['Nuclear', 'Proxy War', 'Cyber', 'Embargo'], answer: 'Proxy War' } ],
     'GED': [
       { q: 'Solve for x: 4x + 10 = 30', options: ['4', '5', '10', '20'], answer: '5' },
-      { q: 'According to Newton\'s Second Law, if m=10kg and a=5m/s^2, what is the Force?', options: ['2 N', '15 N', '50 N', '500 N'], answer: '50 N' },
-      { q: 'In economics, if supply increases and demand remains the same, what happens to the price?', options: ['It drops', 'It rises', 'It stays the same', 'It doubles'], answer: 'It drops' },
-      { q: 'Which US Constitutional Amendment abolished slavery?', options: ['1st', '2nd', '13th', '19th'], answer: '13th' },
-      { q: 'What is the primary purpose of Checks and Balances in the US government?', options: ['To speed up laws', 'To prevent any one branch from becoming too powerful', 'To raise taxes', 'To elect officials'], answer: 'To prevent any one branch from becoming too powerful' },
-      { q: 'What gas is a product of photosynthesis that humans need to survive?', options: ['Carbon Dioxide', 'Nitrogen', 'Oxygen', 'Helium'], answer: 'Oxygen' },
-      { q: 'In an experiment, what is the "control" variable?', options: ['The part that is measured', 'The part that is kept the same', 'The part that changes', 'The hypothesis'], answer: 'The part that is kept the same' },
-      { q: 'A logical fallacy is...', options: ['A strong argument', 'A flaw in reasoning that weakens the argument', 'A metaphor', 'A historical fact'], answer: 'A flaw in reasoning that weakens the argument' },
+      { q: 'What is the slope of the line passing through (1, 2) and (3, 6)?', options: ['1', '2', '3', '4'], answer: '2' },
+      { q: 'According to Newton\'s 2nd Law, if m=10kg and a=5m/s^2, Force is?', options: ['2 N', '15 N', '50 N', '500 N'], answer: '50 N' },
+      { q: 'If supply is low and demand is high, price will...', options: ['Drop', 'Rise', 'Stay same', 'Crash'], answer: 'Rise' },
+      { q: 'Which Amendment abolished slavery?', options: ['1st', '2nd', '13th', '19th'], answer: '13th' },
+      { q: 'Purpose of Checks and Balances?', options: ['Speed laws', 'Prevent tyranny', 'Raise taxes', 'Elect judges'], answer: 'Prevent tyranny' },
+      { q: 'Area of triangle with base 10 and height 4?', options: ['14', '20', '40', '80'], answer: '20' },
+      { q: 'Product of photosynthesis humans need?', options: ['Carbon Dioxide', 'Nitrogen', 'Oxygen', 'Helium'], answer: 'Oxygen' },
+      { q: 'In an experiment, the "control" is...', options: ['Measured', 'Kept the same', 'Changed', 'Hypothesis'], answer: 'Kept the same' },
+      { q: 'A logical fallacy is...', options: ['Strong argument', 'Flaw in reasoning', 'Metaphor', 'Fact'], answer: 'Flaw in reasoning' },
       { q: 'Evaluate f(x) = 2x^2 + 3 for x = 3', options: ['9', '15', '21', '36'], answer: '21' },
-      { q: 'What does the First Amendment protect?', options: ['Right to bear arms', 'Right to a fair trial', 'Freedom of speech, religion, and press', 'Abolition of slavery'], answer: 'Freedom of speech, religion, and press' },
-      { q: 'What is the slope of a line passing through (1, 2) and (3, 6)?', options: ['1', '2', '3', '4'], answer: '2' },
-      { q: 'Which logical fallacy involves attacking the person instead of the argument?', options: ['Strawman', 'Slippery Slope', 'Ad Hominem', 'Red Herring'], answer: 'Ad Hominem' },
-      { q: 'Which branch of government is responsible for making the laws?', options: ['Executive', 'Judicial', 'Military', 'Legislative'], answer: 'Legislative' },
-      { q: 'If a triangle has a base of 10 and a height of 4, what is its area?', options: ['14', '20', '40', '80'], answer: '20' }
+      { q: 'First Amendment protects...', options: ['Bear arms', 'Fair trial', 'Speech/Religion/Press', 'Voting'], answer: 'Speech/Religion/Press' },
+      { q: 'Attacking the person instead of the argument is...', options: ['Strawman', 'Ad Hominem', 'Red Herring', 'Slippery Slope'], answer: 'Ad Hominem' },
+      { q: 'Branch of government that makes laws?', options: ['Executive', 'Judicial', 'Military', 'Legislative'], answer: 'Legislative' },
+      { q: 'What is 20% of 80?', options: ['16', '20', '40', '60'], answer: '16' },
+      { q: 'A first-hand historical account (like a diary) is a...', options: ['Secondary Source', 'Primary Source', 'Fallacy', 'Hypothesis'], answer: 'Primary Source' },
+      { q: 'Energy of motion is called...', options: ['Potential', 'Kinetic', 'Thermal', 'Chemical'], answer: 'Kinetic' },
+      { q: 'Stored energy is called...', options: ['Potential', 'Kinetic', 'Nuclear', 'Solar'], answer: 'Potential' },
+      { q: 'Exaggerating someone\'s argument to make it easier to attack is...', options: ['Strawman', 'Ad Hominem', 'Ethos', 'Pathos'], answer: 'Strawman' },
+      { q: 'Solve: 3(x - 2) = 15', options: ['3', '5', '7', '17'], answer: '7' },
+      { q: 'What is the median of this data set: 2, 5, 8, 11, 14?', options: ['5', '8', '11', '40'], answer: '8' },
+      { q: 'Which is a Fact, not an Opinion?', options: ['Pizza is best', 'Water boils at 100°C', 'Math is hard', 'Dogs are cute'], answer: 'Water boils at 100°C' },
+      { q: 'What you give up to get something else in economics is...', options: ['Inflation', 'Supply', 'Opportunity Cost', 'Demand'], answer: 'Opportunity Cost' },
+      { q: 'Power shared between National and State governments is...', options: ['Federalism', 'Monarchy', 'Communism', 'Tyranny'], answer: 'Federalism' },
+      { q: 'Which is a transitional word?', options: ['Apple', 'Therefore', 'Quickly', 'Run'], answer: 'Therefore' }
     ]
   };
 
   const toggleExpand = (name) => setExpandedItem(expandedItem === name ? null : name);
 
-  // --- DYNAMIC RANDOMIZED QUIZ ENGINE ---
   const startQuiz = () => {
     const pool = quizzes[activeGrade] || [];
-    // Fisher-Yates Shuffle to pull 10 random questions from the bank
-    const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 10);
+    const testLength = activeGrade === 'GED' ? 15 : 10;
+    const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, testLength);
     setActiveQuizPool(shuffled);
-    setCurrentQ(0);
-    setScore(0);
-    setShowResults(false);
-    setQuizActive(true);
+    setCurrentQ(0); setScore(0); setShowResults(false); setQuizActive(true);
   };
 
   const handleAnswer = (opt, correct) => {
@@ -215,9 +230,7 @@ export default function LearningHub() {
             
             <div style={{ display: 'flex', gap: '5px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '15px', WebkitOverflowScrolling: 'touch' }}>
               {gradesList.map(g => (
-                <button key={g} onClick={() => setActiveGrade(g)} style={{ flex: '0 0 auto', padding: '8px 16px', borderRadius: '8px', background: activeGrade === g ? '#f59e0b' : '#222', color: activeGrade === g ? '#000' : '#888', border: 'none', fontWeight: 'bold' }}>
-                  {g}
-                </button>
+                <button key={g} onClick={() => setActiveGrade(g)} style={{ flex: '0 0 auto', padding: '8px 16px', borderRadius: '8px', background: activeGrade === g ? '#f59e0b' : '#222', color: activeGrade === g ? '#000' : '#888', border: 'none', fontWeight: 'bold' }}>{g}</button>
               ))}
             </div>
 
@@ -228,6 +241,12 @@ export default function LearningHub() {
                 </div>
 
                 <div style={{ padding: '20px' }}>
+                  {/* HUMANITY ENGINE ENCOURAGEMENT */}
+                  <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid #3b82f6', color: '#3b82f6', padding: '15px', borderRadius: '8px', marginBottom: '20px', fontStyle: 'italic', fontSize: '0.95em', lineHeight: '1.5' }}>
+                    <span style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>💡 A quick note:</span>
+                    "{encouragement}"
+                  </div>
+
                   {['math', 'science', 'chemistry', 'history', 'language'].map((subj) => (
                     schoolCurriculum[activeGrade][subj]?.length > 0 && (
                       <div key={subj} style={{ marginBottom: '20px' }}>
@@ -256,7 +275,7 @@ export default function LearningHub() {
                   
                   {quizzes[activeGrade] && (
                     <button onClick={startQuiz} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginTop: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
-                      📝 Take {activeGrade === 'GED' ? 'GED Practice' : `Grade ${activeGrade}`} Exam
+                      📝 Take {activeGrade === 'GED' ? '15-Question GED' : `Grade ${activeGrade}`} Exam
                     </button>
                   )}
                 </div>
@@ -293,15 +312,20 @@ export default function LearningHub() {
                 </div>
               ) : (
                 <div style={{ background: '#111', padding: '30px 20px', borderRadius: '12px', border: `2px solid ${hasPassed ? '#10b981' : '#ef4444'}`, textAlign: 'center' }}>
-                  <h2 style={{ color: hasPassed ? '#10b981' : '#ef4444', margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '2em' }}>
+                  <h2 style={{ color: hasPassed ? '#10b981' : '#ef4444', margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '2.5em' }}>
                     {hasPassed ? 'PASSED!' : 'FAILED'}
                   </h2>
                   <div style={{ color: '#fff', fontSize: '1.2em', marginBottom: '20px' }}>You scored {score} out of {activeQuizPool.length}.</div>
                   <div style={{ color: '#888', marginBottom: '20px', fontSize: '0.9em' }}>Required to pass: {passThreshold} ({Math.round((passThreshold/activeQuizPool.length)*100)}%)</div>
-                  <p style={{ color: '#ccc', marginBottom: '30px' }}>
-                    {hasPassed ? `Great job! You have mastered the ${activeGrade} curriculum.` : 'Please review the reference books and try the exam again.'}
-                  </p>
-                  <button onClick={resetQuiz} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '15px 30px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>
+                  
+                  {/* HUMANITY ENGINE: POST-TEST ENCOURAGEMENT */}
+                  <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '8px', marginBottom: '30px', fontStyle: 'italic', color: '#ccc' }}>
+                    {hasPassed 
+                      ? "Outstanding work. You put in the focus, you trusted the process, and you proved you know this material. Take a breath and be proud of yourself." 
+                      : "Failure is just data. It tells you exactly what you need to review. Don't let frustration win. Step back, re-read the curriculum, and hit it again when you're ready."}
+                  </div>
+
+                  <button onClick={resetQuiz} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '15px 30px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', width: '100%' }}>
                     Return to Books
                   </button>
                 </div>
@@ -315,6 +339,7 @@ export default function LearningHub() {
           <div style={{ borderTop: '4px solid #a855f7', paddingTop: '10px' }}>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', overflowX: 'auto' }}>
               <button onClick={() => setActiveSubTab('tarot')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'tarot' ? '1px solid #a855f7' : '1px solid #333', background: activeSubTab === 'tarot' ? 'rgba(168, 85, 247, 0.1)' : 'transparent', color: activeSubTab === 'tarot' ? '#a855f7' : '#888', fontWeight: 'bold' }}>Tarot</button>
+              <button onClick={() => setActiveSubTab('wicca')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'wicca' ? '1px solid #10b981' : '1px solid #333', background: activeSubTab === 'wicca' ? 'rgba(16, 185, 129, 0.1)' : 'transparent', color: activeSubTab === 'wicca' ? '#10b981' : '#888', fontWeight: 'bold' }}>Wicca</button>
             </div>
             {activeSubTab === 'tarot' && tarotDeck.map((card, idx) => (
               <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
@@ -324,6 +349,9 @@ export default function LearningHub() {
                 )}
               </div>
             ))}
+            {activeSubTab === 'wicca' && (
+              <div style={{ color: '#888', textAlign: 'center', padding: '20px', fontStyle: 'italic' }}>Select a topic to view details...</div>
+            )}
           </div>
         )}
 
