@@ -11,7 +11,7 @@ export default function LearningHub() {
   const [activeWiccaTab, setActiveWiccaTab] = useState('lunar');
   const [activeEntityTab, setActiveEntityTab] = useState('goddesses');
   
-  // Anime Filter State - Defaulted to 'A' to show the new list
+  // Anime Filter State
   const [activeLetter, setActiveLetter] = useState('A');
   const [expandedItem, setExpandedItem] = useState(null);
 
@@ -82,11 +82,29 @@ export default function LearningHub() {
   ];
 
   const animeDB = [
+    { title: 'A Certain Magical Index', genre: 'Sci-Fi / Fantasy', era: '2000s', desc: 'In a city of espers, a boy with the power to negate any ability meets a nun running from sorcerers.' },
+    { title: 'A Certain Scientific Railgun', genre: 'Sci-Fi / Action', era: '2000s', desc: 'A spin-off of Magical Index focusing on Mikoto Misaka, the third strongest esper in Academy City.' },
+    { title: 'A Silent Voice', genre: 'Drama / Romance', era: '2010s', desc: 'A former bully tries to make amends with a deaf girl he tormented in elementary school.' },
+    { title: 'Afro Samurai', genre: 'Action / Samurai', era: '2000s', desc: 'A samurai seeks revenge against the man who killed his father, fighting his way to the Number One headband.' },
+    { title: 'Aggretsuko', genre: 'Comedy / Slice of Life', era: '2010s', desc: 'A frustrated red panda accountant deals with her stressful corporate life by singing death metal at karaoke.' },
+    { title: 'Air Gear', genre: 'Sports / Sci-Fi', era: '2000s', desc: 'A street punk discovers the underground world of motorized inline skates called Air Trecks.' },
+    { title: 'Akagi', genre: 'Thriller / Gambling', era: '2000s', desc: 'A genius teenager dives into the dangerous world of high-stakes yakuza Mahjong.' },
     { title: 'Akame ga Kill!', genre: 'Dark Fantasy / Action', era: '2010s', desc: 'A young villager travels to the capital to raise money for his home, only to discover deep corruption and join a group of assassins known as Night Raid.' },
     { title: 'Akira', genre: 'Cyberpunk', era: '1980s', desc: 'A secret military project endangers Neo-Tokyo when it turns a biker gang member into a rampaging psychic psychopath.' },
+    { title: 'Amagi Brilliant Park', genre: 'Comedy / Fantasy', era: '2010s', desc: 'A narcissistic high schooler is forced to manage a failing amusement park populated by actual magical creatures.' },
     { title: 'Angel Beats!', genre: 'Drama / Supernatural', era: '2010s', desc: 'In an afterlife high school, teens who experienced trauma in life form a rebellion against God before they can reincarnate.' },
+    { title: 'Anohana: The Flower We Saw That Day', genre: 'Drama / Supernatural', era: '2010s', desc: 'A group of childhood friends drift apart after a tragedy, only to be brought back together when the ghost of their friend appears.' },
+    { title: 'Another', genre: 'Horror / Mystery', era: '2010s', desc: 'A transfer student uncovers a deadly curse plaguing his new class, where ignoring a mysterious girl is the only way to survive.' },
+    { title: 'Appleseed', genre: 'Sci-Fi / Cyberpunk', era: '1980s-2000s', desc: 'In a post-apocalyptic utopian city, a human soldier and her cyborg partner uncover a conspiracy involving bioroids.' },
+    { title: 'Aria the Animation', genre: 'Sci-Fi / Slice of Life', era: '2000s', desc: 'On a terraformed Mars, a young woman trains to become a gondolier in a peaceful, watery replica of Venice.' },
+    { title: 'Arifureta: From Commonplace to World\'s Strongest', genre: 'Isekai / Fantasy', era: '2010s', desc: 'An ordinary otaku is betrayed and falls into an abyss, forcing him to ruthlessly adapt and survive.' },
     { title: 'Assassination Classroom', genre: 'Action / Comedy', era: '2010s', desc: 'A class of misfits is tasked with assassinating their alien teacher, who threatens to destroy Earth but is ironically the best teacher they\'ve ever had.' },
+    { title: 'Astra Lost in Space', genre: 'Sci-Fi / Mystery', era: '2010s', desc: 'A group of students on a space camp trip are suddenly teleported millions of light-years away and must survive the journey home.' },
+    { title: 'Astro Boy', genre: 'Sci-Fi / Mecha', era: '1960s', desc: 'The foundational classic about a powerful robot boy created by a brilliant scientist to replace his deceased son.' },
     { title: 'Attack on Titan', genre: 'Dark Fantasy / Action', era: '2010s-2020s', desc: 'Humanity lives inside cities surrounded by enormous walls that protect them from gigantic man-eating humanoids called Titans.' },
+    { title: 'Azumanga Daioh', genre: 'Comedy / Slice of Life', era: '2000s', desc: 'The everyday surreal and comedic lives of six eccentric high school girls and their teachers.' },
+    
+    // Non-A placeholders preserved
     { title: 'Cowboy Bebop', genre: 'Sci-Fi / Western', era: '1990s', desc: 'The futuristic misadventures and tragedies of an easygoing bounty hunter and his partners.' },
     { title: 'Dragon Ball Z', genre: 'Shonen / Action', era: '1980s-1990s', desc: 'The adventures of Goku who, along with his companions, defends the Earth against an assortment of villains.' },
     { title: 'Fullmetal Alchemist: Brotherhood', genre: 'Fantasy / Adventure', era: '2000s', desc: 'Two brothers search for a Philosopher\'s Stone after a forbidden attempt to revive their mother goes horribly awry.' },
@@ -194,7 +212,7 @@ export default function LearningHub() {
                   </div>
                   {expandedItem === anime.title && (
                     <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
-                      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexWrap: 'wrap' }}>
                         <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', fontWeight: 'bold' }}>{anime.genre}</span>
                         <span style={{ background: '#222', color: '#aaa', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', fontWeight: 'bold' }}>{anime.era}</span>
                       </div>
