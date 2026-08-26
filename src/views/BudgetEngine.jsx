@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function BudgetEngine() {
   const navigate = useNavigate();
-  // Set Dashboard as the new landing page
+  // Opens to the internal Budget Dashboard, not the Ledger
   const [activeTab, setActiveTab] = useState('dashboard'); 
 
   // --- STATE ---
@@ -20,7 +20,7 @@ export default function BudgetEngine() {
   const [incName, setIncName] = useState('');
   const [incAmount, setIncAmount] = useState('');
   const [incDate, setIncDate] = useState('');
-  const [incFreq, setIncFreq] = useState('None'); // None, Weekly, Bi-Weekly, Monthly
+  const [incFreq, setIncFreq] = useState('None');
 
   // Bill Form
   const [billName, setBillName] = useState('');
@@ -65,7 +65,6 @@ export default function BudgetEngine() {
   const deleteItem = (id, type) => {
     if (type === 'income') {
       setIncomes(incomes.filter(i => i.id !== id));
-      // Unlink bills attached to this deleted income
       setBills(bills.map(b => b.linkedIncomeId == id ? { ...b, linkedIncomeId: 'None' } : b));
     } else {
       setBills(bills.filter(b => b.id !== id));
@@ -143,6 +142,7 @@ export default function BudgetEngine() {
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', color: '#fff' }}>
       <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.8)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          {/* This button returns you to the Main App Hub safely */}
           <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
           <h2 style={{ margin: 0, color: '#10b981', fontSize: '1.2em' }}>Budget Engine</h2>
         </div>
@@ -157,7 +157,7 @@ export default function BudgetEngine() {
 
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
         
-        {/* --- DASHBOARD TAB (THE NEW LANDING PAGE) --- */}
+        {/* --- BUDGET INTERNAL DASHBOARD --- */}
         {activeTab === 'dashboard' && (
           <>
             <div style={{ ...cardStyle, textAlign: 'center', border: '1px solid #a855f7', marginTop: '10px' }}>
@@ -187,7 +187,7 @@ export default function BudgetEngine() {
           </>
         )}
 
-        {/* --- LEDGER TAB --- */}
+        {/* --- DETAILED LEDGER TAB --- */}
         {activeTab === 'ledger' && (
           <>
             <h3 style={{ color: '#a855f7', textAlign: 'center', textTransform: 'uppercase', margin: '20px 0 15px 0' }}>Income Sources</h3>
@@ -212,7 +212,6 @@ export default function BudgetEngine() {
 
             <h3 style={{ color: '#a855f7', textAlign: 'center', textTransform: 'uppercase', margin: '30px 0 15px 0' }}>Bill Ledger</h3>
             {bills.length === 0 ? <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No bills added.</p> : bills.map(bill => {
-              const linkedInc = incomes.find(i => i.id == bill.linkedIncomeId);
               return (
                 <div key={bill.id} style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
