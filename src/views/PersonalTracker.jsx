@@ -10,11 +10,11 @@ export default function PersonalTracker() {
   
   // Tax & Deductions State
   const [taxProfile, setTaxProfile] = useState('W2 Employee');
-  const [stateTax, setStateTax] = useState(2.5);
+  const [stateTax, setStateTax] = useState(2.5); // Defaulted to AZ 2.5%
   const [fedTax, setFedTax] = useState(10.0);
   const [showReport, setShowReport] = useState(false);
 
-  // Shift State (Pre-filled Monday for demonstration)
+  // Shift State
   const [shifts, setShifts] = useState({
     MON: { start: '16:00', end: '22:00', active: true },
     TUE: { start: '', end: '', active: false },
@@ -43,12 +43,9 @@ export default function PersonalTracker() {
 
   const clearWeek = () => {
     setShifts({
-      MON: { start: '', end: '', active: false },
-      TUE: { start: '', end: '', active: false },
-      WED: { start: '', end: '', active: false },
-      THU: { start: '', end: '', active: false },
-      FRI: { start: '', end: '', active: false },
-      SAT: { start: '', end: '', active: false },
+      MON: { start: '', end: '', active: false }, TUE: { start: '', end: '', active: false },
+      WED: { start: '', end: '', active: false }, THU: { start: '', end: '', active: false },
+      FRI: { start: '', end: '', active: false }, SAT: { start: '', end: '', active: false },
       SUN: { start: '', end: '', active: false }
     });
   };
@@ -62,12 +59,9 @@ export default function PersonalTracker() {
       let startD = new Date(`1970-01-01T${times.start}`);
       let endD = new Date(`1970-01-01T${times.end}`);
       
-      // Handle overnight shifts seamlessly
-      if (endD < startD) {
-        endD.setDate(endD.getDate() + 1); 
-      }
+      if (endD < startD) endD.setDate(endD.getDate() + 1); 
       
-      let diff = (endD - startD) / 3600000; // Convert ms to hours
+      let diff = (endD - startD) / 3600000; 
       totalHours += diff;
       dailyBreakdown.push({ day, hours: diff.toFixed(2), start: times.start, end: times.end });
     }
@@ -79,7 +73,6 @@ export default function PersonalTracker() {
   const otPay = otHours * (hourlyRate * 1.5);
   const grossPay = regPay + otPay;
 
-  // FICA Taxes (1099 independent contractors pay double FICA self-employment tax)
   const isW2 = taxProfile === 'W2 Employee';
   const ssTax = isW2 ? grossPay * 0.062 : grossPay * 0.124; 
   const medTax = isW2 ? grossPay * 0.0145 : grossPay * 0.029;
@@ -98,28 +91,20 @@ export default function PersonalTracker() {
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
       
-      {/* HEADER */}
       <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
           <h2 style={{ margin: 0, color: '#10b981', fontSize: '1.2em' }}>My Schedule</h2>
         </div>
-        <button style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', color: '#10b981', padding: '8px', borderRadius: '6px' }}>🏠</button>
       </header>
 
-      {/* TOP TABS */}
       <div style={{ display: 'flex', padding: '15px', gap: '10px' }}>
-        <button onClick={() => setActiveTab('tracker')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'tracker' ? '#10b981' : '#222', color: activeTab === 'tracker' ? '#000' : '#888' }}>
-          Tracker
-        </button>
-        <button onClick={() => setActiveTab('guides')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'guides' ? '#10b981' : '#222', color: activeTab === 'guides' ? '#000' : '#888' }}>
-          Guides & Info
-        </button>
+        <button onClick={() => setActiveTab('tracker')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'tracker' ? '#10b981' : '#222', color: activeTab === 'tracker' ? '#000' : '#888' }}>Tracker</button>
+        <button onClick={() => setActiveTab('guides')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'guides' ? '#10b981' : '#222', color: activeTab === 'guides' ? '#000' : '#888' }}>Guides & Info</button>
       </div>
 
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
         
-        {/* RATE & HOURS CARD */}
         <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '4px solid #10b981' }}>
           <div style={{ width: '45%' }}>
             <label style={labelStyle}>My Hourly Rate</label>
@@ -134,10 +119,8 @@ export default function PersonalTracker() {
           </div>
         </div>
 
-        {/* SHIFTS CARD */}
         <div style={cardStyle}>
           <h3 style={{ color: '#10b981', margin: '0 0 20px 0', textAlign: 'center' }}>This Week's Shifts</h3>
-          
           {Object.keys(shifts).map((day) => (
             <div key={day} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', borderBottom: '1px dashed #222', paddingBottom: '15px' }}>
               <strong style={{ width: '40px', fontSize: '0.9em' }}>{day}</strong>
@@ -146,26 +129,19 @@ export default function PersonalTracker() {
               <input type="time" value={shifts[day].end} onChange={(e) => handleShiftChange(day, 'end', e.target.value)} style={{ ...inputStyle, flex: 1, padding: '8px' }} />
             </div>
           ))}
-
-          <button onClick={clearWeek} style={{ width: '100%', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', padding: '15px', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>
-            CLEAR WEEK
-          </button>
+          <button onClick={clearWeek} style={{ width: '100%', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', padding: '15px', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>CLEAR WEEK</button>
         </div>
 
-        {/* PAYCHECK ESTIMATOR CARD */}
         <div style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
           <h3 style={{ color: '#10b981', margin: '0 0 20px 0', textTransform: 'uppercase', textAlign: 'center' }}>Paycheck Estimator</h3>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '1.05em' }}>
-            <span style={{ color: '#ccc' }}>Regular Pay ({regHours.toFixed(1)}h)</span>
-            <span style={{ fontWeight: 'bold' }}>${regPay.toFixed(2)}</span>
+            <span style={{ color: '#ccc' }}>Regular Pay ({regHours.toFixed(1)}h)</span><span style={{ fontWeight: 'bold' }}>${regPay.toFixed(2)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '1.05em', borderBottom: '1px solid #333', paddingBottom: '15px' }}>
-            <span style={{ color: '#ccc' }}>Overtime Pay ({otHours.toFixed(1)}h)</span>
-            <span style={{ fontWeight: 'bold' }}>${otPay.toFixed(2)}</span>
+            <span style={{ color: '#ccc' }}>Overtime Pay ({otHours.toFixed(1)}h)</span><span style={{ fontWeight: 'bold' }}>${otPay.toFixed(2)}</span>
           </div>
 
-          {/* DYNAMIC TAX INPUTS */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
             <label style={{ ...labelStyle, margin: 0, width: '40%' }}>Tax Profile</label>
             <select value={taxProfile} onChange={(e) => setTaxProfile(e.target.value)} style={{ ...inputStyle, width: '55%', color: '#3b82f6', fontWeight: 'bold' }}>
@@ -189,38 +165,21 @@ export default function PersonalTracker() {
             </div>
           </div>
 
-          {/* DEDUCTIONS OUTPUT */}
           <h4 style={{ color: '#fff', textTransform: 'uppercase', fontSize: '0.9em', textAlign: 'center', marginBottom: '15px' }}>Estimated Deductions</h4>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#888', fontSize: '0.95em' }}>
-            <span>Social Security (FICA)</span>
-            <span>-${ssTax.toFixed(2)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#888', fontSize: '0.95em' }}>
-            <span>Medicare (FICA)</span>
-            <span>-${medTax.toFixed(2)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#888', fontSize: '0.95em' }}>
-            <span>Federal Tax ({fedTax}%)</span>
-            <span>-${calculatedFedTax.toFixed(2)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', color: '#888', fontSize: '0.95em', borderBottom: '1px solid #333', paddingBottom: '15px' }}>
-            <span>State Tax ({stateTax}%)</span>
-            <span>-${calculatedStateTax.toFixed(2)}</span>
-          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#888', fontSize: '0.95em' }}><span>Social Security (FICA)</span><span>-${ssTax.toFixed(2)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#888', fontSize: '0.95em' }}><span>Medicare (FICA)</span><span>-${medTax.toFixed(2)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#888', fontSize: '0.95em' }}><span>Federal Tax ({fedTax}%)</span><span>-${calculatedFedTax.toFixed(2)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', color: '#888', fontSize: '0.95em', borderBottom: '1px solid #333', paddingBottom: '15px' }}><span>State Tax ({stateTax}%)</span><span>-${calculatedStateTax.toFixed(2)}</span></div>
 
-          {/* FINAL NET PAY */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.2em' }}>
-            <strong style={{ color: '#fff' }}>Est. Net Pay</strong>
-            <strong style={{ color: '#10b981', fontSize: '1.4em' }}>${netPay.toFixed(2)}</strong>
+            <strong style={{ color: '#fff' }}>Est. Net Pay</strong><strong style={{ color: '#10b981', fontSize: '1.4em' }}>${netPay.toFixed(2)}</strong>
           </div>
           
-          {/* TRIGGER FULL REPORT MODAL */}
           <button onClick={() => setShowReport(true)} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', marginTop: '25px', fontSize: '1.05em' }}>
             📄 VIEW FULL REPORT
           </button>
         </div>
-
       </div>
 
       {/* FULL REPORT MODAL */}
@@ -245,20 +204,16 @@ export default function PersonalTracker() {
               ))
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px', paddingTop: '10px', borderTop: '1px solid #333', fontSize: '1.1em', fontWeight: 'bold' }}>
-              <span>Total Logged:</span>
-              <span style={{ color: '#10b981' }}>{totalHours.toFixed(2)} Hours</span>
+              <span>Total Logged:</span><span style={{ color: '#10b981' }}>{totalHours.toFixed(2)} Hours</span>
             </div>
           </div>
 
           <div style={{ background: '#111', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
             <h3 style={{ color: '#fff', borderBottom: '1px dashed #444', paddingBottom: '10px', marginBottom: '15px' }}>Financial Breakdown</h3>
-            
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '8px' }}><span>Gross Pay:</span> <span>${grossPay.toFixed(2)}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444', marginBottom: '8px' }}><span>Total Taxes/Deductions:</span> <span>-${totalDeductions.toFixed(2)}</span></div>
-            
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px', paddingTop: '15px', borderTop: '2px solid #333', fontSize: '1.3em', fontWeight: 'bold' }}>
-              <span>Take Home:</span>
-              <span style={{ color: '#10b981' }}>${netPay.toFixed(2)}</span>
+              <span>Take Home:</span><span style={{ color: '#10b981' }}>${netPay.toFixed(2)}</span>
             </div>
           </div>
         </div>
