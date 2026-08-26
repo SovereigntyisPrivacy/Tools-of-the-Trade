@@ -19,7 +19,7 @@ export default function AssetLedger() {
   const [assetStatus, setAssetStatus] = useState('Deployed');
   const [assetCategory, setAssetCategory] = useState('Tools & Hardware');
   const [assetSn, setAssetSn] = useState('');
-  const [assetPhoto, setAssetPhoto] = useState(null); // Holds the Base64 image
+  const [assetPhotos, setAssetPhotos] = useState([]); // NOW AN ARRAY FOR MULTIPLE PHOTOS
 
   // --- PERSISTENCE ---
   useEffect(() => {
@@ -30,42 +30,52 @@ export default function AssetLedger() {
 
   const guideData = [
     { title: "📌 What is the Asset Ledger?", content: "This tool tracks mission-critical gear, vehicles, and electronics. Logging serial numbers, prices, and warranties creates an immutable record for insurance claims, tax depreciation, and maintenance." },
-    { title: "⚠️ Disclaimers & Privacy", content: "All data and photos are stored locally on your device. They are not uploaded to any cloud server. Export your CSV regularly. This tool does not constitute financial or legal advice." },
-    { title: "💡 Tips for Tax & Insurance", content: "1. Always record the Serial Number (S/N) and snap photographic proof.\n2. Export your CSV quarterly and save it as a backup.\n3. For independent contractors, items used exclusively for work can often be written off under Section 179." },
+    { title: "⚠️ Disclaimers & Privacy", content: "All data and photos are stored locally on your device. They are not uploaded to any cloud server. The file picker is sandboxed by Android for your privacy. Export your CSV regularly. This tool does not constitute financial or legal advice." },
+    { title: "💡 Tips for Tax & Insurance", content: "1. Always record the Serial Number (S/N).\n2. Snap up to 4 photos (Front, Side, Model Plate, Receipt).\n3. Export your CSV quarterly and save it as a backup." },
     { title: "📅 Calendar Warranty Sync", content: "When you add an asset, use the 'Sync to Calendar' button. This generates a native .ics event reminding you of the warranty expiration 2 weeks before it expires." }
   ];
 
   // --- ACTIONS ---
   const toggleAccordion = (index) => setOpenAccordion(openAccordion === index ? null : index);
 
-  // Compress and convert image to Base64 to save LocalStorage space
+  // Aggressive compression for multiple Base64 images
   const handlePhotoCapture = (e) => {
+    if (assetPhotos.length >= 4) return alert("Maximum of 4 photos per asset (Front, Side, Plate, Receipt).");
     const file = e.target.files[0];
     if (!file) return;
+    
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800; 
+        const MAX_WIDTH = 500; // Aggressive resize to save LocalStorage space
         const scaleSize = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // Compress to 60% quality
-        setAssetPhoto(dataUrl);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.5); // 50% quality compression
+        
+        setAssetPhotos(prev => [...prev, dataUrl]);
       };
       img.src = event.target.result;
     };
     reader.readAsDataURL(file);
+    e.target.value = null; // Reset input so they can upload the same file again if needed
+  };
+
+  const removePhoto = (index) => {
+    setAssetPhotos(assetPhotos.filter((_, i) => i !== index));
   };
 
   const handleAddAsset = () => {
     if (!assetName || !assetPrice) return alert("Name and Price are required.");
-    const newAsset = { id: Date.now(), name: assetName, price: parseFloat(assetPrice), date: assetDate, warranty: assetWarranty, status: assetStatus, category: assetCategory, sn: assetSn, photo: assetPhoto };
+    const newAsset = { id: Date.now(), name: assetName, price: parseFloat(assetPrice), date: assetDate, warranty: assetWarranty, status: assetStatus, category: assetCategory, sn: assetSn, photos: assetPhotos };
     setAssets([newAsset, ...assets]);
-    setAssetName(''); setAssetPrice(''); setAssetSn(''); setAssetPhoto(null);
+    
+    // Reset Form
+    setAssetName(''); setAssetPrice(''); setAssetSn(''); setAssetPhotos([]);
     setShowAddModal(false);
   };
 
@@ -119,7 +129,7 @@ export default function AssetLedger() {
   const cardStyle = { background: 'rgba(17, 17, 17, 0.95)', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
   const inputStyle = { background: '#000', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '6px', width: '100%', marginBottom: '15px', fontSize: '1em' };
   const labelStyle = { color: '#a855f7', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px', display: 'block', textAlign: 'center' };
-  const btnStyle = (bg, color) => ({ background: bg, color: color, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', width: '100%', fontSize: '1em' });
+  const btnStyle = (bg, color) => ({ background: bg, color: color, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', width: '100%', fontSize: '1em', cursor: 'pointer' });
 
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', color: '#fff' }}>
@@ -162,9 +172,11 @@ export default function AssetLedger() {
                     <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2em' }}>${asset.price.toFixed(2)}</div>
                   </div>
                   
-                  {asset.photo && (
-                    <div style={{ marginBottom: '15px', textAlign: 'center' }}>
-                      <img src={asset.photo} alt="Asset Proof" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #333' }} />
+                  {asset.photos && asset.photos.length > 0 && (
+                    <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '15px', paddingBottom: '5px' }}>
+                      {asset.photos.map((photo, idx) => (
+                        <img key={idx} src={photo} alt={`Proof ${idx + 1}`} style={{ height: '100px', width: 'auto', borderRadius: '6px', border: '1px solid #333', objectFit: 'cover' }} />
+                      ))}
                     </div>
                   )}
 
@@ -185,7 +197,6 @@ export default function AssetLedger() {
           </>
         )}
 
-        {/* --- GUIDE TAB --- */}
         {activeTab === 'guide' && (
           <div style={{ paddingTop: '10px' }}>
             <h3 style={{ color: '#10b981', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase', background: 'rgba(0,0,0,0.7)', padding: '10px', borderRadius: '8px' }}>Ledger Field Guide</h3>
@@ -205,28 +216,18 @@ export default function AssetLedger() {
         )}
       </div>
 
-      {/* --- EXPORT CONTROL MODAL --- */}
       {showExportModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#111', padding: '25px', borderRadius: '12px', border: '1px solid #3b82f6', width: '100%' }}>
             <h2 style={{ color: '#3b82f6', marginTop: 0, textAlign: 'center', textTransform: 'uppercase' }}>Export Controls</h2>
             <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '25px', fontSize: '0.9em' }}>Select how you want to export your encrypted ledger data.</p>
-            
-            <button onClick={downloadCSVFile} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}>
-              📥 Download .CSV File
-            </button>
-            <button onClick={copyCSVToClipboard} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '25px' }}>
-              📋 Copy Raw Data
-            </button>
-            
-            <button onClick={() => setShowExportModal(false)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>
-              Cancel
-            </button>
+            <button onClick={downloadCSVFile} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}>📥 Download .CSV File</button>
+            <button onClick={copyCSVToClipboard} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '25px' }}>📋 Copy Raw Data</button>
+            <button onClick={() => setShowExportModal(false)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
           </div>
         </div>
       )}
 
-      {/* --- ADD ASSET MODAL --- */}
       {showAddModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.98)', zIndex: 100, padding: '20px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #a855f7', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -255,15 +256,26 @@ export default function AssetLedger() {
             <div style={{ flex: 1 }}><label style={labelStyle}>Status</label><select value={assetStatus} onChange={(e) => setAssetStatus(e.target.value)} style={inputStyle}><option>Deployed</option><option>Stored</option><option>Maintenance</option><option>Retired</option></select></div>
           </div>
 
-          <label style={{ ...btnStyle('transparent', '#a855f7'), border: '1px dashed #a855f7', display: 'block', textAlign: 'center', marginBottom: '20px', cursor: 'pointer' }}>
-            📸 Snap Photographic Proof
-            <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePhotoCapture} />
-          </label>
+          <label style={labelStyle}>Photographic Proof ({assetPhotos.length}/4)</label>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <label style={{ ...btnStyle('transparent', '#10b981'), border: '1px dashed #10b981', flex: 1, textAlign: 'center' }}>
+              📸 Camera
+              <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePhotoCapture} />
+            </label>
+            <label style={{ ...btnStyle('transparent', '#3b82f6'), border: '1px dashed #3b82f6', flex: 1, textAlign: 'center' }}>
+              🖼️ Upload
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoCapture} />
+            </label>
+          </div>
 
-          {assetPhoto && (
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <span style={{ color: '#10b981', display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>✓ Photo Captured</span>
-              <img src={assetPhoto} alt="Preview" style={{ maxWidth: '100px', borderRadius: '6px', border: '1px solid #10b981' }} />
+          {assetPhotos.length > 0 && (
+            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '20px', paddingBottom: '10px' }}>
+              {assetPhotos.map((photo, idx) => (
+                <div key={idx} style={{ position: 'relative', flex: '0 0 auto' }}>
+                  <img src={photo} alt={`Preview ${idx}`} style={{ height: '80px', borderRadius: '6px', border: '1px solid #555' }} />
+                  <button onClick={() => removePhoto(idx)} style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>×</button>
+                </div>
+              ))}
             </div>
           )}
 
