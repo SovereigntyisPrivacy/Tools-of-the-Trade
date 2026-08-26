@@ -5,14 +5,14 @@ export default function LearningHub() {
   const navigate = useNavigate();
 
   // Navigation State
-  const [activeCategory, setActiveCategory] = useState('starthere');
+  const [activeCategory, setActiveCategory] = useState('anime');
   const [activeSubTab, setActiveSubTab] = useState('wicca');
   const [activeTarotTab, setActiveTarotTab] = useState('basics');
   const [activeWiccaTab, setActiveWiccaTab] = useState('lunar');
   const [activeEntityTab, setActiveEntityTab] = useState('goddesses');
   
-  // Anime Filter State
-  const [activeLetter, setActiveLetter] = useState('All');
+  // Anime Filter State - Defaulted to 'A' to show the new list
+  const [activeLetter, setActiveLetter] = useState('A');
   const [expandedItem, setExpandedItem] = useState(null);
 
   const alphabet = ['All', ...Array.from({length: 26}, (_, i) => String.fromCharCode(65 + i))];
@@ -48,7 +48,7 @@ export default function LearningHub() {
   const lunarDB = [
     { name: 'The Triple Goddess', type: 'Archetypes', desc: 'The Maiden (New/Waxing Moon): Wild, free, developing like a budding rose. The Mother (Full Moon): Full of potent creative power and solid stability. The Crone (Waning/Dark Moon): Wise and experienced.' },
     { name: 'Esbats', type: 'Lunar Magick', desc: 'Gatherings to perform rites and magickal works utilizing the phases of the moon.' },
-    { name: 'Dark Moon', type: 'Death / Shadow', desc: 'Exceptionally potent for Shadow Work (processing traits we find displeasing). Most conductive time for urgent, forceful banishing.' },
+    { name: 'Dark Moon', type: 'Death / Shadow', desc: 'Exceptionally potent for Shadow Work. Most conductive time for urgent, forceful banishing.' },
     { name: 'New Moon', type: 'Rebirth', desc: 'Prime workings: blessing new projects, setting intentions to reinvent yourself, scouting new ideas.' },
     { name: 'Waxing Moon', type: 'Solar Spring', desc: 'Spells for any type of gain or increase correspond with this energy.' },
     { name: 'Full Moon', type: 'Potent Power', desc: 'Most potent time to do any magickal work. Invoking, protecting, or healing.' },
@@ -82,14 +82,18 @@ export default function LearningHub() {
   ];
 
   const animeDB = [
-    { title: 'Akira', genre: 'Cyberpunk', era: '1980s', desc: 'A secret military project endangers Neo-Tokyo when it turns a biker gang member into a rampaging psychic.' },
+    { title: 'Akame ga Kill!', genre: 'Dark Fantasy / Action', era: '2010s', desc: 'A young villager travels to the capital to raise money for his home, only to discover deep corruption and join a group of assassins known as Night Raid.' },
+    { title: 'Akira', genre: 'Cyberpunk', era: '1980s', desc: 'A secret military project endangers Neo-Tokyo when it turns a biker gang member into a rampaging psychic psychopath.' },
+    { title: 'Angel Beats!', genre: 'Drama / Supernatural', era: '2010s', desc: 'In an afterlife high school, teens who experienced trauma in life form a rebellion against God before they can reincarnate.' },
+    { title: 'Assassination Classroom', genre: 'Action / Comedy', era: '2010s', desc: 'A class of misfits is tasked with assassinating their alien teacher, who threatens to destroy Earth but is ironically the best teacher they\'ve ever had.' },
+    { title: 'Attack on Titan', genre: 'Dark Fantasy / Action', era: '2010s-2020s', desc: 'Humanity lives inside cities surrounded by enormous walls that protect them from gigantic man-eating humanoids called Titans.' },
     { title: 'Cowboy Bebop', genre: 'Sci-Fi / Western', era: '1990s', desc: 'The futuristic misadventures and tragedies of an easygoing bounty hunter and his partners.' },
-    { title: 'Dragon Ball Z', genre: 'Shonen / Action', era: '1980s-1990s', desc: 'The adventures of Goku who, along with his companions, defends the Earth against villains.' },
-    { title: 'Fullmetal Alchemist: Brotherhood', genre: 'Fantasy / Adventure', era: '2000s', desc: 'Two brothers search for a Philosopher\'s Stone after an attempt to revive their mother goes awry.' },
+    { title: 'Dragon Ball Z', genre: 'Shonen / Action', era: '1980s-1990s', desc: 'The adventures of Goku who, along with his companions, defends the Earth against an assortment of villains.' },
+    { title: 'Fullmetal Alchemist: Brotherhood', genre: 'Fantasy / Adventure', era: '2000s', desc: 'Two brothers search for a Philosopher\'s Stone after a forbidden attempt to revive their mother goes horribly awry.' },
     { title: 'Kidnapped Dragons', genre: 'Fantasy / Slice of Life', era: 'Web Novel', desc: 'A regressor is tasked with raising dragon hatchlings to prevent the apocalypse.' },
     { title: 'Lookism', genre: 'Drama / Action', era: '2010s-2020s', desc: 'A high school student navigates society and gang warfare while switching between two entirely different bodies.' },
     { title: 'My Hero Academia', genre: 'Shonen / Superhero', era: '2010s-2020s', desc: 'A boy without powers enrolls in a prestigious hero academy to learn what it truly means to be a hero.' },
-    { title: 'Neon Genesis Evangelion', genre: 'Mecha / Psychological', era: '1990s', desc: 'A teenage boy finds himself recruited as a member of an elite team of mecha pilots.' },
+    { title: 'Neon Genesis Evangelion', genre: 'Mecha / Psychological', era: '1990s', desc: 'A teenage boy finds himself recruited as a member of an elite team of mecha pilots to fight monstrous angels.' },
     { title: 'One Piece', genre: 'Adventure / Shonen', era: '1990s-Present', desc: 'Monkey D. Luffy and his pirate crew traverse the Grand Line to find the greatest treasure ever left.' },
     { title: 'Viral Hit', genre: 'Action / Martial Arts', era: '2020s', desc: 'A scrawny high schooler learns how to fight from a mysterious channel and begins broadcasting street fights.' }
   ].sort((a, b) => a.title.localeCompare(b.title));
@@ -111,7 +115,7 @@ export default function LearningHub() {
         <h2 style={{ margin: 0, color: '#3b82f6', fontSize: '1.2em' }}>Learning Center</h2>
       </header>
 
-      {/* TOP NAV */}
+      {/* TOP NAV: Main Categories */}
       <div style={{ display: 'flex', gap: '10px', padding: '15px 15px 0 15px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <button onClick={() => setActiveCategory('starthere')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'starthere' ? '#3b82f6' : '#222', color: activeCategory === 'starthere' ? '#fff' : '#888' }}>
           📑 Start Here
@@ -129,29 +133,37 @@ export default function LearningHub() {
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
 
+        {/* START HERE / MANIFESTO */}
         {activeCategory === 'starthere' && (
           <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6', padding: '25px 20px' }}>
             <h2 style={{ color: '#3b82f6', margin: '0 0 20px 0', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>Forward</h2>
+            
             <div style={{ color: '#ccc', lineHeight: '1.7', fontSize: '0.95em', textAlign: 'left', marginBottom: '25px' }}>
               <p style={{ marginBottom: '20px' }}>All information contained within this archive is individually researched and gained from public sources or other individuals respected in their craft or field.</p>
+              
               <div style={{ background: 'rgba(239, 68, 68, 0.1)', borderLeft: '3px solid #ef4444', padding: '15px', borderRadius: '4px', marginBottom: '20px' }}>
                 <strong style={{ color: '#ef4444', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Disclaimer & Info</strong>
                 Always <strong>do your own research</strong>. The contents provided here are for educational, organizational, and informational purposes only. They do not constitute professional, legal, or medical advice. 
               </div>
             </div>
+
             <div style={{ borderTop: '1px dashed #333', paddingTop: '25px', marginTop: '15px', textAlign: 'center' }}>
               <p style={{ color: '#888', fontStyle: 'italic', marginBottom: '25px', lineHeight: '1.6', padding: '0 10px' }}>
                 "Developed to provide information and knowledge to the masses when it is so hard to come by if you don't have the means."
               </p>
+              
               <div style={{ background: '#0a0a0a', padding: '20px', borderRadius: '8px', border: '1px solid #222' }}>
                 <h3 style={{ color: '#fff', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, fontSize: '1.1em', lineHeight: '1.8' }}>
-                  Sovereignty is privacy.<br/><span style={{ color: '#3b82f6' }}>Take back your freedom.</span><br/>Stay sovereign.
+                  Sovereignty is privacy.<br/>
+                  <span style={{ color: '#3b82f6' }}>Take back your freedom.</span><br/>
+                  Stay sovereign.
                 </h3>
               </div>
             </div>
           </div>
         )}
 
+        {/* PAGANISM PLACEHOLDER */}
         {activeCategory === 'paganism' && (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: '#888' }}>
             <span style={{ fontSize: '3em', display: 'block', marginBottom: '15px' }}>🌿</span>
