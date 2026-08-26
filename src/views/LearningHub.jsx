@@ -4,17 +4,20 @@ import { useNavigate } from 'react-router-dom';
 export default function LearningHub() {
   const navigate = useNavigate();
 
-  // Navigation State
-  const [activeCategory, setActiveCategory] = useState('anime');
+  // Navigation State - Defaulted to 'starthere' as requested
+  const [activeCategory, setActiveCategory] = useState('starthere');
   const [activeSubTab, setActiveSubTab] = useState('wicca');
   const [activeTarotTab, setActiveTarotTab] = useState('basics');
   const [activeWiccaTab, setActiveWiccaTab] = useState('lunar');
   const [activeEntityTab, setActiveEntityTab] = useState('goddesses');
   
+  // Anime & School State
   const [activeLetter, setActiveLetter] = useState('A');
+  const [activeGrade, setActiveGrade] = useState('K');
   const [expandedItem, setExpandedItem] = useState(null);
 
   const alphabet = ['All', ...Array.from({length: 26}, (_, i) => String.fromCharCode(65 + i))];
+  const gradesList = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', 'College'];
 
   // --- DATABASES ---
   const tarotDeck = [
@@ -86,48 +89,36 @@ export default function LearningHub() {
     { title: 'A Lull in the Sea (Nagi-Asu)', genre: 'Drama / Romance', era: '2010s', desc: 'Middle school students from a village beneath the sea must attend school on the surface after their school closes.' },
     { title: 'A Place Further Than the Universe', genre: 'Adventure / Slice of Life', era: '2010s', desc: 'Four high school girls embark on a journey to Antarctica to find a missing mother.' },
     { title: 'A Silent Voice', genre: 'Drama / Romance', era: '2010s', desc: 'A former bully tries to make amends with a deaf girl he tormented in elementary school.' },
-    { title: 'A-Channel', genre: 'Slice of Life / Comedy', era: '2010s', desc: 'The daily lives of four high school girls and their eccentric interactions.' },
-    { title: 'Abenobashi Magical Shopping District', genre: 'Comedy / Fantasy', era: '2000s', desc: 'Two childhood friends are transported through bizarre, parallel-universe versions of their shopping arcade.' },
-    { title: 'Absolute Duo', genre: 'Action / Romance', era: '2010s', desc: 'Students at a special academy learn to manifest weapons from their souls to fight in pairs.' },
     { title: 'Afro Samurai', genre: 'Action / Samurai', era: '2000s', desc: 'A samurai seeks revenge against the man who killed his father, fighting his way to the Number One headband.' },
     { title: 'Aggretsuko', genre: 'Comedy / Slice of Life', era: '2010s', desc: 'A frustrated red panda accountant deals with her stressful corporate life by singing death metal at karaoke.' },
-    { title: 'Aharen-san wa Hakarenai', genre: 'Comedy / Romance', era: '2020s', desc: 'A boy tries to understand and befriend his quiet, boundary-lacking desk neighbor.' },
-    { title: 'Ahiru no Sora', genre: 'Sports / Drama', era: '2010s', desc: 'A short but passionate basketball player works to revive his high school\'s delinquent-filled basketball club.' },
-    { title: 'A.I.C.O. -Incarnation-', genre: 'Sci-Fi / Action', era: '2010s', desc: 'A girl discovers her body is artificial and must journey into an infected zone to find her real one.' },
-    { title: 'Air', genre: 'Drama / Supernatural', era: '2000s', desc: 'A traveling showman arrives in a seaside town and meets a girl with a tragic, mystical destiny.' },
-    { title: 'Air Gear', genre: 'Sports / Sci-Fi', era: '2000s', desc: 'A street punk discovers the underground world of motorized inline skates called Air Trecks.' },
-    { title: 'Akagi', genre: 'Thriller / Gambling', era: '2000s', desc: 'A genius teenager dives into the dangerous world of high-stakes yakuza Mahjong.' },
     { title: 'Akame ga Kill!', genre: 'Dark Fantasy / Action', era: '2010s', desc: 'A young villager travels to the capital to raise money for his home, only to discover deep corruption and join an assassin group.' },
-    { title: 'Akatsuki no Yona (Yona of the Dawn)', genre: 'Fantasy / Adventure', era: '2010s', desc: 'A sheltered princess flees her kingdom after a coup and searches for four legendary dragon warriors to reclaim her throne.' },
     { title: 'Akira', genre: 'Cyberpunk', era: '1980s', desc: 'A secret military project endangers Neo-Tokyo when it turns a biker gang member into a rampaging psychic psychopath.' },
-    { title: 'Aldnoah.Zero', genre: 'Mecha / Sci-Fi', era: '2010s', desc: 'Tensions ignite into all-out interplanetary war between Earth and the technologically advanced Vers Empire of Mars.' },
-    { title: 'All Out!!', genre: 'Sports / Drama', era: '2010s', desc: 'A short, fiery student and a tall, timid student join their high school rugby team.' },
-    { title: 'Alps no Shoujo Heidi', genre: 'Slice of Life / Drama', era: '1970s', desc: 'The classic tale of an orphan girl sent to live with her reclusive grandfather in the Swiss Alps.' },
-    { title: 'Amagami SS', genre: 'Romance / Omnibus', era: '2010s', desc: 'A high school boy navigates romance in an omnibus format, exploring different timelines with different girls.' },
-    { title: 'Amagi Brilliant Park', genre: 'Comedy / Fantasy', era: '2010s', desc: 'A narcissistic high schooler is forced to manage a failing amusement park populated by actual magical creatures.' },
     { title: 'Angel Beats!', genre: 'Drama / Supernatural', era: '2010s', desc: 'In an afterlife high school, teens who experienced trauma in life form a rebellion against God before they can reincarnate.' },
-    { title: 'Anohana: The Flower We Saw That Day', genre: 'Drama / Supernatural', era: '2010s', desc: 'A group of childhood friends drift apart after a tragedy, only to reunite when the ghost of their friend appears.' },
-    { title: 'Another', genre: 'Horror / Mystery', era: '2010s', desc: 'A transfer student uncovers a deadly curse plaguing his new class, where ignoring a mysterious girl is the only way to survive.' },
-    { title: 'Ao Ashi', genre: 'Sports', era: '2020s', desc: 'A talented but unrefined soccer player from a small town joins a prestigious youth academy in Tokyo.' },
-    { title: 'Ao Haru Ride', genre: 'Romance / Drama', era: '2010s', desc: 'A high school girl reunites with her middle school crush, but discovers his personality has completely changed.' },
-    { title: 'Appleseed', genre: 'Sci-Fi / Cyberpunk', era: '1980s-2000s', desc: 'In a post-apocalyptic utopian city, a human soldier and her cyborg partner uncover a conspiracy involving bioroids.' },
-    { title: 'Aquarion', genre: 'Mecha / Sci-Fi', era: '2000s', desc: 'Reincarnated warriors pilot a legendary mechanical angel to defend Earth from mythical entities called Shadow Angels.' },
-    { title: 'Arakawa Under the Bridge', genre: 'Comedy / Romance', era: '2010s', desc: 'A wealthy heir is forced to live under a bridge with a community of bizarre eccentrics after being saved by a girl claiming to be from Venus.' },
-    { title: 'Area no Kishi (The Knight in the Area)', genre: 'Sports / Drama', era: '2010s', desc: 'After a tragic accident, a boy receives his prodigy brother\'s heart and strives to become a top soccer player.' },
-    { title: 'Argento Soma', genre: 'Mecha / Sci-Fi', era: '2000s', desc: 'Following a devastating alien attack, a disfigured scientist joins a military organization to enact his revenge.' },
-    { title: 'Aria the Animation', genre: 'Sci-Fi / Slice of Life', era: '2000s', desc: 'On a terraformed Mars, a young woman trains to become a gondolier in a peaceful, watery replica of Venice.' },
-    { title: 'Arifureta: From Commonplace to World\'s Strongest', genre: 'Isekai / Fantasy', era: '2010s', desc: 'An ordinary otaku is betrayed and falls into an abyss, forcing him to ruthlessly adapt and survive.' },
-    { title: 'Arslan Senki', genre: 'Action / Adventure', era: '2010s', desc: 'A young prince must gather allies and build an army to take back his conquered kingdom of Pars.' },
-    { title: 'Ascendance of a Bookworm', genre: 'Isekai / Fantasy', era: '2010s', desc: 'A book-obsessed girl is reincarnated into a medieval world where books are scarce, so she decides to make them herself.' },
-    { title: 'Ashita no Joe', genre: 'Sports / Drama', era: '1970s', desc: 'The legendary tale of a wandering delinquent who finds purpose and tragedy in the boxing ring.' },
-    { title: 'Asobi Asobase', genre: 'Comedy', era: '2010s', desc: 'Three middle school girls form the "Pastimers Club," leading to chaotic, absurd, and painfully hilarious situations.' },
     { title: 'Assassination Classroom', genre: 'Action / Comedy', era: '2010s', desc: 'A class of misfits is tasked with assassinating their alien teacher, who threatens to destroy Earth.' },
-    { title: 'Astra Lost in Space', genre: 'Sci-Fi / Mystery', era: '2010s', desc: 'A group of students on a space camp trip are suddenly teleported millions of light-years away and must survive the journey home.' },
-    { title: 'Astro Boy', genre: 'Sci-Fi / Mecha', era: '1960s', desc: 'The foundational classic about a powerful robot boy created by a brilliant scientist to replace his deceased son.' },
     { title: 'Attack on Titan', genre: 'Dark Fantasy / Action', era: '2010s-2020s', desc: 'Humanity lives inside cities surrounded by enormous walls that protect them from gigantic man-eating humanoids called Titans.' },
-    { title: 'Aura Battler Dunbine', genre: 'Mecha / Isekai', era: '1980s', desc: 'People from Earth are pulled into a medieval fantasy realm to pilot insectoid mechas in a massive war.' },
-    { title: 'Azumanga Daioh', genre: 'Comedy / Slice of Life', era: '2000s', desc: 'The everyday surreal and comedic lives of six eccentric high school girls and their teachers.' }
+    { title: 'Cowboy Bebop', genre: 'Sci-Fi / Western', era: '1990s', desc: 'The futuristic misadventures and tragedies of an easygoing bounty hunter and his partners.' },
+    { title: 'Fullmetal Alchemist: Brotherhood', genre: 'Fantasy / Adventure', era: '2000s', desc: 'Two brothers search for a Philosopher\'s Stone after a forbidden attempt to revive their mother goes horribly awry.' },
+    { title: 'My Hero Academia', genre: 'Shonen / Superhero', era: '2010s-2020s', desc: 'A boy without powers enrolls in a prestigious hero academy.' },
+    { title: 'One Piece', genre: 'Adventure / Shonen', era: '1990s-Present', desc: 'Monkey D. Luffy and his pirate crew traverse the Grand Line.' }
   ].sort((a, b) => a.title.localeCompare(b.title));
+
+  // School Reference Documents Data structure mapped by grade
+  const schoolCurriculum = {
+    'K': { math: 'Counting 1-100, basic shapes, simple addition concepts.', science: 'Five senses, weather patterns, animal habitats.', history: 'Family trees, community helpers, national symbols.', chemistry: 'States of matter (solid ice vs liquid water).' },
+    '1st': { math: 'Addition/subtraction within 20, place value, time to the hour.', science: 'Plant life cycles, light & sound, sun/moon/stars.', history: 'Historical figures (Washington, Lincoln), past vs present.', chemistry: 'Mixing colors, dissolving sugar in water.' },
+    '2nd': { math: 'Two-digit addition/subtraction, money, measurement, data graphs.', science: 'States of matter in depth, earth materials, ecosystems.', history: 'Local geography, maps, basic American history & civics.', chemistry: 'Reversible vs irreversible changes (melting vs burning).' },
+    '3rd': { math: 'Multiplication & division, fractions, area & perimeter.', science: 'Life cycles (metamorphosis), forces & motion, magnets.', history: 'World geography, ancient civilizations (Egypt, Greece), indigenous peoples.', chemistry: 'Introduction to atoms, molecules, and simple mixtures.' },
+    '4th': { math: 'Multi-digit multiplication, fraction equivalence, angle measurements.', science: 'Energy transfer, electricity, rock cycle, erosion.', history: 'State history, exploration, colonization era.', chemistry: 'Solutions, solutes, solvents, and concentration.' },
+    '5th': { math: 'Decimal operations, volume, coordinate planes, adding unlike fractions.', science: 'Cell structure, food webs, solar system mechanics, gravity.', history: 'American Revolution, Declaration of Independence, U.S. Constitution.', chemistry: 'Chemical vs physical changes, basic chemical reactions (baking soda & vinegar).' },
+    '6th': { math: 'Ratios, unit rates, algebraic expressions, introduction to negative numbers.', science: 'Plate tectonics, earthquakes, ecosystems, thermal energy.', history: 'Ancient world history (Mesopotamia, Indus Valley, Early China, Rome).', chemistry: 'Elements, the Periodic Table basics, atomic structure (protons, neutrons, electrons).' },
+    '7th': { math: 'Proportional relationships, inequalities, circle geometry, probability.', science: 'Human body systems (circulatory, respiratory, nervous), genetics & heredity.', history: 'Medieval history, feudalism, the Renaissance, global trade routes.', chemistry: 'Compounds, chemical formulas, balancing simple equations.' },
+    '8th': { math: 'Linear equations, functions, Pythagorean theorem, volume of cones/cylinders.', science: 'Chemical reactions, waves, electromagnetic spectrum, space exploration.', history: 'U.S. History from colonization through Reconstruction & Civil War.', chemistry: 'States of matter phase changes, kinetic molecular theory, reaction rates.' },
+    '9th': { math: 'Algebra I: Quadratics, polynomials, exponential functions, systems of equations.', science: 'Biology: Cell biology, photosynthesis, cellular respiration, DNA & protein synthesis.', history: 'World Geography & Modern Global History (1900 to Present).', chemistry: 'Stoichiometry intro, mole concept, molar mass calculations.' },
+    '10th': { math: 'Geometry: Proofs, triangle similarity, trigonometry ratios, circle theorems.', science: 'Earth & Space Science: Climate science, plate tectonics, stellar evolution, biogeochemical cycles.', history: 'World History II: Imperialism, World Wars, Cold War, Decolonization.', chemistry: 'General Chemistry: Gas laws (Boyle, Charles, Ideal Gas), electron configurations, periodic trends.' },
+    '11th': { math: 'Algebra II / Pre-Calculus: Logarithms, complex numbers, matrices, conic sections, sequences.', science: 'Chemistry: Thermochemistry, acid-base equilibrium (pH, pOH), oxidation-reduction (redox) reactions.', history: 'U.S. History: Industrialization, Great Depression, New Deal, Civil Rights Movement.', chemistry: 'Advanced Bonding: VSEPR theory, intermolecular forces, molecular geometry.' },
+    '12th': { math: 'Calculus AB/BC or Statistics: Limits, derivatives, integrals, probability distributions.', science: 'Physics or Advanced Biology: Mechanics, kinematics, thermodynamics, or advanced genetics & evolution.', history: 'Government & Economics: Micro/Macroeconomics, U.S. Constitution in depth, civic duties.', chemistry: 'Organic Chemistry / Biochemistry: Hydrocarbons, functional groups, polymers, amino acids.' },
+    'College': { math: 'Multivariable Calculus, Linear Algebra, Differential Equations, Real Analysis.', science: 'Advanced Physics (Quantum/Electromagnetism), Organic Chemistry, Molecular Biology.', history: 'Historiography, Specialized Global Studies, Geopolitics.', chemistry: 'Thermodynamics, Quantum Chemistry, Spectroscopy, Synthesis.' }
+  };
 
   const filteredAnime = activeLetter === 'All' ? animeDB : animeDB.filter(a => a.title.toUpperCase().startsWith(activeLetter));
   const toggleExpand = (name) => setExpandedItem(expandedItem === name ? null : name);
@@ -156,6 +147,9 @@ export default function LearningHub() {
         <button onClick={() => setActiveCategory('anime')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'anime' ? '#ef4444' : '#222', color: activeCategory === 'anime' ? '#fff' : '#888' }}>
           ⛩️ Anime
         </button>
+        <button onClick={() => setActiveCategory('school')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'school' ? '#f59e0b' : '#222', color: activeCategory === 'school' ? '#000' : '#888' }}>
+          📚 School
+        </button>
         <button onClick={() => setActiveCategory('paganism')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'paganism' ? '#10b981' : '#222', color: activeCategory === 'paganism' ? '#fff' : '#888' }}>
           🌿 Paganism
         </button>
@@ -163,7 +157,7 @@ export default function LearningHub() {
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
 
-        {/* START HERE / MANIFESTO */}
+        {/* START HERE / MANIFESTO (Default Landing) */}
         {activeCategory === 'starthere' && (
           <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6', padding: '25px 20px' }}>
             <h2 style={{ color: '#3b82f6', margin: '0 0 20px 0', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>Forward</h2>
@@ -199,6 +193,45 @@ export default function LearningHub() {
             <span style={{ fontSize: '3em', display: 'block', marginBottom: '15px' }}>🌿</span>
             <h3 style={{ color: '#10b981', margin: '0 0 10px 0' }}>Paganism Database</h3>
             <p>This category is primed and waiting for future module expansion.</p>
+          </div>
+        )}
+
+        {/* SCHOOL REFERENCE ARCHIVE */}
+        {activeCategory === 'school' && (
+          <div style={{ borderTop: '4px solid #f59e0b', paddingTop: '10px' }}>
+            <h3 style={{ color: '#f59e0b', margin: '0 0 15px 0', textTransform: 'uppercase', fontSize: '0.95em', textAlign: 'center' }}>Academic Grade Levels</h3>
+            
+            <div style={{ display: 'flex', gap: '5px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '15px', WebkitOverflowScrolling: 'touch' }}>
+              {gradesList.map(g => (
+                <button key={g} onClick={() => setActiveGrade(g)} style={{ flex: '0 0 auto', padding: '8px 16px', borderRadius: '8px', background: activeGrade === g ? '#f59e0b' : '#222', color: activeGrade === g ? '#000' : '#888', border: 'none', fontWeight: 'bold' }}>
+                  {g}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+              <h3 style={{ color: '#f59e0b', margin: '0 0 15px 0', textTransform: 'uppercase' }}>Grade {activeGrade} Curriculum</h3>
+              
+              <div style={{ marginBottom: '15px', borderBottom: '1px dashed #333', paddingBottom: '10px' }}>
+                <div style={{ color: '#3b82f6', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '4px' }}>🔢 Math Reference</div>
+                <div style={{ color: '#eee', fontSize: '0.95em' }}>{schoolCurriculum[activeGrade].math}</div>
+              </div>
+
+              <div style={{ marginBottom: '15px', borderBottom: '1px dashed #333', paddingBottom: '10px' }}>
+                <div style={{ color: '#10b981', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '4px' }}>🧪 Chemistry Focus</div>
+                <div style={{ color: '#eee', fontSize: '0.95em' }}>{schoolCurriculum[activeGrade].chemistry}</div>
+              </div>
+
+              <div style={{ marginBottom: '15px', borderBottom: '1px dashed #333', paddingBottom: '10px' }}>
+                <div style={{ color: '#ef4444', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '4px' }}>🔬 Science Reference</div>
+                <div style={{ color: '#eee', fontSize: '0.95em' }}>{schoolCurriculum[activeGrade].science}</div>
+              </div>
+
+              <div>
+                <div style={{ color: '#f59e0b', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '4px' }}>📜 History Reference</div>
+                <div style={{ color: '#eee', fontSize: '0.95em' }}>{schoolCurriculum[activeGrade].history}</div>
+              </div>
+            </div>
           </div>
         )}
 
