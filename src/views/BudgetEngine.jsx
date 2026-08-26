@@ -22,7 +22,7 @@ export default function BudgetEngine() {
   const [incDate, setIncDate] = useState('');
   const [incFreq, setIncFreq] = useState('None');
 
-  // Bill Form (Now with Photo capability)
+  // Bill Form (Now with Photo support)
   const [billName, setBillName] = useState('');
   const [billAmount, setBillAmount] = useState('');
   const [billDate, setBillDate] = useState('');
@@ -45,12 +45,12 @@ export default function BudgetEngine() {
   const guideData = [
     { title: "Zero-Based Budgeting", content: "Your Total Unassigned Cash should always be exactly $0.00. Every single dollar you earn needs a job before the month begins. If you have $200 left over, create a 'Savings' bill to zero it out." },
     { title: "Paycheck Routing", content: "If all bills are due on the 1st, but you get paid on the 15th and 30th, you will overdraft. Use the dropdown in the Ledger to link specific bills to specific paychecks." },
-    { title: "Calendar Syncing", content: "Set a frequency (Weekly, Bi-Weekly, Monthly) when adding an income or bill, then tap 'Sync'. This allows you to push a recurring event directly to your phone's calendar." }
+    { title: "Calendar Syncing", content: "Set a frequency (Weekly, Bi-Weekly, Monthly) when adding an income or bill, then tap 'Sync'. This writes the event directly to the Master Calendar." }
   ];
 
   const toggleAccordion = (index) => setOpenAccordion(openAccordion === index ? null : index);
 
-  // --- ACTIONS & IMAGE COMPRESSION ---
+  // --- ACTIONS & IMAGE COMPRESSOR ---
   const handlePhotoCapture = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -75,13 +75,13 @@ export default function BudgetEngine() {
 
   const addIncome = () => {
     if (!incName || !incAmount) return alert("Name and Amount are required.");
-    setIncomes([...incomes, { id: Date.now(), name: incName, amount: parseFloat(incAmount), date: incDate, frequency: incFreq }]);
+    setIncomes([...incomes, { id: Date.now(), name: incName, amount: parseFloat(incAmount), date: incDate, frequency: incFreq, isSynced: false }]);
     setIncName(''); setIncAmount(''); setIncDate(''); setIncFreq('None'); setShowIncomeModal(false);
   };
 
   const addBill = () => {
     if (!billName || !billAmount) return alert("Name and Amount are required.");
-    setBills([...bills, { id: Date.now(), name: billName, amount: parseFloat(billAmount), dueDate: billDate, frequency: billFreq, linkedIncomeId: billLinkedInc, isPaid: false, datePaid: null, photo: billPhoto }]);
+    setBills([...bills, { id: Date.now(), name: billName, amount: parseFloat(billAmount), dueDate: billDate, frequency: billFreq, linkedIncomeId: billLinkedInc, isPaid: false, datePaid: null, photo: billPhoto, isSynced: false }]);
     setBillName(''); setBillAmount(''); setBillDate(''); setBillFreq('None'); setBillLinkedInc('None'); setBillPhoto(null); setShowBillModal(false);
   };
 
@@ -89,39 +89,35 @@ export default function BudgetEngine() {
     if (type === 'income') {
       setIncomes(incomes.filter(i => i.id !== id));
       setBills(bills.map(b => b.linkedIncomeId == id ? { ...b, linkedIncomeId: 'None' } : b));
-    } else {
-      setBills(bills.filter(b => b.id !== id));
-    }
+    } else setBills(bills.filter(b => b.id !== id));
   };
 
   const togglePaidStatus = (id) => {
     setBills(bills.map(b => b.id === id ? { ...b, isPaid: !b.isPaid, datePaid: !b.isPaid ? new Date().toLocaleDateString() : null } : b));
   };
 
-  // --- CALENDAR SYNC (NATIVE ANDROID SHARE FIX) ---
-  const syncToCalendar = async (item, type) => {
+  // --- IN-APP CALENDAR WRAPPER SYNC ---
+  const syncToCalendar = (item, type) => {
     const targetDate = item.date || item.dueDate;
     if (!targetDate) return alert("Please set a date before syncing.");
     
-    const dateObj = new Date(targetDate);
-    const formattedDate = dateObj.toISOString().split('T')[0].replace(/-/g, '');
-    let rrule = '';
-    if (item.frequency === 'Weekly') rrule = '\nRRULE:FREQ=WEEKLY';
-    if (item.frequency === 'Bi-Weekly') rrule = '\nRRULE:FREQ=WEEKLY;INTERVAL=2';
-    if (item.frequency === 'Monthly') rrule = '\nRRULE:FREQ=MONTHLY';
+    // Update local state to show it is synced
+    if (type === 'income') setIncomes(incomes.map(i => i.id === item.id ? { ...i, isSynced: true } : i));
+    else setBills(bills.map(b => b.id === item.id ? { ...b, isSynced: true } : b));
 
-    const summary = type === 'income' ? `Payday: ${item.name}` : `Bill Due: ${item.name}`;
-    const desc = type === 'income' ? `Expected Income: $${item.amount}` : `Bill Amount: $${item.amount}`;
-    const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nDTSTART;VALUE=DATE:${formattedDate}\nDTEND;VALUE=DATE:${formattedDate}${rrule}\nSUMMARY:${summary}\nDESCRIPTION:${desc}\nEND:VEVENT\nEND:VCALENDAR`;
-
-    try {
-      const file = new File([icsContent], `${type}_${item.name.replace(/\s+/g, '_')}.ics`, { type: 'text/calendar' });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Calendar Sync', text: 'Add this recurring event to your calendar.' });
-      } else {
-        alert("Your device does not support native calendar file sharing. Please use the export options instead.");
-      }
-    } catch (err) { console.error("Calendar share failed", err); }
+    // Push to a global array for the Master Calendar wrapper to scan
+    const existingEvents = JSON.parse(localStorage.getItem('tot_calendar_events')) || [];
+    const newEvent = {
+      id: `${type}_${item.id}`,
+      title: type === 'income' ? `Payday: ${item.name}` : `Bill Due: ${item.name}`,
+      date: targetDate,
+      frequency: item.frequency,
+      amount: item.amount,
+      type: type,
+      source: 'BudgetEngine'
+    };
+    localStorage.setItem('tot_calendar_events', JSON.stringify([...existingEvents.filter(e => e.id !== newEvent.id), newEvent]));
+    alert(`${item.name} pushed to Master Calendar successfully!`);
   };
 
   // --- ARCHIVING & EXPORT ---
@@ -134,14 +130,16 @@ export default function BudgetEngine() {
   };
 
   const getCSVString = () => {
-    let csv = "Type,Name,Amount,Date,Frequency,Linked Paycheck,Status,Paid Date\n";
+    let csv = "Type,Name,Amount,Date/Due,Frequency,Routed Paycheck,Status,Date Paid\n";
     let totalIn = 0; let totalOut = 0;
+    
     incomes.forEach(i => { csv += `"Income","${i.name}","$${i.amount}","${i.date}","${i.frequency}","N/A","N/A","N/A"\n`; totalIn += i.amount; });
     bills.forEach(b => {
       const linkedName = incomes.find(inc => inc.id == b.linkedIncomeId)?.name || 'None';
       csv += `"Bill","${b.name}","$${b.amount}","${b.dueDate}","${b.frequency}","${linkedName}","${b.isPaid ? 'PAID' : 'UNPAID'}","${b.datePaid || 'N/A'}"\n`;
       totalOut += b.amount;
     });
+    
     csv += `\n"TOTALS","Pool:","$${totalIn.toFixed(2)}","Used:","$${totalOut.toFixed(2)}","Unassigned:","$${(totalIn - totalOut).toFixed(2)}",""\n`;
     return csv;
   };
@@ -179,6 +177,7 @@ export default function BudgetEngine() {
 
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
         
+        {/* --- MAIN DASHBOARD (CLEAN VIEW) --- */}
         {activeTab === 'dashboard' && (
           <>
             <div style={{ ...cardStyle, textAlign: 'center', border: '1px solid #a855f7', marginTop: '10px' }}>
@@ -204,6 +203,7 @@ export default function BudgetEngine() {
           </>
         )}
 
+        {/* --- DETAILED LEDGER TAB --- */}
         {activeTab === 'ledger' && (
           <>
             <h3 style={{ color: '#a855f7', textAlign: 'center', textTransform: 'uppercase', margin: '20px 0 15px 0' }}>Income Sources</h3>
@@ -219,7 +219,7 @@ export default function BudgetEngine() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ccc', fontSize: '0.9em', borderTop: '1px dashed #333', paddingTop: '10px' }}>
                   <span>{inc.date || 'No Date'}</span>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => syncToCalendar(inc, 'income')} style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}>Sync 📅</button>
+                    <button onClick={() => syncToCalendar(inc, 'income')} style={{ background: inc.isSynced ? '#222' : '#a855f7', color: inc.isSynced ? '#a855f7' : '#fff', border: inc.isSynced ? '1px solid #a855f7' : 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}>{inc.isSynced ? 'Synced ✓' : 'Sync 📅'}</button>
                     <button onClick={() => deleteItem(inc.id, 'income')} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold', fontSize: '1.2em' }}>×</button>
                   </div>
                 </div>
@@ -244,9 +244,17 @@ export default function BudgetEngine() {
                   
                   {bill.photo && (
                     <div style={{ marginBottom: '10px', border: '1px solid #333', padding: '5px', borderRadius: '6px', display: 'inline-block' }}>
-                      <img src={bill.photo} alt="Receipt" style={{ height: '60px', borderRadius: '4px' }} />
+                      <img src={bill.photo} alt="Receipt" style={{ height: '80px', borderRadius: '4px' }} />
                     </div>
                   )}
+
+                  <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ color: '#888', fontSize: '0.85em' }}>Route To:</span>
+                    <select value={bill.linkedIncomeId} onChange={(e) => setBills(bills.map(b => b.id === bill.id ? { ...b, linkedIncomeId: e.target.value } : b))} style={{ background: '#000', color: '#3b82f6', border: '1px solid #333', padding: '6px', borderRadius: '4px', flex: 1, fontSize: '0.9em' }}>
+                      <option value="None">None (Unassigned)</option>
+                      {incomes.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                    </select>
+                  </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ccc', fontSize: '0.9em', borderTop: '1px dashed #333', paddingTop: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -255,7 +263,7 @@ export default function BudgetEngine() {
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button onClick={() => togglePaidStatus(bill.id)} style={{ background: bill.isPaid ? '#222' : '#10b981', color: bill.isPaid ? '#888' : '#000', border: '1px solid #10b981', padding: '6px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}>{bill.isPaid ? 'Unmark' : 'Mark Paid'}</button>
-                      <button onClick={() => syncToCalendar(bill, 'bill')} style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}>Sync 📅</button>
+                      <button onClick={() => syncToCalendar(bill, 'bill')} style={{ background: bill.isSynced ? '#222' : '#a855f7', color: bill.isSynced ? '#a855f7' : '#fff', border: bill.isSynced ? '1px solid #a855f7' : 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}>{bill.isSynced ? 'Synced ✓' : 'Sync 📅'}</button>
                       <button onClick={() => deleteItem(bill.id, 'bill')} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold', fontSize: '1.2em' }}>×</button>
                     </div>
                   </div>
@@ -265,11 +273,12 @@ export default function BudgetEngine() {
           </>
         )}
 
+        {/* --- HISTORY TAB --- */}
         {activeTab === 'history' && (
           <>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', marginTop: '10px' }}>
               <button onClick={archiveBudget} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Archive Month</button>
-              <button onClick={() => setShowExportModal(true)} style={{ flex: 1, background: '#222', color: '#fff', border: '1px solid #3b82f6', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Export Excel / CSV</button>
+              <button onClick={() => setShowExportModal(true)} style={{ flex: 1, background: '#222', color: '#fff', border: '1px solid #3b82f6', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Export Logs</button>
             </div>
 
             <h3 style={{ color: '#f59e0b', textAlign: 'center', textTransform: 'uppercase', marginBottom: '15px' }}>Archived Budgets</h3>
@@ -286,6 +295,7 @@ export default function BudgetEngine() {
           </>
         )}
 
+        {/* --- GUIDES TAB --- */}
         {activeTab === 'guides' && (
           <div style={{ paddingTop: '10px' }}>
             <h3 style={{ color: '#10b981', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase', background: 'rgba(0,0,0,0.7)', padding: '10px', borderRadius: '8px' }}>Budgeting Field Guide</h3>
@@ -311,13 +321,13 @@ export default function BudgetEngine() {
           <input type="text" placeholder="Source Name (e.g. Circle K)" value={incName} onChange={(e) => setIncName(e.target.value)} style={inputStyle} />
           <input type="number" placeholder="Amount ($)" value={incAmount} onChange={(e) => setIncAmount(e.target.value)} style={inputStyle} />
           <input type="date" value={incDate} onChange={(e) => setIncDate(e.target.value)} style={inputStyle} />
-          <label style={{ color: '#a855f7', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Recurring Frequency (For Calendar)</label>
+          <label style={{ color: '#a855f7', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Recurring Frequency</label>
           <select value={incFreq} onChange={(e) => setIncFreq(e.target.value)} style={inputStyle}><option>None</option><option>Weekly</option><option>Bi-Weekly</option><option>Monthly</option></select>
           <button onClick={addIncome} style={{ ...btnStyle('#10b981', '#000'), marginTop: '10px' }}>Save Income</button>
         </div>
       )}
 
-      {/* --- ADD BILL MODAL (NOW WITH PHOTO UPLOAD) --- */}
+      {/* --- ADD BILL MODAL (NOW WITH PHOTO SUPPORT) --- */}
       {showBillModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, padding: '20px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ef4444', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -327,14 +337,14 @@ export default function BudgetEngine() {
           <input type="text" placeholder="Bill Name (e.g. Rent)" value={billName} onChange={(e) => setBillName(e.target.value)} style={inputStyle} />
           <input type="number" placeholder="Amount ($)" value={billAmount} onChange={(e) => setBillAmount(e.target.value)} style={inputStyle} />
           <input type="date" value={billDate} onChange={(e) => setBillDate(e.target.value)} style={inputStyle} />
-          <label style={{ color: '#a855f7', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Recurring Frequency (For Calendar)</label>
+          <label style={{ color: '#a855f7', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Recurring Frequency</label>
           <select value={billFreq} onChange={(e) => setBillFreq(e.target.value)} style={inputStyle}><option>None</option><option>Weekly</option><option>Bi-Weekly</option><option>Monthly</option></select>
           <label style={{ color: '#3b82f6', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Route to Paycheck</label>
           <select value={billLinkedInc} onChange={(e) => setBillLinkedInc(e.target.value)} style={inputStyle}>
             <option value="None">None (Unassigned)</option>
             {incomes.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
           </select>
-          
+
           <label style={{ color: '#10b981', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Attach Receipt / Proof (Optional)</label>
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
             <label style={{ ...btnStyle('transparent', '#10b981'), border: '1px dashed #10b981', flex: 1, textAlign: 'center' }}>📸 Camera<input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePhotoCapture} /></label>
@@ -358,16 +368,16 @@ export default function BudgetEngine() {
         </div>
       )}
 
-      {/* --- ARCHIVED BUDGET VIEWER MODAL --- */}
+      {/* --- COLLAPSIBLE HISTORY VIEWER MODAL --- */}
       {viewingArchive && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100, padding: '15px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #f59e0b', paddingBottom: '10px', marginBottom: '15px' }}>
-            <h2 style={{ color: '#f59e0b', margin: 0, textTransform: 'uppercase' }}>Archived Budget</h2>
+            <h2 style={{ color: '#f59e0b', margin: 0, textTransform: 'uppercase' }}>Archived Ledger</h2>
             <button onClick={() => setViewingArchive(null)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
           </div>
           
           <div style={{ background: '#fff', color: '#000', padding: '20px', borderRadius: '8px' }}>
-            <h2 style={{ color: '#f59e0b', textAlign: 'center', margin: '0 0 5px 0', textTransform: 'uppercase' }}>LEDGER SNAPSHOT</h2>
+            <h2 style={{ color: '#f59e0b', textAlign: 'center', margin: '0 0 5px 0', textTransform: 'uppercase' }}>MONTHLY SNAPSHOT</h2>
             <h4 style={{ textAlign: 'center', margin: '0 0 20px 0', color: '#666' }}>Archived: {viewingArchive.date}</h4>
             
             <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>Incomes</h4>
