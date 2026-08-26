@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 export default function LearningHub() {
   const navigate = useNavigate();
 
-  // Navigation State
+  // Navigation State - Default to 'starthere'
+  const [activeCategory, setActiveCategory] = useState('starthere');
   const [activeSubTab, setActiveSubTab] = useState('wicca');
   const [activeTarotTab, setActiveTarotTab] = useState('basics');
   const [activeWiccaTab, setActiveWiccaTab] = useState('lunar');
@@ -90,155 +91,193 @@ export default function LearningHub() {
         <h2 style={{ margin: 0, color: '#3b82f6', fontSize: '1.2em' }}>Learning Center</h2>
       </header>
 
+      {/* TOP NAV: Main Categories */}
       <div style={{ display: 'flex', gap: '10px', padding: '15px 15px 0 15px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <button style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: '#a855f7', color: '#fff' }}>
+        <button onClick={() => setActiveCategory('starthere')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'starthere' ? '#3b82f6' : '#222', color: activeCategory === 'starthere' ? '#fff' : '#888' }}>
+          📑 Start Here
+        </button>
+        <button onClick={() => setActiveCategory('supernatural')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'supernatural' ? '#a855f7' : '#222', color: activeCategory === 'supernatural' ? '#fff' : '#888' }}>
           🔮 Supernatural
         </button>
-        <button style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: '1px dashed #333', fontWeight: 'bold', background: 'transparent', color: '#555' }}>+ Add Hub</button>
+        <button onClick={() => setActiveCategory('paganism')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'paganism' ? '#10b981' : '#222', color: activeCategory === 'paganism' ? '#fff' : '#888' }}>
+          🌿 Paganism
+        </button>
       </div>
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', overflowX: 'auto' }}>
-          <button onClick={() => setActiveSubTab('tarot')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'tarot' ? '1px solid #a855f7' : '1px solid #333', background: activeSubTab === 'tarot' ? 'rgba(168, 85, 247, 0.1)' : 'transparent', color: activeSubTab === 'tarot' ? '#a855f7' : '#888', fontWeight: 'bold' }}>Tarot</button>
-          <button onClick={() => setActiveSubTab('wicca')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'wicca' ? '1px solid #10b981' : '1px solid #333', background: activeSubTab === 'wicca' ? 'rgba(16, 185, 129, 0.1)' : 'transparent', color: activeSubTab === 'wicca' ? '#10b981' : '#888', fontWeight: 'bold' }}>Wicca</button>
-          <button onClick={() => setActiveSubTab('paganism')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'paganism' ? '1px solid #f59e0b' : '1px solid #333', background: activeSubTab === 'paganism' ? 'rgba(245, 158, 11, 0.1)' : 'transparent', color: activeSubTab === 'paganism' ? '#f59e0b' : '#888', fontWeight: 'bold' }}>Paganism</button>
-          <button onClick={() => setActiveSubTab('entities')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'entities' ? '1px solid #ef4444' : '1px solid #333', background: activeSubTab === 'entities' ? 'rgba(239, 68, 68, 0.1)' : 'transparent', color: activeSubTab === 'entities' ? '#ef4444' : '#888', fontWeight: 'bold' }}>Entities & Lore</button>
-        </div>
 
-        {activeSubTab === 'tarot' && (
-          <div style={{ borderTop: '1px solid #222', paddingTop: '15px' }}>
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '10px', WebkitOverflowScrolling: 'touch' }}>
-              <button onClick={() => setActiveTarotTab('basics')} style={tertTabStyle('basics', activeTarotTab, '#a855f7')}>Basics</button>
-              <button onClick={() => setActiveTarotTab('interpretations')} style={tertTabStyle('interpretations', activeTarotTab, '#a855f7')}>Interpretations</button>
+        {/* START HERE / MANIFESTO */}
+        {activeCategory === 'starthere' && (
+          <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6', padding: '25px 20px' }}>
+            <h2 style={{ color: '#3b82f6', margin: '0 0 20px 0', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>Forward</h2>
+            
+            <div style={{ color: '#ccc', lineHeight: '1.7', fontSize: '0.95em', textAlign: 'left', marginBottom: '25px' }}>
+              <p style={{ marginBottom: '20px' }}>All information contained within this archive is individually researched and gained from public sources or other individuals respected in their craft or field.</p>
+              
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', borderLeft: '3px solid #ef4444', padding: '15px', borderRadius: '4px', marginBottom: '20px' }}>
+                <strong style={{ color: '#ef4444', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Disclaimer & Info</strong>
+                Always <strong>do your own research</strong>. The contents provided here are for educational, organizational, and informational purposes only. They do not constitute professional, legal, or medical advice. 
+              </div>
             </div>
-            {activeTarotTab === 'interpretations' ? (
-              tarotDeck.map((card, idx) => (
-                <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
-                  <div onClick={() => toggleExpand(card.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                    <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{card.name}</h4>
-                    <span style={{ color: '#a855f7', fontWeight: 'bold' }}>{expandedItem === card.name ? '−' : '+'}</span>
-                  </div>
-                  {expandedItem === card.name && (
-                    <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
-                      <div style={{ color: '#00ffff', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px' }}>Keywords</div>
-                      <div style={{ color: '#aaa', fontStyle: 'italic', marginBottom: '15px' }}>{card.keywords}</div>
-                      <div style={{ color: '#00ffff', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px' }}>Interpretation</div>
-                      <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{card.desc}</div>
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div style={cardStyle}><h3 style={{ color: '#a855f7', marginTop: 0 }}>Section Template</h3><p style={{ color: '#ccc' }}>Ready for additional notes...</p></div>
-            )}
+
+            <div style={{ borderTop: '1px dashed #333', paddingTop: '25px', marginTop: '15px', textAlign: 'center' }}>
+              <p style={{ color: '#888', fontStyle: 'italic', marginBottom: '25px', lineHeight: '1.6', padding: '0 10px' }}>
+                "Developed to provide information and knowledge to the masses when it is so hard to come by if you don't have the means."
+              </p>
+              
+              <div style={{ background: '#0a0a0a', padding: '20px', borderRadius: '8px', border: '1px solid #222' }}>
+                <h3 style={{ color: '#fff', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, fontSize: '1.1em', lineHeight: '1.8' }}>
+                  Sovereignty is privacy.<br/>
+                  <span style={{ color: '#3b82f6' }}>Take back your freedom.</span><br/>
+                  Stay sovereign.
+                </h3>
+              </div>
+            </div>
           </div>
         )}
 
-        {activeSubTab === 'wicca' && (
-          <div style={{ borderTop: '1px solid #222', paddingTop: '15px' }}>
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '10px', WebkitOverflowScrolling: 'touch' }}>
-              <button onClick={() => setActiveWiccaTab('lunar')} style={tertTabStyle('lunar', activeWiccaTab, '#10b981')}>Lunar Cycles & Esbats</button>
-              <button onClick={() => setActiveWiccaTab('elements')} style={tertTabStyle('elements', activeWiccaTab, '#10b981')}>The 5 Elements</button>
-              <button onClick={() => setActiveWiccaTab('rede')} style={tertTabStyle('rede', activeWiccaTab, '#10b981')}>Wiccan Rede</button>
-              <button onClick={() => setActiveWiccaTab('sabbats')} style={tertTabStyle('sabbats', activeWiccaTab, '#10b981')}>The Sabbats</button>
-            </div>
-
-            {activeWiccaTab === 'lunar' && lunarDB.map((moon, idx) => (
-              <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
-                <div onClick={() => toggleExpand(moon.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                  <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{moon.name}</h4>
-                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>{expandedItem === moon.name ? '−' : '+'}</span>
-                </div>
-                {expandedItem === moon.name && (
-                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
-                    <div style={{ color: '#00ffff', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px' }}>Energy / Archetype</div>
-                    <div style={{ color: '#aaa', fontStyle: 'italic', marginBottom: '15px' }}>{moon.type}</div>
-                    <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{moon.desc}</div>
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {activeWiccaTab === 'sabbats' && sabbatsDB.map((sab, idx) => (
-              <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
-                <div onClick={() => toggleExpand(sab.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                  <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{sab.name} <span style={{ color: '#888', fontSize: '0.8em', fontWeight: 'normal' }}>({sab.date})</span></h4>
-                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>{expandedItem === sab.name ? '−' : '+'}</span>
-                </div>
-                {expandedItem === sab.name && (
-                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
-                    <div style={{ display: 'inline-block', background: '#222', color: sab.type.includes('Fire') ? '#ef4444' : '#3b82f6', padding: '4px 10px', borderRadius: '4px', fontSize: '0.8em', fontWeight: 'bold', marginBottom: '15px' }}>{sab.type}</div>
-                    <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{sab.desc}</div>
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {activeWiccaTab === 'elements' && elementsDB.map((el, idx) => (
-              <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
-                <div onClick={() => toggleExpand(el.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                  <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{el.name}</h4>
-                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>{expandedItem === el.name ? '−' : '+'}</span>
-                </div>
-                {expandedItem === el.name && (
-                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
-                    <div style={{ color: '#aaa', fontStyle: 'italic', marginBottom: '15px' }}>Color: {el.color} | Direction: {el.direction}<br/>Properties: {el.props}</div>
-                    <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{el.desc}</div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeSubTab === 'paganism' && (
+        {/* PAGANISM PLACEHOLDER */}
+        {activeCategory === 'paganism' && (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: '#888' }}>
             <span style={{ fontSize: '3em', display: 'block', marginBottom: '15px' }}>🌿</span>
-            <h3 style={{ color: '#f59e0b', margin: '0 0 10px 0' }}>Paganism Database</h3>
+            <h3 style={{ color: '#10b981', margin: '0 0 10px 0' }}>Paganism Database</h3>
             <p>This category is primed and waiting for future module expansion.</p>
           </div>
         )}
 
-        {activeSubTab === 'entities' && (
-          <div style={{ borderTop: '1px solid #222', paddingTop: '15px' }}>
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '10px', WebkitOverflowScrolling: 'touch' }}>
-              <button onClick={() => setActiveEntityTab('goddesses')} style={tertTabStyle('goddesses', activeEntityTab, '#ef4444')}>Goddesses & Deities</button>
-              <button onClick={() => setActiveEntityTab('creatures')} style={tertTabStyle('creatures', activeEntityTab, '#ef4444')}>Threat Index</button>
+        {/* SUPERNATURAL CONTENT */}
+        {activeCategory === 'supernatural' && (
+          <>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', overflowX: 'auto' }}>
+              <button onClick={() => setActiveSubTab('tarot')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'tarot' ? '1px solid #a855f7' : '1px solid #333', background: activeSubTab === 'tarot' ? 'rgba(168, 85, 247, 0.1)' : 'transparent', color: activeSubTab === 'tarot' ? '#a855f7' : '#888', fontWeight: 'bold' }}>Tarot</button>
+              <button onClick={() => setActiveSubTab('wicca')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'wicca' ? '1px solid #10b981' : '1px solid #333', background: activeSubTab === 'wicca' ? 'rgba(16, 185, 129, 0.1)' : 'transparent', color: activeSubTab === 'wicca' ? '#10b981' : '#888', fontWeight: 'bold' }}>Wicca</button>
+              <button onClick={() => setActiveSubTab('entities')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'entities' ? '1px solid #ef4444' : '1px solid #333', background: activeSubTab === 'entities' ? 'rgba(239, 68, 68, 0.1)' : 'transparent', color: activeSubTab === 'entities' ? '#ef4444' : '#888', fontWeight: 'bold' }}>Entities & Lore</button>
             </div>
 
-            {activeEntityTab === 'goddesses' && goddessesDB.map((god, idx) => (
-              <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
-                <div onClick={() => toggleExpand(god.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                  <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{god.name}</h4>
-                  <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{expandedItem === god.name ? '−' : '+'}</span>
+            {activeSubTab === 'tarot' && (
+              <div style={{ borderTop: '1px solid #222', paddingTop: '15px' }}>
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '10px', WebkitOverflowScrolling: 'touch' }}>
+                  <button onClick={() => setActiveTarotTab('basics')} style={tertTabStyle('basics', activeTarotTab, '#a855f7')}>Basics</button>
+                  <button onClick={() => setActiveTarotTab('interpretations')} style={tertTabStyle('interpretations', activeTarotTab, '#a855f7')}>Interpretations</button>
                 </div>
-                {expandedItem === god.name && (
-                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
-                    <div style={{ display: 'inline-block', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '0.8em', fontWeight: 'bold', marginBottom: '15px' }}>Origin: {god.origin}</div>
-                    <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{god.desc}</div>
+                {activeTarotTab === 'interpretations' ? tarotDeck.map((card, idx) => (
+                  <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
+                    <div onClick={() => toggleExpand(card.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                      <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{card.name}</h4>
+                      <span style={{ color: '#a855f7', fontWeight: 'bold' }}>{expandedItem === card.name ? '−' : '+'}</span>
+                    </div>
+                    {expandedItem === card.name && (
+                      <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
+                        <div style={{ color: '#00ffff', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px' }}>Keywords</div>
+                        <div style={{ color: '#aaa', fontStyle: 'italic', marginBottom: '15px' }}>{card.keywords}</div>
+                        <div style={{ color: '#00ffff', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px' }}>Interpretation</div>
+                        <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{card.desc}</div>
+                      </div>
+                    )}
                   </div>
-                )}
+                )) : <div style={cardStyle}><h3 style={{ color: '#a855f7', marginTop: 0 }}>Section Template</h3><p style={{ color: '#ccc' }}>Ready for additional notes...</p></div>}
               </div>
-            ))}
+            )}
 
-            {activeEntityTab === 'creatures' && creaturesDB.map((creature, idx) => (
-              <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
-                <div onClick={() => toggleExpand(creature.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                  <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{creature.name}</h4>
-                  <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{expandedItem === creature.name ? '−' : '+'}</span>
+            {activeSubTab === 'wicca' && (
+              <div style={{ borderTop: '1px solid #222', paddingTop: '15px' }}>
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '10px', WebkitOverflowScrolling: 'touch' }}>
+                  <button onClick={() => setActiveWiccaTab('lunar')} style={tertTabStyle('lunar', activeWiccaTab, '#10b981')}>Lunar Cycles & Esbats</button>
+                  <button onClick={() => setActiveWiccaTab('elements')} style={tertTabStyle('elements', activeWiccaTab, '#10b981')}>The 5 Elements</button>
+                  <button onClick={() => setActiveWiccaTab('rede')} style={tertTabStyle('rede', activeWiccaTab, '#10b981')}>Wiccan Rede</button>
+                  <button onClick={() => setActiveWiccaTab('sabbats')} style={tertTabStyle('sabbats', activeWiccaTab, '#10b981')}>The Sabbats</button>
                 </div>
-                {expandedItem === creature.name && (
-                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}><span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', fontWeight: 'bold' }}>Threat: {creature.threat}</span></div>
-                    <div style={{ color: '#00ffff', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px' }}>Field Notes</div>
-                    <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{creature.desc}</div>
+
+                {activeWiccaTab === 'lunar' && lunarDB.map((moon, idx) => (
+                  <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
+                    <div onClick={() => toggleExpand(moon.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                      <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{moon.name}</h4>
+                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>{expandedItem === moon.name ? '−' : '+'}</span>
+                    </div>
+                    {expandedItem === moon.name && (
+                      <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
+                        <div style={{ color: '#00ffff', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px' }}>Energy / Archetype</div>
+                        <div style={{ color: '#aaa', fontStyle: 'italic', marginBottom: '15px' }}>{moon.type}</div>
+                        <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{moon.desc}</div>
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
+
+                {activeWiccaTab === 'sabbats' && sabbatsDB.map((sab, idx) => (
+                  <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
+                    <div onClick={() => toggleExpand(sab.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                      <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{sab.name} <span style={{ color: '#888', fontSize: '0.8em', fontWeight: 'normal' }}>({sab.date})</span></h4>
+                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>{expandedItem === sab.name ? '−' : '+'}</span>
+                    </div>
+                    {expandedItem === sab.name && (
+                      <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
+                        <div style={{ display: 'inline-block', background: '#222', color: sab.type.includes('Fire') ? '#ef4444' : '#3b82f6', padding: '4px 10px', borderRadius: '4px', fontSize: '0.8em', fontWeight: 'bold', marginBottom: '15px' }}>{sab.type}</div>
+                        <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{sab.desc}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {activeWiccaTab === 'elements' && elementsDB.map((el, idx) => (
+                  <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
+                    <div onClick={() => toggleExpand(el.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                      <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{el.name}</h4>
+                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>{expandedItem === el.name ? '−' : '+'}</span>
+                    </div>
+                    {expandedItem === el.name && (
+                      <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
+                        <div style={{ color: '#aaa', fontStyle: 'italic', marginBottom: '15px' }}>Color: {el.color} | Direction: {el.direction}<br/>Properties: {el.props}</div>
+                        <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{el.desc}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+
+            {activeSubTab === 'entities' && (
+              <div style={{ borderTop: '1px solid #222', paddingTop: '15px' }}>
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '10px', WebkitOverflowScrolling: 'touch' }}>
+                  <button onClick={() => setActiveEntityTab('goddesses')} style={tertTabStyle('goddesses', activeEntityTab, '#ef4444')}>Goddesses & Deities</button>
+                  <button onClick={() => setActiveEntityTab('creatures')} style={tertTabStyle('creatures', activeEntityTab, '#ef4444')}>Threat Index</button>
+                </div>
+
+                {activeEntityTab === 'goddesses' && goddessesDB.map((god, idx) => (
+                  <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                    <div onClick={() => toggleExpand(god.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                      <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{god.name}</h4>
+                      <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{expandedItem === god.name ? '−' : '+'}</span>
+                    </div>
+                    {expandedItem === god.name && (
+                      <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
+                        <div style={{ display: 'inline-block', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '4px 10px', borderRadius: '4px', fontSize: '0.8em', fontWeight: 'bold', marginBottom: '15px' }}>Origin: {god.origin}</div>
+                        <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{god.desc}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {activeEntityTab === 'creatures' && creaturesDB.map((creature, idx) => (
+                  <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                    <div onClick={() => toggleExpand(creature.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                      <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{creature.name}</h4>
+                      <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{expandedItem === creature.name ? '−' : '+'}</span>
+                    </div>
+                    {expandedItem === creature.name && (
+                      <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}><span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', fontWeight: 'bold' }}>Threat: {creature.threat}</span></div>
+                        <div style={{ color: '#00ffff', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px' }}>Field Notes</div>
+                        <div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{creature.desc}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </>
         )}
-
       </div>
     </div>
   );
