@@ -3,258 +3,346 @@ import { useNavigate } from 'react-router-dom';
 
 export default function BudgetEngine() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('calc'); // calc, history, info
-  const [showPreview, setShowPreview] = useState(false);
-  const [selectedHistory, setSelectedHistory] = useState(null); // For viewing past budgets
+  // Set Dashboard as the new landing page
+  const [activeTab, setActiveTab] = useState('dashboard'); 
 
   // --- STATE ---
-  const [incomes, setIncomes] = useState(() => JSON.parse(localStorage.getItem('fleet_incomes')) || [{ id: 1, name: 'Primary Paycheck', amount: '2500', date: '2026-08-01' }]);
-  const [bills, setBills] = useState(() => JSON.parse(localStorage.getItem('fleet_bills')) || [{ id: 1, name: 'New Bill', amount: '600', linkedIncome: '1', frequency: 'Monthly', date: '2026-08-06' }]);
-  const [budgetHistory, setBudgetHistory] = useState(() => JSON.parse(localStorage.getItem('fleet_budget_hist')) || []);
+  const [incomes, setIncomes] = useState(() => JSON.parse(localStorage.getItem('tot_incomes')) || []);
+  const [bills, setBills] = useState(() => JSON.parse(localStorage.getItem('tot_bills')) || []);
+  const [archives, setArchives] = useState(() => JSON.parse(localStorage.getItem('tot_budgetArchives')) || []);
 
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState(null);
+
+  // Income Form
+  const [incName, setIncName] = useState('');
+  const [incAmount, setIncAmount] = useState('');
+  const [incDate, setIncDate] = useState('');
+  const [incFreq, setIncFreq] = useState('None'); // None, Weekly, Bi-Weekly, Monthly
+
+  // Bill Form
+  const [billName, setBillName] = useState('');
+  const [billAmount, setBillAmount] = useState('');
+  const [billDate, setBillDate] = useState('');
+  const [billFreq, setBillFreq] = useState('None');
+  const [billLinkedInc, setBillLinkedInc] = useState('None');
+
+  // --- PERSISTENCE ---
   useEffect(() => {
-    localStorage.setItem('fleet_incomes', JSON.stringify(incomes));
-    localStorage.setItem('fleet_bills', JSON.stringify(bills));
-    localStorage.setItem('fleet_budget_hist', JSON.stringify(budgetHistory));
-  }, [incomes, bills, budgetHistory]);
+    localStorage.setItem('tot_incomes', JSON.stringify(incomes));
+    localStorage.setItem('tot_bills', JSON.stringify(bills));
+    localStorage.setItem('tot_budgetArchives', JSON.stringify(archives));
+  }, [incomes, bills, archives]);
 
-  // --- MATH ENGINE ---
-  const globalCash = incomes.reduce((sum, inc) => sum + (parseFloat(inc.amount) || 0), 0);
-  const totalBills = bills.reduce((sum, bill) => sum + (parseFloat(bill.amount) || 0), 0);
-  const unassignedCash = globalCash - totalBills;
+  // --- DASHBOARD CALCULATIONS ---
+  const totalPool = incomes.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+  const usedCash = bills.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+  const unassignedCash = totalPool - usedCash;
 
-  // --- OFFLINE CSV EXPORTER ---
-  const downloadCSV = (content, fileName) => {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const guideData = [
+    { title: "Zero-Based Budgeting", content: "Your Total Unassigned Cash should always be exactly $0.00. Every single dollar you earn needs a job before the month begins. If you have $200 left over, create a 'Savings' bill to zero it out." },
+    { title: "Paycheck Routing", content: "If all bills are due on the 1st, but you get paid on the 15th and 30th, you will overdraft. Use the dropdown in the Ledger to link specific bills to specific paychecks so you always know which check covers which liability." },
+    { title: "Calendar Syncing", content: "Set a frequency (Weekly, Bi-Weekly, Monthly) when adding an income or bill, then tap 'Sync'. This programs your phone's calendar to automatically repeat the event." }
+  ];
+
+  const toggleAccordion = (index) => setOpenAccordion(openAccordion === index ? null : index);
+
+  // --- ACTIONS ---
+  const addIncome = () => {
+    if (!incName || !incAmount) return alert("Name and Amount are required.");
+    setIncomes([...incomes, { id: Date.now(), name: incName, amount: parseFloat(incAmount), date: incDate, frequency: incFreq }]);
+    setIncName(''); setIncAmount(''); setIncDate(''); setIncFreq('None'); setShowIncomeModal(false);
+  };
+
+  const addBill = () => {
+    if (!billName || !billAmount) return alert("Name and Amount are required.");
+    setBills([...bills, { id: Date.now(), name: billName, amount: parseFloat(billAmount), dueDate: billDate, frequency: billFreq, linkedIncomeId: billLinkedInc }]);
+    setBillName(''); setBillAmount(''); setBillDate(''); setBillFreq('None'); setBillLinkedInc('None'); setShowBillModal(false);
+  };
+
+  const deleteItem = (id, type) => {
+    if (type === 'income') {
+      setIncomes(incomes.filter(i => i.id !== id));
+      // Unlink bills attached to this deleted income
+      setBills(bills.map(b => b.linkedIncomeId == id ? { ...b, linkedIncomeId: 'None' } : b));
+    } else {
+      setBills(bills.filter(b => b.id !== id));
+    }
+  };
+
+  // --- CALENDAR SYNC (WITH RECURRING LOGIC) ---
+  const syncToCalendar = (item, type) => {
+    const targetDate = item.date || item.dueDate;
+    if (!targetDate) return alert("Please set a date before syncing.");
+    
+    const dateObj = new Date(targetDate);
+    const formattedDate = dateObj.toISOString().split('T')[0].replace(/-/g, '');
+
+    let rrule = '';
+    if (item.frequency === 'Weekly') rrule = '\nRRULE:FREQ=WEEKLY';
+    if (item.frequency === 'Bi-Weekly') rrule = '\nRRULE:FREQ=WEEKLY;INTERVAL=2';
+    if (item.frequency === 'Monthly') rrule = '\nRRULE:FREQ=MONTHLY';
+
+    const summary = type === 'income' ? `Payday: ${item.name}` : `Bill Due: ${item.name}`;
+    const desc = type === 'income' ? `Expected Income: $${item.amount}` : `Bill Amount: $${item.amount}`;
+
+    const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nDTSTART;VALUE=DATE:${formattedDate}\nDTEND;VALUE=DATE:${formattedDate}${rrule}\nSUMMARY:${summary}\nDESCRIPTION:${desc}\nEND:VEVENT\nEND:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', fileName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `${type}_${item.name.replace(/\s+/g, '_')}.ics`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
-  const exportSingleBudget = (budget) => {
-    let csv = 'Type,Name,Amount,Frequency,Date,Linked_Income\n';
-    budget.incomes.forEach(i => { csv += `"INCOME","${i.name || 'Unnamed'}","${i.amount}","Single","${i.date}","N/A"\n`; });
-    budget.bills.forEach(b => {
-      const linked = budget.incomes.find(inc => inc.id.toString() === b.linkedIncome);
-      csv += `"BILL","${b.name || 'Unnamed'}","${b.amount}","${b.frequency}","${b.date}","${linked ? linked.name : 'Unlinked'}"\n`;
+  // --- ARCHIVING & EXPORT ---
+  const archiveBudget = () => {
+    if (totalPool === 0 && usedCash === 0) return alert("Nothing to archive.");
+    if (window.confirm("Archive this budget and wipe the current ledger clean for the next cycle?")) {
+      setArchives([{ id: Date.now(), date: new Date().toLocaleDateString(), totalPool, usedCash, unassignedCash, incomes, bills }, ...archives]);
+      setIncomes([]); setBills([]);
+    }
+  };
+
+  const getCSVString = () => {
+    let csv = "Type,Name,Amount,Date,Frequency,Linked Paycheck\n";
+    incomes.forEach(i => csv += `"Income","${i.name}","$${i.amount}","${i.date}","${i.frequency}","N/A"\n`);
+    bills.forEach(b => {
+      const linkedName = incomes.find(inc => inc.id == b.linkedIncomeId)?.name || 'None';
+      csv += `"Bill","${b.name}","$${b.amount}","${b.dueDate}","${b.frequency}","${linkedName}"\n`;
     });
-    downloadCSV(csv, `Budget_Archive_${budget.date.replace(/\//g, '-')}.csv`);
+    return csv;
   };
 
-  const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
-  const inputStyle = { background: '#111', border: 'none', borderBottom: '1px solid #333', color: '#fff', padding: '8px', outline: 'none', width: '100%' };
-
-  // --- HANDLERS ---
-  const addIncome = () => setIncomes([...incomes, { id: Date.now(), name: '', amount: '', date: '' }]);
-  const removeIncome = (id) => setIncomes(incomes.filter(i => i.id !== id));
-  const updateIncome = (id, field, value) => setIncomes(incomes.map(i => i.id === id ? { ...i, [field]: value } : i));
-
-  const addBill = () => setBills([...bills, { id: Date.now(), name: '', amount: '', linkedIncome: '', frequency: 'Monthly', date: '' }]);
-  const removeBill = (id) => setBills(bills.filter(b => b.id !== id));
-  const updateBill = (id, field, value) => setBills(bills.map(b => b.id === id ? { ...b, [field]: value } : b));
-
-  const saveAndArchiveBudget = () => {
-    const newArchive = { id: Date.now(), date: new Date().toLocaleDateString(), incomes, bills, globalCash, unassignedCash };
-    setBudgetHistory([newArchive, ...budgetHistory]);
-    setIncomes([]); setBills([]); setShowPreview(false); setActiveTab('history');
+  const downloadCSVFile = () => {
+    const blob = new Blob([getCSVString()], { type: 'text/csv;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `budget_export_${Date.now()}.csv`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
+
+  const shareCSV = async () => {
+    try {
+      const file = new File([getCSVString()], `budget_export_${Date.now()}.csv`, { type: 'text/csv' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Budget Ledger', text: 'Attached is your Budget CSV Export' });
+      } else {
+        window.open(`mailto:?subject=Budget Export&body=${encodeURIComponent("Attached is the requested data:\n\n" + getCSVString())}`);
+      }
+    } catch (err) { console.error("Share failed", err); }
+  };
+
+  const cardStyle = { background: 'rgba(17, 17, 17, 0.95)', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
+  const inputStyle = { background: '#000', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '6px', width: '100%', marginBottom: '15px', fontSize: '1em' };
+  const btnStyle = (bg, color) => ({ background: bg, color: color, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', width: '100%', fontSize: '1em' });
 
   return (
-    <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
-      <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-        <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
-        <h2 style={{ margin: 0, color: '#10b981', fontSize: '1.2em' }}>Budget Engine</h2>
+    <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', color: '#fff' }}>
+      <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.8)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
+          <h2 style={{ margin: 0, color: '#10b981', fontSize: '1.2em' }}>Budget Engine</h2>
+        </div>
       </header>
 
-      <div style={{ display: 'flex', gap: '8px', padding: '15px 15px 0 15px', overflowX: 'auto' }}>
-        <button onClick={() => setActiveTab('calc')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'calc' ? '#3b82f6' : '#222', color: activeTab === 'calc' ? '#fff' : '#888' }}>Ledger</button>
-        <button onClick={() => setActiveTab('history')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'history' ? '#f59e0b' : '#222', color: activeTab === 'history' ? '#000' : '#888' }}>History</button>
-        <button onClick={() => setActiveTab('info')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'info' ? '#10b981' : '#222', color: activeTab === 'info' ? '#fff' : '#888' }}>Guides</button>
+      <div style={{ display: 'flex', padding: '15px', gap: '8px', background: 'rgba(0,0,0,0.6)', overflowX: 'auto' }}>
+        <button onClick={() => setActiveTab('dashboard')} style={{ flex: '0 0 auto', padding: '12px 18px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'dashboard' ? '#3b82f6' : '#222', color: activeTab === 'dashboard' ? '#fff' : '#888' }}>Dashboard</button>
+        <button onClick={() => setActiveTab('ledger')} style={{ flex: '0 0 auto', padding: '12px 18px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'ledger' ? '#a855f7' : '#222', color: activeTab === 'ledger' ? '#fff' : '#888' }}>Ledger</button>
+        <button onClick={() => setActiveTab('history')} style={{ flex: '0 0 auto', padding: '12px 18px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'history' ? '#f59e0b' : '#222', color: activeTab === 'history' ? '#fff' : '#888' }}>History</button>
+        <button onClick={() => setActiveTab('guides')} style={{ flex: '0 0 auto', padding: '12px 18px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'guides' ? '#10b981' : '#222', color: activeTab === 'guides' ? '#000' : '#888' }}>Guides</button>
       </div>
 
-      <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
+      <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
         
-        {activeTab === 'calc' && (
+        {/* --- DASHBOARD TAB (THE NEW LANDING PAGE) --- */}
+        {activeTab === 'dashboard' && (
           <>
-            <div style={{ ...cardStyle, borderTop: '4px solid #10b981', textAlign: 'center' }}>
-                <h3 style={{ color: '#10b981', margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '1em' }}>Global Cash Pool</h3>
-                <div style={{ color: '#10b981', fontSize: '2.2em', fontWeight: 'bold', marginBottom: '20px' }}>
-                    <span style={{ fontSize: '0.8em' }}>$</span> {globalCash.toFixed(2)}
-                </div>
-                <div style={{ border: '1px solid #00ffff', borderRadius: '8px', padding: '15px' }}>
-                    <div style={{ color: '#888', textTransform: 'uppercase', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '5px' }}>Total Unassigned Cash</div>
-                    <div style={{ color: '#00ffff', fontSize: '1.5em', fontWeight: 'bold' }}>${unassignedCash.toFixed(2)}</div>
-                </div>
+            <div style={{ ...cardStyle, textAlign: 'center', border: '1px solid #a855f7', marginTop: '10px' }}>
+              <div style={{ color: '#a855f7', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Total Cash Pool</div>
+              <div style={{ color: '#fff', fontSize: '2.5em', fontWeight: 'bold' }}>${totalPool.toFixed(2)}</div>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                <button onClick={() => setShowPreview(true)} style={{ flex: 2, padding: '12px', background: '#0a0a0a', border: '1px solid #3b82f6', color: '#3b82f6', borderRadius: '8px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                    <span>🧾</span> Preview Ledgers
-                </button>
-                <button onClick={addIncome} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>+ Income</button>
-                <button onClick={addBill} style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>+ Bill</button>
+            <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
+              <div style={{ flex: 1, ...cardStyle, textAlign: 'center', border: '1px solid #ef4444', margin: 0 }}>
+                <div style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '5px' }}>Used Cash</div>
+                <div style={{ color: '#fff', fontSize: '1.6em', fontWeight: 'bold' }}>${usedCash.toFixed(2)}</div>
+              </div>
+              <div style={{ flex: 1, ...cardStyle, textAlign: 'center', border: `1px solid ${unassignedCash < 0 ? '#ef4444' : '#10b981'}`, margin: 0 }}>
+                <div style={{ color: unassignedCash < 0 ? '#ef4444' : '#10b981', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '5px' }}>Unassigned</div>
+                <div style={{ color: '#fff', fontSize: '1.6em', fontWeight: 'bold' }}>${unassignedCash.toFixed(2)}</div>
+              </div>
             </div>
-            <h3 style={{ color: '#10b981', margin: '0 0 15px 0', textTransform: 'uppercase', fontSize: '1em', textAlign: 'center' }}>Income Sources</h3>
-            {incomes.map(inc => (
-                <div key={inc.id} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
-                        <input type="text" value={inc.name} onChange={e => updateIncome(inc.id, 'name', e.target.value)} placeholder="Income Name" style={{ ...inputStyle, flex: 2, fontWeight: 'bold' }} />
-                        <span style={{ color: '#10b981', fontWeight: 'bold' }}>$</span>
-                        <input type="number" value={inc.amount} onChange={e => updateIncome(inc.id, 'amount', e.target.value)} placeholder="0.00" style={{ ...inputStyle, flex: 1 }} />
-                        <button onClick={() => removeIncome(inc.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.2em' }}>×</button>
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <input type="date" value={inc.date} onChange={e => updateIncome(inc.id, 'date', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
-                        <button style={{ background: '#10b981', color: '#000', border: 'none', borderRadius: '6px', padding: '0 15px', fontWeight: 'bold' }}>Sync</button>
-                    </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setShowIncomeModal(true)} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Income</button>
+              <button onClick={() => setShowBillModal(true)} style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Bill</button>
+            </div>
+            
+            <button onClick={() => setActiveTab('ledger')} style={{ width: '100%', marginTop: '15px', background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: '1px solid #3b82f6', padding: '15px', borderRadius: '8px', fontWeight: 'bold' }}>
+              View Detailed Ledger
+            </button>
+          </>
+        )}
+
+        {/* --- LEDGER TAB --- */}
+        {activeTab === 'ledger' && (
+          <>
+            <h3 style={{ color: '#a855f7', textAlign: 'center', textTransform: 'uppercase', margin: '20px 0 15px 0' }}>Income Sources</h3>
+            {incomes.length === 0 ? <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No income sources added.</p> : incomes.map(inc => (
+              <div key={inc.id} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.2em' }}>{inc.name}</h3>
+                    <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', color: '#10b981' }}>{inc.frequency}</span>
+                  </div>
+                  <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2em' }}>${inc.amount.toFixed(2)}</div>
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ccc', fontSize: '0.9em', borderTop: '1px dashed #333', paddingTop: '10px' }}>
+                  <span>{inc.date || 'No Date'}</span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => syncToCalendar(inc, 'income')} style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}>Sync 📅</button>
+                    <button onClick={() => deleteItem(inc.id, 'income')} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold', fontSize: '1.2em' }}>×</button>
+                  </div>
+                </div>
+              </div>
             ))}
 
-            <h3 style={{ color: '#10b981', margin: '25px 0 15px 0', textTransform: 'uppercase', fontSize: '1em', textAlign: 'center' }}>Bill Ledger</h3>
-            {bills.map(bill => (
-                <div key={bill.id} style={{ ...cardStyle, borderLeft: '4px solid #3b82f6' }}>
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
-                        <input type="text" value={bill.name} onChange={e => updateBill(bill.id, 'name', e.target.value)} placeholder="Bill Name" style={{ ...inputStyle, flex: 2, fontWeight: 'bold' }} />
-                        <span style={{ color: '#10b981', fontWeight: 'bold' }}>$</span>
-                        <input type="number" value={bill.amount} onChange={e => updateBill(bill.id, 'amount', e.target.value)} placeholder="0.00" style={{ ...inputStyle, flex: 1 }} />
-                        <button onClick={() => removeBill(bill.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '1.2em' }}>×</button>
+            <h3 style={{ color: '#a855f7', textAlign: 'center', textTransform: 'uppercase', margin: '30px 0 15px 0' }}>Bill Ledger</h3>
+            {bills.length === 0 ? <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No bills added.</p> : bills.map(bill => {
+              const linkedInc = incomes.find(i => i.id == bill.linkedIncomeId);
+              return (
+                <div key={bill.id} style={{ ...cardStyle, borderLeft: '4px solid #ef4444' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div>
+                      <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.2em' }}>{bill.name}</h3>
+                      <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', color: '#ef4444' }}>{bill.frequency}</span>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                        <select value={bill.linkedIncome} onChange={e => updateBill(bill.id, 'linkedIncome', e.target.value)} style={{ ...inputStyle, flex: 1, color: '#3b82f6' }}>
-                            <option value="">Select Income...</option>
-                            {incomes.map(i => <option key={i.id} value={i.id}>{i.name || 'Unnamed'}</option>)}
-                        </select>
-                        <select value={bill.frequency} onChange={e => updateBill(bill.id, 'frequency', e.target.value)} style={{ ...inputStyle, flex: 1 }}>
-                            <option value="Weekly">Weekly</option>
-                            <option value="Bi-Weekly">Bi-Weekly</option>
-                            <option value="Monthly">Monthly</option>
-                            <option value="Yearly">Yearly</option>
-                        </select>
+                    <div style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '1.2em' }}>${bill.amount.toFixed(2)}</div>
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ color: '#888', fontSize: '0.85em' }}>Route To:</span>
+                    <select 
+                      value={bill.linkedIncomeId} 
+                      onChange={(e) => setBills(bills.map(b => b.id === bill.id ? { ...b, linkedIncomeId: e.target.value } : b))}
+                      style={{ background: '#000', color: '#3b82f6', border: '1px solid #333', padding: '6px', borderRadius: '4px', flex: 1, fontSize: '0.9em' }}
+                    >
+                      <option value="None">None (Unassigned)</option>
+                      {incomes.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ccc', fontSize: '0.9em', borderTop: '1px dashed #333', paddingTop: '10px' }}>
+                    <span>Due: {bill.dueDate || 'No Date'}</span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => syncToCalendar(bill, 'bill')} style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}>Sync 📅</button>
+                      <button onClick={() => deleteItem(bill.id, 'bill')} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold', fontSize: '1.2em' }}>×</button>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <input type="date" value={bill.date} onChange={e => updateBill(bill.id, 'date', e.target.value)} style={{ ...inputStyle, flex: 1 }} />
-                        <button style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', padding: '0 15px', fontWeight: 'bold' }}>Sync</button>
-                    </div>
+                  </div>
                 </div>
+              );
+            })}
+          </>
+        )}
+
+        {/* --- HISTORY TAB --- */}
+        {activeTab === 'history' && (
+          <>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', marginTop: '10px' }}>
+              <button onClick={archiveBudget} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Archive Month</button>
+              <button onClick={() => setShowExportModal(true)} style={{ flex: 1, background: '#222', color: '#fff', border: '1px solid #3b82f6', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Export Logs</button>
+            </div>
+
+            <h3 style={{ color: '#f59e0b', textAlign: 'center', textTransform: 'uppercase', marginBottom: '15px' }}>Archived Budgets</h3>
+            {archives.length === 0 ? <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No archives saved.</p> : archives.map((arc, idx) => (
+              <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #f59e0b' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <strong style={{ color: '#fff' }}>Saved: {arc.date}</strong>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'center' }}>
+                  <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px' }}><div style={{ color: '#888', fontSize: '0.8em' }}>POOL</div><div style={{ color: '#10b981', fontWeight: 'bold' }}>${arc.totalPool.toFixed(2)}</div></div>
+                  <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px' }}><div style={{ color: '#888', fontSize: '0.8em' }}>USED</div><div style={{ color: '#ef4444', fontWeight: 'bold' }}>${arc.usedCash.toFixed(2)}</div></div>
+                </div>
+              </div>
             ))}
           </>
         )}
 
-        {activeTab === 'history' && (
-          <div style={{ borderTop: '4px solid #f59e0b', paddingTop: '10px' }}>
-            <h3 style={{ color: '#f59e0b', margin: '0 0 15px 0', textAlign: 'center', textTransform: 'uppercase' }}>Archived Budgets</h3>
-            {budgetHistory.length === 0 ? (
-              <div style={{ color: '#666', textAlign: 'center', fontStyle: 'italic', marginTop: '20px' }}>No archived budgets found.</div>
-            ) : (
-              budgetHistory.map(hist => (
-                <div key={hist.id} onClick={() => setSelectedHistory(hist)} style={{ ...cardStyle, borderLeft: '4px solid #f59e0b', cursor: 'pointer' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <strong style={{ color: '#fff', fontSize: '1.1em' }}>Saved: {hist.date}</strong>
-                    <span style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', fontWeight: 'bold' }}>View</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#aaa', fontSize: '0.9em' }}>
-                    <span>Pool: <span style={{ color: '#10b981' }}>${hist.globalCash.toFixed(2)}</span></span>
-                    <span>Unassigned: <span style={{ color: '#00ffff' }}>${hist.unassignedCash.toFixed(2)}</span></span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {activeTab === 'info' && (
-          <div style={{ ...cardStyle, borderTop: '4px solid #10b981' }}>
-            <h3 style={{ color: '#10b981', margin: '0 0 15px 0', textAlign: 'center' }}>📖 Budgeting Field Guide</h3>
-            <div style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
-              <h4 style={{ color: '#00ffff', margin: '0 0 5px 0', borderBottom: '1px solid #333', paddingBottom: '5px' }}>Zero-Based Budgeting</h4>
-              <p style={{ margin: '0 0 15px 0' }}>Your <strong>Total Unassigned Cash</strong> should always be exactly $0.00. Every single dollar you earn needs a job before the month begins. If you have $200 left over, create a "Savings" bill to zero it out.</p>
-              <h4 style={{ color: '#00ffff', margin: '0 0 5px 0', borderBottom: '1px solid #333', paddingBottom: '5px' }}>Paycheck Routing</h4>
-              <p style={{ margin: '0 0 15px 0' }}>If all bills are due on the 1st, but you get paid on the 15th and 30th, you will overdraft. Use the dropdown in the Ledger to link specific bills to specific paychecks so you always know which check covers which liability.</p>
-            </div>
+        {/* --- GUIDES TAB --- */}
+        {activeTab === 'guides' && (
+          <div style={{ paddingTop: '10px' }}>
+            <h3 style={{ color: '#10b981', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase', background: 'rgba(0,0,0,0.7)', padding: '10px', borderRadius: '8px' }}>Budgeting Field Guide</h3>
+            {guideData.map((item, idx) => (
+              <div key={idx} style={{ background: 'rgba(17, 17, 17, 0.95)', borderRadius: '8px', border: '1px solid #222', marginBottom: '10px', overflow: 'hidden' }}>
+                <button onClick={() => toggleAccordion(idx)} style={{ width: '100%', background: 'transparent', color: openAccordion === idx ? '#10b981' : '#fff', border: 'none', padding: '15px', textAlign: 'left', fontWeight: 'bold', fontSize: '1.05em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {item.title} <span style={{ color: '#888' }}>{openAccordion === idx ? '▼' : '▶'}</span>
+                </button>
+                {openAccordion === idx && (
+                  <div style={{ padding: '0 15px 15px 15px', color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>{item.content}</div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* ACTIVE BUDGET ROUTING PREVIEW MODAL */}
-      {showPreview && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '20px' }}>
-            <h2 style={{ color: '#10b981', margin: 0 }}>Routing Preview</h2>
-            <button onClick={() => setShowPreview(false)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
+      {/* --- ADD INCOME MODAL --- */}
+      {showIncomeModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, padding: '20px', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #10b981', paddingBottom: '15px', marginBottom: '20px' }}>
+            <h2 style={{ color: '#10b981', margin: 0, textTransform: 'uppercase' }}>Log Income</h2>
+            <button onClick={() => setShowIncomeModal(false)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
           </div>
-          
-          <button onClick={saveAndArchiveBudget} style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
-            💾 Save & Archive Budget
-          </button>
-
-          {incomes.map(inc => {
-            const linkedBills = bills.filter(b => b.linkedIncome === inc.id.toString());
-            const totalLinked = linkedBills.reduce((sum, b) => sum + (parseFloat(b.amount) || 0), 0);
-            const incAmt = parseFloat(inc.amount) || 0;
-            const remaining = incAmt - totalLinked;
-
-            return (
-              <div key={inc.id} style={{ background: '#111', borderRadius: '8px', borderLeft: '4px solid #10b981', padding: '15px', marginBottom: '15px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '10px' }}>
-                  <strong style={{ color: '#fff', fontSize: '1.1em' }}>{inc.name || 'Unnamed Check'}</strong>
-                  <strong style={{ color: '#10b981', fontSize: '1.1em' }}>${incAmt.toFixed(2)}</strong>
-                </div>
-                {linkedBills.map(b => (
-                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '6px', fontSize: '0.95em' }}>
-                    <span>{b.name || 'Unnamed Bill'}</span><span style={{ color: '#ef4444' }}>-${(parseFloat(b.amount) || 0).toFixed(2)}</span>
-                  </div>
-                ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0a0a0a', padding: '10px', borderRadius: '6px', marginTop: '10px' }}>
-                  <span style={{ color: '#aaa', textTransform: 'uppercase', fontSize: '0.85em', fontWeight: 'bold' }}>Remaining Balance</span>
-                  <strong style={{ color: remaining >= 0 ? '#00ffff' : '#ef4444', fontSize: '1.2em' }}>${remaining.toFixed(2)}</strong>
-                </div>
-              </div>
-            );
-          })}
+          <input type="text" placeholder="Source Name (e.g. Circle K)" value={incName} onChange={(e) => setIncName(e.target.value)} style={inputStyle} />
+          <input type="number" placeholder="Amount ($)" value={incAmount} onChange={(e) => setIncAmount(e.target.value)} style={inputStyle} />
+          <input type="date" value={incDate} onChange={(e) => setIncDate(e.target.value)} style={inputStyle} />
+          <label style={{ color: '#a855f7', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Recurring Frequency (For Calendar)</label>
+          <select value={incFreq} onChange={(e) => setIncFreq(e.target.value)} style={inputStyle}>
+            <option>None</option><option>Weekly</option><option>Bi-Weekly</option><option>Monthly</option>
+          </select>
+          <button onClick={addIncome} style={{ ...btnStyle('#10b981', '#000'), marginTop: '10px' }}>Save Income</button>
         </div>
       )}
 
-      {/* HISTORICAL BUDGET PREVIEW MODAL */}
-      {selectedHistory && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '20px' }}>
-            <h2 style={{ color: '#f59e0b', margin: 0 }}>Archived: {selectedHistory.date}</h2>
-            <button onClick={() => setSelectedHistory(null)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
+      {/* --- ADD BILL MODAL --- */}
+      {showBillModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, padding: '20px', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ef4444', paddingBottom: '15px', marginBottom: '20px' }}>
+            <h2 style={{ color: '#ef4444', margin: 0, textTransform: 'uppercase' }}>Log Bill</h2>
+            <button onClick={() => setShowBillModal(false)} style={{ background: '#222', color: '#fff', border: '1px solid #555', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
           </div>
-
-          <button onClick={() => exportSingleBudget(selectedHistory)} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
-            📥 Export to Excel (.CSV)
-          </button>
-
-          {selectedHistory.incomes.map(inc => {
-            const linkedBills = selectedHistory.bills.filter(b => b.linkedIncome === inc.id.toString());
-            const totalLinked = linkedBills.reduce((sum, b) => sum + (parseFloat(b.amount) || 0), 0);
-            const incAmt = parseFloat(inc.amount) || 0;
-            const remaining = incAmt - totalLinked;
-
-            return (
-              <div key={inc.id} style={{ background: '#111', borderRadius: '8px', borderLeft: '4px solid #10b981', padding: '15px', marginBottom: '15px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '10px' }}>
-                  <strong style={{ color: '#fff', fontSize: '1.1em' }}>{inc.name || 'Unnamed Check'}</strong>
-                  <strong style={{ color: '#10b981', fontSize: '1.1em' }}>${incAmt.toFixed(2)}</strong>
-                </div>
-                {linkedBills.map(b => (
-                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '6px', fontSize: '0.95em' }}>
-                    <span>{b.name || 'Unnamed Bill'}</span><span style={{ color: '#ef4444' }}>-${(parseFloat(b.amount) || 0).toFixed(2)}</span>
-                  </div>
-                ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0a0a0a', padding: '10px', borderRadius: '6px', marginTop: '10px' }}>
-                  <span style={{ color: '#aaa', textTransform: 'uppercase', fontSize: '0.85em', fontWeight: 'bold' }}>Remaining Balance</span>
-                  <strong style={{ color: remaining >= 0 ? '#00ffff' : '#ef4444', fontSize: '1.2em' }}>${remaining.toFixed(2)}</strong>
-                </div>
-              </div>
-            );
-          })}
+          <input type="text" placeholder="Bill Name (e.g. Rent)" value={billName} onChange={(e) => setBillName(e.target.value)} style={inputStyle} />
+          <input type="number" placeholder="Amount ($)" value={billAmount} onChange={(e) => setBillAmount(e.target.value)} style={inputStyle} />
+          <input type="date" value={billDate} onChange={(e) => setBillDate(e.target.value)} style={inputStyle} />
+          <label style={{ color: '#a855f7', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Recurring Frequency (For Calendar)</label>
+          <select value={billFreq} onChange={(e) => setBillFreq(e.target.value)} style={inputStyle}>
+            <option>None</option><option>Weekly</option><option>Bi-Weekly</option><option>Monthly</option>
+          </select>
+          <label style={{ color: '#3b82f6', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Route to Paycheck</label>
+          <select value={billLinkedInc} onChange={(e) => setBillLinkedInc(e.target.value)} style={inputStyle}>
+            <option value="None">None (Unassigned)</option>
+            {incomes.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+          </select>
+          <button onClick={addBill} style={{ ...btnStyle('#ef4444', '#fff'), marginTop: '10px' }}>Save Bill</button>
         </div>
       )}
+
+      {/* --- EXPORT CONTROL MODAL --- */}
+      {showExportModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#111', padding: '25px', borderRadius: '12px', border: '1px solid #3b82f6', width: '100%' }}>
+            <h2 style={{ color: '#3b82f6', marginTop: 0, textAlign: 'center', textTransform: 'uppercase' }}>Export Controls</h2>
+            <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '25px', fontSize: '0.9em' }}>Select how you want to export your encrypted budget data.</p>
+            <button onClick={downloadCSVFile} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}>📥 Download .CSV File</button>
+            <button onClick={shareCSV} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '25px' }}>📤 Native Share / Email</button>
+            <button onClick={() => setShowExportModal(false)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
