@@ -9,10 +9,9 @@ export default function LearningHub() {
   const [activeSubTab, setActiveSubTab] = useState('wicca');
   const [activeTarotTab, setActiveTarotTab] = useState('basics');
   const [activeWiccaTab, setActiveWiccaTab] = useState('lunar');
-  const [activeEntityTab, setActiveEntityTab] = useState('goddesses');
   
   // School & Quiz State
-  const [activeGrade, setActiveGrade] = useState('K');
+  const [activeGrade, setActiveGrade] = useState('1st');
   const [expandedItem, setExpandedItem] = useState(null);
   
   const [quizActive, setQuizActive] = useState(false);
@@ -20,13 +19,12 @@ export default function LearningHub() {
   const [score, setScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
 
-  const gradesList = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', 'College'];
+  const gradesList = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', 'GED / College'];
 
   // --- SUPERNATURAL DATABASES ---
   const tarotDeck = [
-    { name: '0 - The Fool', keywords: 'New beginnings, spontaneity, blind faith', desc: 'Represents a leap into the unknown. A reminder to embrace chaos and trust the journey without knowing the destination.' },
-    { name: 'I - The Magician', keywords: 'Willpower, manifestation, resourcefulness', desc: 'You have the tools and the power to manipulate your reality. Action and concentration are required to bridge the spiritual and physical.' },
-    { name: 'XIII - Death', keywords: 'Transformation, endings, transition', desc: 'Rarely means physical death. It signifies the absolute end of a cycle, forcing a clearing of the old to make way for the new.' }
+    { name: '0 - The Fool', keywords: 'New beginnings, spontaneity, blind faith', desc: 'Represents a leap into the unknown. A reminder to embrace chaos and trust the journey.' },
+    { name: 'I - The Magician', keywords: 'Willpower, manifestation, resourcefulness', desc: 'You have the tools and the power to manipulate your reality.' }
   ];
 
   const elementsDB = [
@@ -37,22 +35,13 @@ export default function LearningHub() {
   ];
 
   const sabbatsDB = [
-    { name: 'Samhain', date: 'Oct 31st', type: 'Greater Sabbat / Fire Festival', desc: '(Pronounced Sowin). Marks the pagan New Year, Halloween or All Hallows Eve. Was the final harvest for our ancestors.' },
+    { name: 'Samhain', date: 'Oct 31st', type: 'Greater Sabbat / Fire Festival', desc: '(Pronounced Sowin). Marks the pagan New Year, Halloween or All Hallows Eve.' },
     { name: 'Yule', date: 'Dec 21st or 22nd', type: 'Lesser Sabbat / Solar Festival', desc: 'Winter Solstice. Shortest day of the year. Celebrated as the rebirth of the sun.' }
   ];
 
   const lunarDB = [
     { name: 'The Triple Goddess', type: 'Archetypes', desc: 'The Maiden (New/Waxing Moon), The Mother (Full Moon), The Crone (Waning/Dark Moon).' },
     { name: 'Full Moon', type: 'Potent Power', desc: 'Most potent time to do any magickal work. Invoking, protecting, or healing.' }
-  ];
-
-  const goddessesDB = [
-    { name: 'Hathor', origin: 'Egyptian', desc: 'Helps you to your inner light, shows you how truly beautiful you are.' },
-    { name: 'Lilith', origin: 'Mesopotamian / Abrahamic', desc: 'Adam\'s first wife. Helps you discover your dark and wild side.' }
-  ];
-
-  const creaturesDB = [
-    { name: 'Hellspawn / High Demons', threat: 'Extreme', desc: 'Entities originating from infernal realms. They frequently utilize necroplasmic energy or celestial pacts.' }
   ];
 
   // --- SCHOOL CURRICULUM & QUIZ DATABASES ---
@@ -76,25 +65,52 @@ export default function LearningHub() {
         { topic: 'Time & Days', content: 'There are 7 days in a week: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday.' }
       ]
     },
-    '1st': { math: [{topic:'Notice', content:'Module currently under construction.'}], science: [], language: [], history: [] },
-    '2nd': { math: [{topic:'Notice', content:'Module currently under construction.'}], science: [], language: [], history: [] },
-    '3rd': { math: [{topic:'Notice', content:'Module currently under construction.'}], science: [], language: [], history: [] }
+    '1st': { 
+      math: [
+        { topic: 'Addition & Subtraction (0-20)', content: 'Adding is combining numbers (8 + 4 = 12). Subtraction is taking away (15 - 5 = 10).' },
+        { topic: 'Place Value', content: 'Numbers are made of Tens and Ones. In the number 34, there are 3 Tens and 4 Ones.' },
+        { topic: 'Telling Time', content: 'The short hand is the Hour, the long hand is the Minute. There are 60 minutes in 1 hour.' }
+      ],
+      science: [
+        { topic: 'Plant Life Cycles', content: 'Plants start as a Seed, grow roots, sprout into a Seedling, and become an Adult Plant with flowers.' },
+        { topic: 'Light & Sound', content: 'Light from the sun helps us see. Sound is made by vibrations that travel to our ears.' },
+        { topic: 'Sky Patterns', content: 'The Sun gives us light and warmth during the day. The Moon and stars are visible at night.' }
+      ],
+      language: [
+        { topic: 'Sentences & Punctuation', content: 'A sentence always starts with a Capital Letter and ends with punctuation like a period (.) or question mark (?).' },
+        { topic: 'Nouns & Verbs', content: 'A Noun is a person, place, or thing (Dog, School, Apple). A Verb is an action word (Run, Jump, Read).' }
+      ],
+      history: [
+        { topic: 'Past vs. Present', content: 'The Past is what happened before (long ago, people rode horses). The Present is happening now (we drive cars).' },
+        { topic: 'Maps & Globes', content: 'A map is a flat picture of a place. A globe is a round model of the whole Earth.' }
+      ]
+    },
+    '2nd': { math: [{topic:'Notice', content:'Module currently under construction.'}], science: [], language: [], history: [] }
   };
 
-  const kQuiz = [
-    { q: 'Which shape has exactly 3 sides?', options: ['Circle', 'Square', 'Triangle', 'Rectangle'], answer: 'Triangle' },
-    { q: 'What is 1 + 1?', options: ['1', '2', '3', '11'], answer: '2' },
-    { q: 'Which body part do we use for the sense of Smell?', options: ['Ears', 'Hands', 'Eyes', 'Nose'], answer: 'Nose' },
-    { q: 'Which of these is a Living thing?', options: ['A Rock', 'A Toy Car', 'A Tree', 'A Pencil'], answer: 'A Tree' },
-    { q: 'How many days are in a week?', options: ['5', '7', '10', '12'], answer: '7' }
-  ];
+  const quizzes = {
+    'K': [
+      { q: 'Which shape has exactly 3 sides?', options: ['Circle', 'Square', 'Triangle', 'Rectangle'], answer: 'Triangle' },
+      { q: 'What is 1 + 1?', options: ['1', '2', '3', '11'], answer: '2' },
+      { q: 'Which body part do we use for the sense of Smell?', options: ['Ears', 'Hands', 'Eyes', 'Nose'], answer: 'Nose' },
+      { q: 'Which of these is a Living thing?', options: ['A Rock', 'A Toy Car', 'A Tree', 'A Pencil'], answer: 'A Tree' },
+      { q: 'How many days are in a week?', options: ['5', '7', '10', '12'], answer: '7' }
+    ],
+    '1st': [
+      { q: 'How many Tens are in the number 42?', options: ['2', '4', '6', '42'], answer: '4' },
+      { q: 'What goes at the end of a regular sentence?', options: ['A Capital Letter', 'A Number', 'A Period (.)', 'A Noun'], answer: 'A Period (.)' },
+      { q: 'What is 12 - 4?', options: ['8', '16', '6', '9'], answer: '8' },
+      { q: 'Which word is a Verb (an action word)?', options: ['Apple', 'Run', 'School', 'Blue'], answer: 'Run' },
+      { q: 'What does a plant start as before it grows?', options: ['A Flower', 'A Leaf', 'A Seed', 'A Tree'], answer: 'A Seed' }
+    ]
+  };
 
   // --- ACTIONS ---
   const toggleExpand = (name) => setExpandedItem(expandedItem === name ? null : name);
 
   const handleAnswer = (opt, correct) => {
     if (opt === correct) setScore(s => s + 1);
-    if (currentQ < kQuiz.length - 1) {
+    if (currentQ < quizzes[activeGrade].length - 1) {
       setCurrentQ(q => q + 1);
     } else {
       setShowResults(true);
@@ -166,7 +182,7 @@ export default function LearningHub() {
             {schoolCurriculum[activeGrade] ? (
               <div style={{ ...cardStyle, borderLeft: '4px solid #f59e0b', padding: '0' }}>
                 <div style={{ background: '#f59e0b', color: '#000', padding: '15px', borderRadius: '10px 10px 0 0', fontWeight: 'bold', fontSize: '1.1em', textTransform: 'uppercase', textAlign: 'center' }}>
-                  Grade {activeGrade} Reference Books
+                  Grade {activeGrade} Curriculum
                 </div>
 
                 <div style={{ padding: '20px' }}>
@@ -186,9 +202,9 @@ export default function LearningHub() {
                     )
                   ))}
                   
-                  {activeGrade === 'K' && (
+                  {quizzes[activeGrade] && (
                     <button onClick={() => setQuizActive(true)} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginTop: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
-                      📝 Take Grade K Final Exam
+                      📝 Take Grade {activeGrade} Final Exam
                     </button>
                   )}
                 </div>
@@ -200,34 +216,34 @@ export default function LearningHub() {
         )}
 
         {/* QUIZ MODAL */}
-        {quizActive && (
+        {quizActive && quizzes[activeGrade] && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #f59e0b', paddingBottom: '15px', marginBottom: '20px' }}>
-              <h2 style={{ color: '#f59e0b', margin: 0, textTransform: 'uppercase' }}>Final Exam</h2>
+              <h2 style={{ color: '#f59e0b', margin: 0, textTransform: 'uppercase' }}>{activeGrade} Exam</h2>
               <button onClick={resetQuiz} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Exit</button>
             </div>
 
             {!showResults ? (
               <div style={{ background: '#111', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
-                <div style={{ color: '#888', fontWeight: 'bold', marginBottom: '15px', textTransform: 'uppercase' }}>Question {currentQ + 1} of {kQuiz.length}</div>
-                <h3 style={{ color: '#fff', margin: '0 0 20px 0', fontSize: '1.2em', lineHeight: '1.4' }}>{kQuiz[currentQ].q}</h3>
+                <div style={{ color: '#888', fontWeight: 'bold', marginBottom: '15px', textTransform: 'uppercase' }}>Question {currentQ + 1} of {quizzes[activeGrade].length}</div>
+                <h3 style={{ color: '#fff', margin: '0 0 20px 0', fontSize: '1.2em', lineHeight: '1.4' }}>{quizzes[activeGrade][currentQ].q}</h3>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {kQuiz[currentQ].options.map((opt, idx) => (
-                    <button key={idx} onClick={() => handleAnswer(opt, kQuiz[currentQ].answer)} style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '15px', borderRadius: '8px', fontSize: '1.05em', textAlign: 'left', fontWeight: 'bold' }}>
+                  {quizzes[activeGrade][currentQ].options.map((opt, idx) => (
+                    <button key={idx} onClick={() => handleAnswer(opt, quizzes[activeGrade][currentQ].answer)} style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '15px', borderRadius: '8px', fontSize: '1.05em', textAlign: 'left', fontWeight: 'bold' }}>
                       {opt}
                     </button>
                   ))}
                 </div>
               </div>
             ) : (
-              <div style={{ background: '#111', padding: '30px 20px', borderRadius: '12px', border: `2px solid ${score >= 4 ? '#10b981' : '#ef4444'}`, textAlign: 'center' }}>
-                <h2 style={{ color: score >= 4 ? '#10b981' : '#ef4444', margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '2em' }}>
-                  {score >= 4 ? 'PASSED!' : 'FAILED'}
+              <div style={{ background: '#111', padding: '30px 20px', borderRadius: '12px', border: `2px solid ${(score / quizzes[activeGrade].length) >= 0.8 ? '#10b981' : '#ef4444'}`, textAlign: 'center' }}>
+                <h2 style={{ color: (score / quizzes[activeGrade].length) >= 0.8 ? '#10b981' : '#ef4444', margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '2em' }}>
+                  {(score / quizzes[activeGrade].length) >= 0.8 ? 'PASSED!' : 'FAILED'}
                 </h2>
-                <div style={{ color: '#fff', fontSize: '1.2em', marginBottom: '20px' }}>You scored {score} out of {kQuiz.length}.</div>
+                <div style={{ color: '#fff', fontSize: '1.2em', marginBottom: '20px' }}>You scored {score} out of {quizzes[activeGrade].length}.</div>
                 <p style={{ color: '#ccc', marginBottom: '30px' }}>
-                  {score >= 4 ? 'Great job! You have mastered the Grade K curriculum.' : 'Please review the reference books and try the exam again.'}
+                  {(score / quizzes[activeGrade].length) >= 0.8 ? `Great job! You have mastered the Grade ${activeGrade} curriculum.` : 'Please review the reference books and try the exam again.'}
                 </p>
                 <button onClick={resetQuiz} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '15px 30px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>
                   Return to Books
