@@ -5,12 +5,18 @@ export default function ChronosHub() {
   const navigate = useNavigate();
   const [activeMainTab, setActiveMainTab] = useState('hos'); 
 
-  // --- HOS LOGS STATE ---
+  // --- HOS STATE (TIMESTAMP DRIVEN) ---
+  const [shiftStart, setShiftStart] = useState(() => parseInt(localStorage.getItem('hos_shiftStart')) || null);
+  const [accumulatedDriveSecs, setAccumulatedDriveSecs] = useState(() => parseInt(localStorage.getItem('hos_driveSecs')) || 0);
+  const [driveStart, setDriveStart] = useState(() => parseInt(localStorage.getItem('hos_driveStart')) || null);
+  
+  const [isShiftActive, setIsShiftActive] = useState(() => localStorage.getItem('hos_isShiftActive') === 'true');
+  const [isDriving, setIsDriving] = useState(() => localStorage.getItem('hos_isDriving') === 'true');
+  
   const [shiftSeconds, setShiftSeconds] = useState(14 * 3600);
   const [driveSeconds, setDriveSeconds] = useState(11 * 3600);
-  const [isShiftActive, setIsShiftActive] = useState(false);
-  const [isDriving, setIsDriving] = useState(false);
-  const [hosLogs, setHosLogs] = useState([]);
+
+  const [hosLogs, setHosLogs] = useState(() => JSON.parse(localStorage.getItem('hos_logs')) || []);
   const [logLocation, setLogLocation] = useState('');
   const [logNotes, setLogNotes] = useState('');
   const [showHosModal, setShowHosModal] = useState(false);
@@ -30,32 +36,59 @@ export default function ChronosHub() {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [receiptTab, setReceiptTab] = useState('customer');
 
-  // --- ARCHIVE STATE ---
-  const [dotArchives, setDotArchives] = useState([]);
-  const [invoiceArchives, setInvoiceArchives] = useState([]);
+  const [dotArchives, setDotArchives] = useState(() => JSON.parse(localStorage.getItem('hos_dotArchives')) || []);
+  const [invoiceArchives, setInvoiceArchives] = useState(() => JSON.parse(localStorage.getItem('hos_invoiceArchives')) || []);
 
-  // --- MASTER TIMER LOGIC ---
+  // --- PERSISTENCE EFFECT ---
+  useEffect(() => {
+    localStorage.setItem('hos_isShiftActive', isShiftActive);
+    localStorage.setItem('hos_isDriving', isDriving);
+    localStorage.setItem('hos_shiftStart', shiftStart || '');
+    localStorage.setItem('hos_driveSecs', accumulatedDriveSecs);
+    localStorage.setItem('hos_driveStart', driveStart || '');
+    localStorage.setItem('hos_logs', JSON.stringify(hosLogs));
+    localStorage.setItem('hos_dotArchives', JSON.stringify(dotArchives));
+    localStorage.setItem('hos_invoiceArchives', JSON.stringify(invoiceArchives));
+  }, [isShiftActive, isDriving, shiftStart, accumulatedDriveSecs, driveStart, hosLogs, dotArchives, invoiceArchives]);
+
+  // --- MASTER TIMESTAMP CLOCK ENGINE ---
   useEffect(() => {
     let interval;
-    if (isShiftActive) {
+    if (isShiftActive && shiftStart) {
       interval = setInterval(() => {
-        setShiftSeconds(prevShift => {
-          const nextShift = prevShift - 1;
-          setDriveSeconds(prevDrive => {
-            let nextDrive = isDriving ? prevDrive - 1 : prevDrive;
-            if (nextShift < nextDrive) nextDrive = nextShift; // Drive cannot exceed Shift
-            return Math.max(0, nextDrive);
-          });
-          return Math.max(0, nextShift);
-        });
+        const now = Date.now();
+        
+        // 14-Hour Shift Clock Calculation based on absolute elapsed time
+        const elapsedShiftSecs = Math.floor((now - shiftStart) / 1000);
+        const remainingShift = Math.max(0, (14 * 3600) - elapsedShiftSecs);
+        setShiftSeconds(remainingShift);
 
+        // 11-Hour Drive Clock Calculation
+        let currentDriveTotal = accumulatedDriveSecs;
+        if (isDriving && driveStart) {
+          currentDriveTotal += Math.floor((now - driveStart) / 1000);
+        }
+        const remainingDrive = Math.max(0, (11 * 3600) - currentDriveTotal);
+
+        // DOT RULE: Drive clock cannot exceed remaining shift time
+        const masterDrive = Math.min(remainingDrive, remainingShift);
+        setDriveSeconds(masterDrive);
+
+        // Auto-end shift if 14 hours expire
+        if (remainingShift === 0) {
+          setIsShiftActive(false);
+          setIsDriving(false);
+          addHosLog('14-Hour Shift Expired', 'OFF DUTY');
+        }
+
+        // Tick Crew Timers
         setCrew(prevCrew => prevCrew.map(c => 
           c.isActive ? { ...c, elapsed: c.elapsed + 1 } : c
         ));
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isShiftActive, isDriving]);
+  }, [isShiftActive, shiftStart, isDriving, driveStart, accumulatedDriveSecs]);
 
   const formatTime = (totalSeconds) => {
     const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
@@ -69,7 +102,7 @@ export default function ChronosHub() {
     let minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
-    hours = hours ? hours : 12; 
+    hours = hours ? 12 : hours; 
     minutes = minutes < 10 ? '0' + minutes : minutes;
     return `${hours}:${minutes} ${ampm}`;
   };
@@ -83,20 +116,36 @@ export default function ChronosHub() {
 
   const toggleShift = () => {
     if (!isShiftActive) {
+      const now = Date.now();
+      setShiftStart(now);
+      setAccumulatedDriveSecs(0);
+      setDriveStart(null);
       setIsShiftActive(true);
       addHosLog('Shift Started', 'ON DUTY');
     } else {
-      setIsShiftActive(false); setIsDriving(false);
+      if (isDriving && driveStart) {
+        setAccumulatedDriveSecs(prev => prev + Math.floor((Date.now() - driveStart) / 1000));
+      }
+      setIsShiftActive(false); 
+      setIsDriving(false);
+      setShiftStart(null);
+      setDriveStart(null);
       addHosLog('Shift Ended', 'OFF DUTY');
     }
   };
 
   const toggleDrive = () => {
     if (!isShiftActive) return alert("Start shift first.");
+    const now = Date.now();
     if (!isDriving) {
+      setDriveStart(now);
       setIsDriving(true);
       addHosLog('Started Driving', 'DRIVING');
     } else {
+      if (driveStart) {
+        setAccumulatedDriveSecs(prev => prev + Math.floor((now - driveStart) / 1000));
+      }
+      setDriveStart(null);
       setIsDriving(false);
       addHosLog('Stopped Driving', 'ON DUTY (Not Driving)');
     }
@@ -104,6 +153,11 @@ export default function ChronosHub() {
 
   const takeBreak = (mins) => {
     if (!isShiftActive) return alert("Start shift first.");
+    const now = Date.now();
+    if (isDriving && driveStart) {
+      setAccumulatedDriveSecs(prev => prev + Math.floor((now - driveStart) / 1000));
+      setDriveStart(null);
+    }
     setIsDriving(false);
     addHosLog(`Started ${mins} Min Break`, 'OFF DUTY');
   };
@@ -127,12 +181,10 @@ export default function ChronosHub() {
     setCrew(crew.map(c => ({ ...c, isActive: !anyActive })));
   };
 
-  // --- CALCULATIONS (FIXED) ---
   const totalMaterials = materials.reduce((acc, m) => acc + (m.cost * m.qty), 0);
   const totalCrewPayout = crew.reduce((acc, c) => acc + ((c.elapsed / 3600) * c.rate), 0);
   const grossBillable = (parseFloat(fixedFee) || 0) + totalMaterials + totalCrewPayout - (parseFloat(discount) || 0);
 
-  // --- ARCHIVING & EXPORTING ---
   const archiveDOT = () => {
     if (hosLogs.length === 0) return alert("No logs to save.");
     setDotArchives([{ date: new Date().toLocaleDateString(), logs: hosLogs }, ...dotArchives]);
@@ -167,7 +219,6 @@ export default function ChronosHub() {
     document.body.removeChild(link);
   };
 
-  // --- STYLES ---
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
   const inputStyle = { background: '#000', color: '#fff', border: '1px solid #333', padding: '10px', borderRadius: '6px', width: '100%' };
   const btnStyle = (bg, color) => ({ background: bg, color: color, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', width: '100%', fontSize: '1em' });
@@ -190,7 +241,6 @@ export default function ChronosHub() {
 
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
         
-        {/* --- HOS LOGS VIEW --- */}
         {activeMainTab === 'hos' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
@@ -231,7 +281,6 @@ export default function ChronosHub() {
           </>
         )}
 
-        {/* --- CONTRACTOR VIEW --- */}
         {activeMainTab === 'contractor' && (
           <>
             <div style={{ ...cardStyle, textAlign: 'center', borderTop: '4px solid #3b82f6' }}>
@@ -299,7 +348,6 @@ export default function ChronosHub() {
           </>
         )}
 
-        {/* --- HISTORY VIEW --- */}
         {activeMainTab === 'history' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
@@ -333,7 +381,6 @@ export default function ChronosHub() {
         )}
       </div>
 
-      {/* --- HOS DAILY LOG MODAL --- */}
       {showHosModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#fff', color: '#000', zIndex: 100, padding: '15px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #222', paddingBottom: '10px', marginBottom: '15px' }}>
@@ -363,7 +410,6 @@ export default function ChronosHub() {
         </div>
       )}
 
-      {/* --- RECEIPT ENGINE MODAL --- */}
       {showReceiptModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100, padding: '15px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #222', paddingBottom: '10px', marginBottom: '15px' }}>
@@ -376,7 +422,13 @@ export default function ChronosHub() {
             <button onClick={() => setReceiptTab('operator')} style={{ flex: 1, background: receiptTab === 'operator' ? '#3b82f6' : '#222', color: receiptTab === 'operator' ? '#fff' : '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Operator View</button>
           </div>
 
-          <button onClick={archiveInvoice} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>💾 Archive Job</button>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <button onClick={archiveInvoice} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Archive Job</button>
+            <button onClick={() => {
+              const emailBody = encodeURIComponent(`Invoice Summary:\nFixed Fee: $${fixedFee}\nMaterials: $${totalMaterials.toFixed(2)}\nLabor: $${totalCrewPayout.toFixed(2)}\nTotal: $${grossBillable.toFixed(2)}`);
+              window.open(`mailto:?subject=Job Invoice&body=${emailBody}`);
+            }} style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📧 Email Invoice</button>
+          </div>
 
           {receiptTab === 'customer' ? (
             <div style={{ background: '#fff', color: '#000', padding: '20px', borderRadius: '8px' }}>
