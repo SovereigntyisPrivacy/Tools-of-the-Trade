@@ -8,8 +8,10 @@ export default function AssetLedger() {
   // --- STATE ---
   const [assets, setAssets] = useState(() => JSON.parse(localStorage.getItem('tot_assets')) || []);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [openAccordion, setOpenAccordion] = useState(null);
 
+  // Form State
   const [assetName, setAssetName] = useState('');
   const [assetPrice, setAssetPrice] = useState('');
   const [assetDate, setAssetDate] = useState(new Date().toISOString().split('T')[0]);
@@ -17,6 +19,7 @@ export default function AssetLedger() {
   const [assetStatus, setAssetStatus] = useState('Deployed');
   const [assetCategory, setAssetCategory] = useState('Tools & Hardware');
   const [assetSn, setAssetSn] = useState('');
+  const [assetPhoto, setAssetPhoto] = useState(null); // Holds the Base64 image
 
   // --- PERSISTENCE ---
   useEffect(() => {
@@ -27,19 +30,42 @@ export default function AssetLedger() {
 
   const guideData = [
     { title: "📌 What is the Asset Ledger?", content: "This tool tracks mission-critical gear, vehicles, and electronics. Logging serial numbers, prices, and warranties creates an immutable record for insurance claims, tax depreciation, and maintenance." },
-    { title: "⚠️ Disclaimers & Privacy", content: "All data is stored locally on your device. It is not uploaded to any cloud server. Export your CSV regularly. This tool does not constitute financial or legal advice." },
-    { title: "💡 Tips for Tax & Insurance", content: "1. Always record the Serial Number (S/N).\n2. Export your CSV quarterly and email it to yourself as a backup.\n3. For independent contractors, items used exclusively for work can often be written off under Section 179." },
+    { title: "⚠️ Disclaimers & Privacy", content: "All data and photos are stored locally on your device. They are not uploaded to any cloud server. Export your CSV regularly. This tool does not constitute financial or legal advice." },
+    { title: "💡 Tips for Tax & Insurance", content: "1. Always record the Serial Number (S/N) and snap photographic proof.\n2. Export your CSV quarterly and save it as a backup.\n3. For independent contractors, items used exclusively for work can often be written off under Section 179." },
     { title: "📅 Calendar Warranty Sync", content: "When you add an asset, use the 'Sync to Calendar' button. This generates a native .ics event reminding you of the warranty expiration 2 weeks before it expires." }
   ];
 
   // --- ACTIONS ---
   const toggleAccordion = (index) => setOpenAccordion(openAccordion === index ? null : index);
 
+  // Compress and convert image to Base64 to save LocalStorage space
+  const handlePhotoCapture = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800; 
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // Compress to 60% quality
+        setAssetPhoto(dataUrl);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleAddAsset = () => {
     if (!assetName || !assetPrice) return alert("Name and Price are required.");
-    const newAsset = { id: Date.now(), name: assetName, price: parseFloat(assetPrice), date: assetDate, warranty: assetWarranty, status: assetStatus, category: assetCategory, sn: assetSn };
+    const newAsset = { id: Date.now(), name: assetName, price: parseFloat(assetPrice), date: assetDate, warranty: assetWarranty, status: assetStatus, category: assetCategory, sn: assetSn, photo: assetPhoto };
     setAssets([newAsset, ...assets]);
-    setAssetName(''); setAssetPrice(''); setAssetSn('');
+    setAssetName(''); setAssetPrice(''); setAssetSn(''); setAssetPhoto(null);
     setShowAddModal(false);
   };
 
@@ -68,24 +94,28 @@ export default function AssetLedger() {
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
-  // --- NATIVE CSV EXPORT ---
-  const exportCSV = async () => {
-    if (assets.length === 0) return alert("No assets to export.");
+  // --- EXPORT CONTROLS ---
+  const getCSVString = () => {
     let csv = "Asset Name,Category,Price,Purchase Date,Warranty,Status,Serial Number\n";
     assets.forEach(a => csv += `"${a.name}","${a.category}","$${a.price}","${a.date}","${a.warranty}","${a.status}","${a.sn}"\n`);
-    
-    try {
-      const file = new File([csv], `fleet_ledger_${Date.now()}.csv`, { type: 'text/csv' });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Asset Ledger', text: 'Attached is your Asset & Gear Ledger CSV Export' });
-      } else {
-        const emailBody = encodeURIComponent("Attached is the requested Asset Ledger data:\n\n" + csv);
-        window.open(`mailto:?subject=Asset Ledger CSV Export&body=${emailBody}`);
-      }
-    } catch (err) { console.error("Share failed", err); }
+    return csv;
   };
 
-  // --- MISSING STYLES FIXED ---
+  const downloadCSVFile = () => {
+    if (assets.length === 0) return alert("No assets to export.");
+    const blob = new Blob([getCSVString()], { type: 'text/csv;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `fleet_ledger_${Date.now()}.csv`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  };
+
+  const copyCSVToClipboard = () => {
+    if (assets.length === 0) return alert("No assets to export.");
+    navigator.clipboard.writeText(getCSVString());
+    alert("CSV Data securely copied to your clipboard!");
+  };
+
   const cardStyle = { background: 'rgba(17, 17, 17, 0.95)', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
   const inputStyle = { background: '#000', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '6px', width: '100%', marginBottom: '15px', fontSize: '1em' };
   const labelStyle = { color: '#a855f7', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px', display: 'block', textAlign: 'center' };
@@ -116,7 +146,7 @@ export default function AssetLedger() {
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
               <button onClick={() => setShowAddModal(true)} style={{ flex: 2, background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Log New Asset</button>
-              <button onClick={exportCSV} style={{ flex: 1, background: '#222', color: '#fff', border: '1px solid #3b82f6', padding: '15px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Export</button>
+              <button onClick={() => setShowExportModal(true)} style={{ flex: 1, background: '#222', color: '#fff', border: '1px solid #3b82f6', padding: '15px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Export</button>
             </div>
 
             {assets.length === 0 ? (
@@ -132,6 +162,12 @@ export default function AssetLedger() {
                     <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2em' }}>${asset.price.toFixed(2)}</div>
                   </div>
                   
+                  {asset.photo && (
+                    <div style={{ marginBottom: '15px', textAlign: 'center' }}>
+                      <img src={asset.photo} alt="Asset Proof" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #333' }} />
+                    </div>
+                  )}
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', color: '#ccc', fontSize: '0.9em', marginBottom: '15px' }}>
                     <div><strong style={{ color: '#888' }}>Purchased:</strong><br/>{asset.date}</div>
                     <div><strong style={{ color: '#888' }}>Status:</strong><br/>{asset.status}</div>
@@ -169,7 +205,28 @@ export default function AssetLedger() {
         )}
       </div>
 
-      {/* --- ADD ASSET MODAL (CRASH FIXED) --- */}
+      {/* --- EXPORT CONTROL MODAL --- */}
+      {showExportModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#111', padding: '25px', borderRadius: '12px', border: '1px solid #3b82f6', width: '100%' }}>
+            <h2 style={{ color: '#3b82f6', marginTop: 0, textAlign: 'center', textTransform: 'uppercase' }}>Export Controls</h2>
+            <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '25px', fontSize: '0.9em' }}>Select how you want to export your encrypted ledger data.</p>
+            
+            <button onClick={downloadCSVFile} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}>
+              📥 Download .CSV File
+            </button>
+            <button onClick={copyCSVToClipboard} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '25px' }}>
+              📋 Copy Raw Data
+            </button>
+            
+            <button onClick={() => setShowExportModal(false)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- ADD ASSET MODAL --- */}
       {showAddModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.98)', zIndex: 100, padding: '20px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #a855f7', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -200,8 +257,15 @@ export default function AssetLedger() {
 
           <label style={{ ...btnStyle('transparent', '#a855f7'), border: '1px dashed #a855f7', display: 'block', textAlign: 'center', marginBottom: '20px', cursor: 'pointer' }}>
             📸 Snap Photographic Proof
-            <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={() => alert("Photo capture initialized. (Cloud upload disabled for privacy)")} />
+            <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePhotoCapture} />
           </label>
+
+          {assetPhoto && (
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <span style={{ color: '#10b981', display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>✓ Photo Captured</span>
+              <img src={assetPhoto} alt="Preview" style={{ maxWidth: '100px', borderRadius: '6px', border: '1px solid #10b981' }} />
+            </div>
+          )}
 
           <button onClick={handleAddAsset} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.2em', marginBottom: '20px' }}>
             💾 Save to Ledger
