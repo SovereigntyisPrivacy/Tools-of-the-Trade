@@ -5,90 +5,81 @@ export default function ChronosHub() {
   const navigate = useNavigate();
   const [activeMainTab, setActiveMainTab] = useState('hos'); 
 
-  // --- HOS STATE (TIMESTAMP DRIVEN) ---
+  // --- HOS STATE ---
   const [shiftStart, setShiftStart] = useState(() => parseInt(localStorage.getItem('hos_shiftStart')) || null);
   const [accumulatedDriveSecs, setAccumulatedDriveSecs] = useState(() => parseInt(localStorage.getItem('hos_driveSecs')) || 0);
   const [driveStart, setDriveStart] = useState(() => parseInt(localStorage.getItem('hos_driveStart')) || null);
-  
   const [isShiftActive, setIsShiftActive] = useState(() => localStorage.getItem('hos_isShiftActive') === 'true');
   const [isDriving, setIsDriving] = useState(() => localStorage.getItem('hos_isDriving') === 'true');
-  
-  const [shiftSeconds, setShiftSeconds] = useState(14 * 3600);
-  const [driveSeconds, setDriveSeconds] = useState(11 * 3600);
-
   const [hosLogs, setHosLogs] = useState(() => JSON.parse(localStorage.getItem('hos_logs')) || []);
+  
   const [logLocation, setLogLocation] = useState('');
   const [logNotes, setLogNotes] = useState('');
   const [showHosModal, setShowHosModal] = useState(false);
 
   // --- CONTRACTOR STATE ---
-  const [fixedFee, setFixedFee] = useState(800);
-  const [discount, setDiscount] = useState(0); 
-  const [jobNotes, setJobNotes] = useState(''); 
-  const [materials, setMaterials] = useState([]);
+  const [fixedFee, setFixedFee] = useState(() => parseFloat(localStorage.getItem('con_fixedFee')) || 800);
+  const [discount, setDiscount] = useState(() => parseFloat(localStorage.getItem('con_discount')) || 0); 
+  const [jobNotes, setJobNotes] = useState(() => localStorage.getItem('con_jobNotes') || ''); 
+  const [materials, setMaterials] = useState(() => JSON.parse(localStorage.getItem('con_materials')) || []);
+  const [crew, setCrew] = useState(() => JSON.parse(localStorage.getItem('con_crew')) || []);
+  
   const [matName, setMatName] = useState('');
   const [matCost, setMatCost] = useState('');
   const [matQty, setMatQty] = useState('');
   const [matSn, setMatSn] = useState('');
-  const [crew, setCrew] = useState([]);
   const [crewName, setCrewName] = useState('');
   const [crewRate, setCrewRate] = useState('');
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [receiptTab, setReceiptTab] = useState('customer');
 
+  // --- ARCHIVE STATE ---
   const [dotArchives, setDotArchives] = useState(() => JSON.parse(localStorage.getItem('hos_dotArchives')) || []);
   const [invoiceArchives, setInvoiceArchives] = useState(() => JSON.parse(localStorage.getItem('hos_invoiceArchives')) || []);
 
-  // --- PERSISTENCE EFFECT ---
+  // --- PERSIST EVERYTHING TO STORAGE ---
   useEffect(() => {
-    localStorage.setItem('hos_isShiftActive', isShiftActive);
-    localStorage.setItem('hos_isDriving', isDriving);
     localStorage.setItem('hos_shiftStart', shiftStart || '');
     localStorage.setItem('hos_driveSecs', accumulatedDriveSecs);
     localStorage.setItem('hos_driveStart', driveStart || '');
+    localStorage.setItem('hos_isShiftActive', isShiftActive);
+    localStorage.setItem('hos_isDriving', isDriving);
     localStorage.setItem('hos_logs', JSON.stringify(hosLogs));
+    
+    localStorage.setItem('con_fixedFee', fixedFee);
+    localStorage.setItem('con_discount', discount);
+    localStorage.setItem('con_jobNotes', jobNotes);
+    localStorage.setItem('con_materials', JSON.stringify(materials));
+    localStorage.setItem('con_crew', JSON.stringify(crew));
+
     localStorage.setItem('hos_dotArchives', JSON.stringify(dotArchives));
     localStorage.setItem('hos_invoiceArchives', JSON.stringify(invoiceArchives));
-  }, [isShiftActive, isDriving, shiftStart, accumulatedDriveSecs, driveStart, hosLogs, dotArchives, invoiceArchives]);
+  }, [shiftStart, accumulatedDriveSecs, driveStart, isShiftActive, isDriving, hosLogs, fixedFee, discount, jobNotes, materials, crew, dotArchives, invoiceArchives]);
 
-  // --- MASTER TIMESTAMP CLOCK ENGINE ---
+
+  // --- GLOBAL TICKER ---
+  const [now, setNow] = useState(Date.now());
   useEffect(() => {
-    let interval;
-    if (isShiftActive && shiftStart) {
-      interval = setInterval(() => {
-        const now = Date.now();
-        
-        // 14-Hour Shift Clock Calculation based on absolute elapsed time
-        const elapsedShiftSecs = Math.floor((now - shiftStart) / 1000);
-        const remainingShift = Math.max(0, (14 * 3600) - elapsedShiftSecs);
-        setShiftSeconds(remainingShift);
-
-        // 11-Hour Drive Clock Calculation
-        let currentDriveTotal = accumulatedDriveSecs;
-        if (isDriving && driveStart) {
-          currentDriveTotal += Math.floor((now - driveStart) / 1000);
-        }
-        const remainingDrive = Math.max(0, (11 * 3600) - currentDriveTotal);
-
-        // DOT RULE: Drive clock cannot exceed remaining shift time
-        const masterDrive = Math.min(remainingDrive, remainingShift);
-        setDriveSeconds(masterDrive);
-
-        // Auto-end shift if 14 hours expire
-        if (remainingShift === 0) {
-          setIsShiftActive(false);
-          setIsDriving(false);
-          addHosLog('14-Hour Shift Expired', 'OFF DUTY');
-        }
-
-        // Tick Crew Timers
-        setCrew(prevCrew => prevCrew.map(c => 
-          c.isActive ? { ...c, elapsed: c.elapsed + 1 } : c
-        ));
-      }, 1000);
-    }
+    const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, [isShiftActive, shiftStart, isDriving, driveStart, accumulatedDriveSecs]);
+  }, []);
+
+  // --- INDEPENDENT MATH DERIVATIONS ---
+  const elapsedShift = isShiftActive && shiftStart ? Math.floor((now - shiftStart) / 1000) : 0;
+  const remainingShift = isShiftActive ? Math.max(0, (14 * 3600) - elapsedShift) : (14 * 3600);
+
+  let currentDriveTotal = accumulatedDriveSecs;
+  if (isDriving && driveStart) currentDriveTotal += Math.floor((now - driveStart) / 1000);
+  const remainingDriveRaw = isShiftActive ? Math.max(0, (11 * 3600) - currentDriveTotal) : (11 * 3600);
+  const displayDrive = Math.min(remainingDriveRaw, remainingShift);
+
+  const displayCrew = crew.map(c => {
+    let activeElapsed = c.accumulatedSecs || 0;
+    if (c.isActive && c.currentStartTimestamp) {
+       activeElapsed += Math.floor((now - c.currentStartTimestamp) / 1000);
+    }
+    return { ...c, liveElapsed: activeElapsed };
+  });
 
   const formatTime = (totalSeconds) => {
     const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
@@ -102,7 +93,7 @@ export default function ChronosHub() {
     let minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
-    hours = hours ? 12 : hours; 
+    hours = hours ? hours : 12; 
     minutes = minutes < 10 ? '0' + minutes : minutes;
     return `${hours}:${minutes} ${ampm}`;
   };
@@ -115,52 +106,40 @@ export default function ChronosHub() {
   };
 
   const toggleShift = () => {
+    const timestamp = Date.now();
     if (!isShiftActive) {
-      const now = Date.now();
-      setShiftStart(now);
-      setAccumulatedDriveSecs(0);
-      setDriveStart(null);
-      setIsShiftActive(true);
-      addHosLog('Shift Started', 'ON DUTY');
+      setShiftStart(timestamp); setAccumulatedDriveSecs(0); setDriveStart(null);
+      setIsShiftActive(true); addHosLog('Shift Started', 'ON DUTY');
     } else {
-      if (isDriving && driveStart) {
-        setAccumulatedDriveSecs(prev => prev + Math.floor((Date.now() - driveStart) / 1000));
-      }
-      setIsShiftActive(false); 
-      setIsDriving(false);
-      setShiftStart(null);
-      setDriveStart(null);
+      if (isDriving && driveStart) setAccumulatedDriveSecs(prev => prev + Math.floor((timestamp - driveStart) / 1000));
+      setIsShiftActive(false); setIsDriving(false); setShiftStart(null); setDriveStart(null);
       addHosLog('Shift Ended', 'OFF DUTY');
     }
   };
 
   const toggleDrive = () => {
     if (!isShiftActive) return alert("Start shift first.");
-    const now = Date.now();
+    const timestamp = Date.now();
     if (!isDriving) {
-      setDriveStart(now);
-      setIsDriving(true);
+      setDriveStart(timestamp); setIsDriving(true);
       addHosLog('Started Driving', 'DRIVING');
     } else {
-      if (driveStart) {
-        setAccumulatedDriveSecs(prev => prev + Math.floor((now - driveStart) / 1000));
-      }
-      setDriveStart(null);
-      setIsDriving(false);
+      if (driveStart) setAccumulatedDriveSecs(prev => prev + Math.floor((timestamp - driveStart) / 1000));
+      setDriveStart(null); setIsDriving(false);
       addHosLog('Stopped Driving', 'ON DUTY (Not Driving)');
     }
   };
 
   const takeBreak = (mins) => {
     if (!isShiftActive) return alert("Start shift first.");
-    const now = Date.now();
     if (isDriving && driveStart) {
-      setAccumulatedDriveSecs(prev => prev + Math.floor((now - driveStart) / 1000));
+      setAccumulatedDriveSecs(prev => prev + Math.floor((Date.now() - driveStart) / 1000));
       setDriveStart(null);
     }
     setIsDriving(false);
     addHosLog(`Started ${mins} Min Break`, 'OFF DUTY');
   };
+
 
   // --- CONTRACTOR ACTIONS ---
   const addMaterial = () => {
@@ -171,20 +150,33 @@ export default function ChronosHub() {
 
   const addCrew = () => {
     if (!crewName || !crewRate) return;
-    setCrew([...crew, { id: Date.now(), name: crewName, rate: parseFloat(crewRate), elapsed: 0, isActive: false }]);
+    setCrew([...crew, { id: Date.now(), name: crewName, rate: parseFloat(crewRate), accumulatedSecs: 0, currentStartTimestamp: null, isActive: false }]);
     setCrewName(''); setCrewRate('');
   };
 
-  const toggleCrew = (id) => setCrew(crew.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c));
+  const toggleCrew = (id) => {
+    const timestamp = Date.now();
+    setCrew(crew.map(c => {
+      if (c.id === id) {
+        if (c.isActive) return { ...c, isActive: false, accumulatedSecs: c.accumulatedSecs + Math.floor((timestamp - c.currentStartTimestamp)/1000), currentStartTimestamp: null };
+        return { ...c, isActive: true, currentStartTimestamp: timestamp };
+      }
+      return c;
+    }));
+  };
+
   const toggleAllCrew = () => {
+    const timestamp = Date.now();
     const anyActive = crew.some(c => c.isActive);
-    setCrew(crew.map(c => ({ ...c, isActive: !anyActive })));
+    if (anyActive) setCrew(crew.map(c => c.isActive ? { ...c, isActive: false, accumulatedSecs: c.accumulatedSecs + Math.floor((timestamp - c.currentStartTimestamp)/1000), currentStartTimestamp: null } : c));
+    else setCrew(crew.map(c => !c.isActive ? { ...c, isActive: true, currentStartTimestamp: timestamp } : c));
   };
 
   const totalMaterials = materials.reduce((acc, m) => acc + (m.cost * m.qty), 0);
-  const totalCrewPayout = crew.reduce((acc, c) => acc + ((c.elapsed / 3600) * c.rate), 0);
+  const totalCrewPayout = displayCrew.reduce((acc, c) => acc + ((c.liveElapsed / 3600) * c.rate), 0);
   const grossBillable = (parseFloat(fixedFee) || 0) + totalMaterials + totalCrewPayout - (parseFloat(discount) || 0);
 
+  // --- ARCHIVING & EXPORTING ---
   const archiveDOT = () => {
     if (hosLogs.length === 0) return alert("No logs to save.");
     setDotArchives([{ date: new Date().toLocaleDateString(), logs: hosLogs }, ...dotArchives]);
@@ -193,7 +185,7 @@ export default function ChronosHub() {
 
   const archiveInvoice = () => {
     if (grossBillable === 0) return alert("No financials to save.");
-    setInvoiceArchives([{ date: new Date().toLocaleDateString(), total: grossBillable.toFixed(2), fee: fixedFee, materials, crew }, ...invoiceArchives]);
+    setInvoiceArchives([{ date: new Date().toLocaleDateString(), total: grossBillable.toFixed(2), fee: fixedFee, materials, crew: displayCrew }, ...invoiceArchives]);
     setMaterials([]); setCrew([]); setJobNotes(''); setShowReceiptModal(false); alert("Invoice Archived to History.");
   };
 
@@ -201,22 +193,16 @@ export default function ChronosHub() {
     let csvContent = "data:text/csv;charset=utf-8,";
     if (type === 'dot') {
       csvContent += "Date,Time,Event,Status,Location\n";
-      dotArchives.forEach(arc => {
-        arc.logs.forEach(l => csvContent += `"${arc.date}","${l.time}","${l.event}","${l.status}","${l.location}"\n`);
-      });
+      dotArchives.forEach(arc => arc.logs.forEach(l => csvContent += `"${arc.date}","${l.time}","${l.event}","${l.status}","${l.location}"\n`));
     } else {
       csvContent += "Date,Total Billed,Fixed Fee,Materials Count,Crew Count\n";
-      invoiceArchives.forEach(arc => {
-        csvContent += `"${arc.date}","$${arc.total}","$${arc.fee}","${arc.materials.length}","${arc.crew.length}"\n`;
-      });
+      invoiceArchives.forEach(arc => csvContent += `"${arc.date}","$${arc.total}","$${arc.fee}","${arc.materials.length}","${arc.crew.length}"\n`);
     }
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `${type}_export_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
@@ -225,7 +211,6 @@ export default function ChronosHub() {
 
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
-      
       <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
@@ -240,18 +225,18 @@ export default function ChronosHub() {
       </div>
 
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
-        
+
         {activeMainTab === 'hos' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
               <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
                 <div style={{ flex: 1, background: '#0a0a0a', padding: '15px', borderRadius: '8px', textAlign: 'center', border: '1px solid #222' }}>
                   <div style={{ color: '#888', fontWeight: 'bold', marginBottom: '10px' }}>DRIVE (11 HR)</div>
-                  <div style={{ color: '#10b981', fontSize: '1.5em', fontWeight: 'bold', fontFamily: 'monospace' }}>{formatTime(driveSeconds)}</div>
+                  <div style={{ color: '#10b981', fontSize: '1.5em', fontWeight: 'bold', fontFamily: 'monospace' }}>{formatTime(displayDrive)}</div>
                 </div>
                 <div style={{ flex: 1, background: '#0a0a0a', padding: '15px', borderRadius: '8px', textAlign: 'center', border: '1px solid #222' }}>
                   <div style={{ color: '#888', fontWeight: 'bold', marginBottom: '10px' }}>SHIFT (14 HR)</div>
-                  <div style={{ color: '#10b981', fontSize: '1.5em', fontWeight: 'bold', fontFamily: 'monospace' }}>{formatTime(shiftSeconds)}</div>
+                  <div style={{ color: '#10b981', fontSize: '1.5em', fontWeight: 'bold', fontFamily: 'monospace' }}>{formatTime(remainingShift)}</div>
                 </div>
               </div>
               <button onClick={toggleShift} style={{ ...btnStyle('#222', '#fff'), marginBottom: '10px' }}>{isShiftActive ? 'END 14-HOUR SHIFT' : 'START 14-HOUR SHIFT'}</button>
@@ -323,19 +308,19 @@ export default function ChronosHub() {
                 <button onClick={toggleAllCrew} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold' }}>Start/Stop All</button>
               </div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <input type="text" placeholder="Name" value={crewName} onChange={(e) => setCrewName(e.target.value)} style={{ ...inputStyle, flex: 2 }} />
-                <input type="number" placeholder="Rate" value={crewRate} onChange={(e) => setCrewRate(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+                <input type="text" placeholder="Worker Name" value={crewName} onChange={(e) => setCrewName(e.target.value)} style={{ ...inputStyle, flex: 2 }} />
+                <input type="number" placeholder="Rate/h" value={crewRate} onChange={(e) => setCrewRate(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
                 <button onClick={addCrew} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', fontWeight: 'bold' }}>+ Add</button>
               </div>
-              {crew.map(c => (
+              {displayCrew.map(c => (
                 <div key={c.id} style={{ background: '#0a0a0a', padding: '15px', borderRadius: '8px', borderLeft: `2px solid ${c.isActive ? '#10b981' : '#444'}`, marginBottom: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                     <strong style={{ color: '#fff' }}>{c.name}</strong><span style={{ color: '#888' }}>${c.rate}/hr</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontFamily: 'monospace', fontSize: '1.2em' }}>{formatTime(c.elapsed)}</div>
-                      <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.9em' }}>Earned: ${((c.elapsed / 3600) * c.rate).toFixed(2)}</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '1.2em' }}>{formatTime(c.liveElapsed)}</div>
+                      <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.9em' }}>Earned: ${((c.liveElapsed / 3600) * c.rate).toFixed(2)}</div>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button onClick={() => toggleCrew(c.id)} style={{ background: c.isActive ? '#ef4444' : '#10b981', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>{c.isActive ? 'Stop' : 'Start'}</button>
@@ -387,15 +372,14 @@ export default function ChronosHub() {
             <h2 style={{ color: '#10b981', margin: 0, textTransform: 'uppercase' }}>Driver's Daily Log</h2>
             <button onClick={() => setShowHosModal(false)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
           </div>
-          
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
             <button onClick={archiveDOT} style={{ flex: 1, background: '#a855f7', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Archive Shift</button>
+            <button onClick={() => exportCSV('dot')} style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Export (CSV)</button>
           </div>
-
           <div style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '4px' }}>
             <h3 style={{ textAlign: 'center', margin: '0 0 15px 0' }}>Date: {new Date().toLocaleDateString()}</h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
-              <thead><tr style={{ borderBottom: '2px solid #000' }}><th style={{ padding: '8px' }}>TIME</th><th style={{ padding: '8px' }}>STATUS / EVENT</th><th style={{ padding: '8px' }}>LOCATION / REMARKS</th></tr></thead>
+              <thead><tr style={{ borderBottom: '2px solid #000' }}><th style={{ padding: '8px' }}>TIME</th><th style={{ padding: '8px' }}>STATUS / EVENT</th><th style={{ padding: '8px' }}>LOCATION</th></tr></thead>
               <tbody>
                 {hosLogs.map(log => (
                   <tr key={log.id} style={{ borderBottom: '1px dashed #ccc' }}>
@@ -416,54 +400,34 @@ export default function ChronosHub() {
             <h2 style={{ color: '#10b981', margin: 0, textTransform: 'uppercase' }}>Receipt Engine</h2>
             <button onClick={() => setShowReceiptModal(false)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
           </div>
-
           <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
             <button onClick={() => setReceiptTab('customer')} style={{ flex: 1, background: receiptTab === 'customer' ? '#fff' : '#222', color: receiptTab === 'customer' ? '#000' : '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Customer View</button>
             <button onClick={() => setReceiptTab('operator')} style={{ flex: 1, background: receiptTab === 'operator' ? '#3b82f6' : '#222', color: receiptTab === 'operator' ? '#fff' : '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Operator View</button>
           </div>
-
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
             <button onClick={archiveInvoice} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Archive Job</button>
-            <button onClick={() => {
-              const emailBody = encodeURIComponent(`Invoice Summary:\nFixed Fee: $${fixedFee}\nMaterials: $${totalMaterials.toFixed(2)}\nLabor: $${totalCrewPayout.toFixed(2)}\nTotal: $${grossBillable.toFixed(2)}`);
-              window.open(`mailto:?subject=Job Invoice&body=${emailBody}`);
-            }} style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📧 Email Invoice</button>
+            <button onClick={() => { const emailBody = encodeURIComponent(`Invoice Summary:\nFixed Fee: $${fixedFee}\nMaterials: $${totalMaterials.toFixed(2)}\nLabor: $${totalCrewPayout.toFixed(2)}\nTotal: $${grossBillable.toFixed(2)}`); window.open(`mailto:?subject=Job Invoice&body=${emailBody}`); }} style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📧 Email Invoice</button>
           </div>
-
+          
           {receiptTab === 'customer' ? (
             <div style={{ background: '#fff', color: '#000', padding: '20px', borderRadius: '8px' }}>
               <h2 style={{ color: '#10b981', textAlign: 'center', margin: '0 0 5px 0', textTransform: 'uppercase' }}>INVOICE</h2>
               <h4 style={{ textAlign: 'center', margin: '0 0 20px 0', color: '#666' }}>{new Date().toLocaleDateString()}</h4>
-              
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}><span>Service Fee</span><span>${parseFloat(fixedFee).toFixed(2)}</span></div>
-              
-              {discount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', color: '#ef4444', marginBottom: '15px' }}><span>Discount Applied</span><span>-${parseFloat(discount).toFixed(2)}</span></div>
-              )}
-
+              {discount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', color: '#ef4444', marginBottom: '15px' }}><span>Discount Applied</span><span>-${parseFloat(discount).toFixed(2)}</span></div>}
               <h4 style={{ textAlign: 'center', textTransform: 'uppercase', color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>Materials & Hardware</h4>
               {materials.map(m => (
-                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}><span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span></div>
+                 <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}><span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span></div>
               ))}
-
               <h4 style={{ textAlign: 'center', textTransform: 'uppercase', color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Labor</h4>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '20px' }}><span>Site Labor (Total)</span><span>${totalCrewPayout.toFixed(2)}</span></div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #000', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.3em' }}>
-                <span>TOTAL DUE</span><span>${grossBillable.toFixed(2)}</span>
-              </div>
-
-              {jobNotes && (
-                <div style={{ marginTop: '30px', padding: '15px', background: '#f9f9f9', borderLeft: '3px solid #10b981', fontSize: '0.9em', color: '#444', fontStyle: 'italic' }}>
-                  <strong>Notes: </strong>{jobNotes}
-                </div>
-              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #000', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.3em' }}><span>TOTAL DUE</span><span>${grossBillable.toFixed(2)}</span></div>
+              {jobNotes && <div style={{ marginTop: '30px', padding: '15px', background: '#f9f9f9', borderLeft: '3px solid #10b981', fontSize: '0.9em', color: '#444', fontStyle: 'italic' }}><strong>Notes: </strong>{jobNotes}</div>}
             </div>
           ) : (
             <div style={{ background: '#111', padding: '20px', borderRadius: '8px', border: '1px solid #333' }}>
               <h3 style={{ color: '#10b981', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Internal Cost Breakdown</h3>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '20px', fontSize: '1.1em' }}><span>Flat Fee:</span><span>${parseFloat(fixedFee).toFixed(2)}</span></div>
-
               <h4 style={{ color: '#f59e0b', textAlign: 'center', textTransform: 'uppercase' }}>Materials & S/N</h4>
               {materials.map(m => (
                 <div key={m.id} style={{ marginBottom: '15px' }}>
@@ -471,22 +435,15 @@ export default function ChronosHub() {
                   <div style={{ textAlign: 'center', color: '#666', fontSize: '0.9em' }}>S/N: {m.sn || 'N/A'}</div>
                 </div>
               ))}
-
               <h4 style={{ color: '#10b981', textAlign: 'center', textTransform: 'uppercase', marginTop: '20px' }}>Crew Payouts</h4>
-              {crew.map(c => (
-                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '10px', fontSize: '1.1em' }}>
-                  <span>{c.name || 'Unnamed'} (${c.rate}/hr)</span><span style={{ color: '#10b981' }}>${((c.elapsed / 3600) * c.rate).toFixed(2)}</span>
-                </div>
+              {displayCrew.map(c => (
+                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '10px', fontSize: '1.1em' }}><span>{c.name || 'Unnamed'} (${c.rate}/hr)</span><span style={{ color: '#10b981' }}>${((c.liveElapsed / 3600) * c.rate).toFixed(2)}</span></div>
               ))}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px dashed #444', paddingTop: '15px', marginTop: '20px', fontWeight: 'bold', fontSize: '1.2em' }}>
-                <span style={{ color: '#888' }}>GROSS BILLABLE:</span><span style={{ color: '#10b981' }}>${grossBillable.toFixed(2)}</span>
-              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px dashed #444', paddingTop: '15px', marginTop: '20px', fontWeight: 'bold', fontSize: '1.2em' }}><span style={{ color: '#888' }}>GROSS BILLABLE:</span><span style={{ color: '#10b981' }}>${grossBillable.toFixed(2)}</span></div>
             </div>
           )}
         </div>
       )}
-
     </div>
   );
 }
