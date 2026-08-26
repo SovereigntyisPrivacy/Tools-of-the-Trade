@@ -11,7 +11,7 @@ export default function LearningHub() {
   const [activeWiccaTab, setActiveWiccaTab] = useState('lunar');
   
   // School & Quiz State
-  const [activeGrade, setActiveGrade] = useState('1st');
+  const [activeGrade, setActiveGrade] = useState('2nd');
   const [expandedItem, setExpandedItem] = useState(null);
   
   const [quizActive, setQuizActive] = useState(false);
@@ -19,7 +19,7 @@ export default function LearningHub() {
   const [score, setScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
 
-  const gradesList = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', 'GED / College'];
+  const gradesList = ['K', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th', 'GED'];
 
   // --- SUPERNATURAL DATABASES ---
   const tarotDeck = [
@@ -28,14 +28,14 @@ export default function LearningHub() {
   ];
 
   const elementsDB = [
-    { name: 'Earth', color: 'Green or Brown', direction: 'North', props: 'Grounding, nurturing, supportive, stable, feminine & receptive', desc: 'Represents the very base of existence; it is the foundation.' },
-    { name: 'Air', color: 'Yellow', direction: 'East', props: 'Transport, movement, communication, sound, intellect, travel', desc: 'Represents movement & the breath of life.' },
-    { name: 'Water', color: 'Blue', direction: 'West', props: 'Cleansing, healing, purifying, feminine & receptive', desc: 'Corresponds to emotions.' },
-    { name: 'Fire', color: 'Red', direction: 'South', props: 'Transformative, destructive, purifying, passionate, consuming, masculine, projective', desc: 'Represents swift transformation.' }
+    { name: 'Earth', color: 'Green or Brown', direction: 'North', props: 'Grounding, nurturing, supportive, stable', desc: 'Represents the very base of existence; it is the foundation.' },
+    { name: 'Air', color: 'Yellow', direction: 'East', props: 'Transport, movement, communication, intellect', desc: 'Represents movement & the breath of life.' },
+    { name: 'Water', color: 'Blue', direction: 'West', props: 'Cleansing, healing, purifying', desc: 'Corresponds to emotions.' },
+    { name: 'Fire', color: 'Red', direction: 'South', props: 'Transformative, destructive, passionate', desc: 'Represents swift transformation.' }
   ];
 
   const sabbatsDB = [
-    { name: 'Samhain', date: 'Oct 31st', type: 'Greater Sabbat / Fire Festival', desc: '(Pronounced Sowin). Marks the pagan New Year, Halloween or All Hallows Eve.' },
+    { name: 'Samhain', date: 'Oct 31st', type: 'Greater Sabbat / Fire Festival', desc: '(Pronounced Sowin). Marks the pagan New Year, Halloween or All Hallows Eve. Was the final harvest for our ancestors.' },
     { name: 'Yule', date: 'Dec 21st or 22nd', type: 'Lesser Sabbat / Solar Festival', desc: 'Winter Solstice. Shortest day of the year. Celebrated as the rebirth of the sun.' }
   ];
 
@@ -44,48 +44,83 @@ export default function LearningHub() {
     { name: 'Full Moon', type: 'Potent Power', desc: 'Most potent time to do any magickal work. Invoking, protecting, or healing.' }
   ];
 
-  // --- SCHOOL CURRICULUM & QUIZ DATABASES ---
+  // --- SCHOOL CURRICULUM ---
   const schoolCurriculum = {
     'K': { 
       math: [
-        { topic: 'Counting 1-20', content: 'Numbers tell us how many. Practice: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20.' },
-        { topic: 'Basic Shapes', content: 'Circle (round, no corners). Square (4 equal sides). Triangle (3 sides).' },
-        { topic: 'Simple Addition', content: 'Adding means putting things together. If you have 1 apple and get 1 more, you have 2 apples (1 + 1 = 2).' }
+        { topic: 'Counting 1-20', content: 'Practice: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20.' },
+        { topic: 'Basic Shapes', content: 'Circle (round), Square (4 equal sides), Triangle (3 sides).' },
+        { topic: 'Simple Addition', content: 'Adding means putting things together. 1 + 1 = 2.' }
       ],
       science: [
-        { topic: 'The Five Senses', content: 'Sight (Eyes), Hearing (Ears), Smell (Nose), Taste (Tongue), Touch (Skin/Hands).' },
-        { topic: 'Living vs. Non-Living', content: 'Living things grow, eat, and breathe (Trees, Dogs, People). Non-living things do not (Rocks, Cars, Toys).' }
+        { topic: 'The Five Senses', content: 'Sight (Eyes), Hearing (Ears), Smell (Nose), Taste (Tongue), Touch (Hands).' },
+        { topic: 'Living vs. Non-Living', content: 'Living things grow and breathe (Trees, Dogs). Non-living things do not (Rocks, Cars).' }
       ],
       language: [
-        { topic: 'The Alphabet', content: 'There are 26 letters. Vowels are A, E, I, O, U. The rest are consonants.' },
+        { topic: 'The Alphabet', content: 'There are 26 letters. The letter after A is B. Vowels are A, E, I, O, U.' },
         { topic: 'Sight Words', content: 'Words you should recognize instantly: The, And, Is, It, We, To, You, He, I.' }
       ],
       history: [
-        { topic: 'Community Helpers', content: 'Firefighters put out fires. Doctors keep us healthy. Teachers help us learn. Police keep us safe.' },
-        { topic: 'Time & Days', content: 'There are 7 days in a week: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday.' }
+        { topic: 'Community Helpers', content: 'Firefighters put out fires. Doctors keep us healthy. Teachers help us learn.' },
+        { topic: 'Time & Days', content: 'There are 7 days in a week.' }
       ]
     },
     '1st': { 
       math: [
-        { topic: 'Addition & Subtraction (0-20)', content: 'Adding is combining numbers (8 + 4 = 12). Subtraction is taking away (15 - 5 = 10).' },
-        { topic: 'Place Value', content: 'Numbers are made of Tens and Ones. In the number 34, there are 3 Tens and 4 Ones.' },
+        { topic: 'Addition & Subtraction (0-20)', content: 'Adding is combining (10 + 5 = 15). Subtraction is taking away (15 - 5 = 10).' },
+        { topic: 'Place Value', content: 'Numbers are made of Tens and Ones. In 42, there are 4 Tens and 2 Ones.' },
         { topic: 'Telling Time', content: 'The short hand is the Hour, the long hand is the Minute. There are 60 minutes in 1 hour.' }
       ],
       science: [
-        { topic: 'Plant Life Cycles', content: 'Plants start as a Seed, grow roots, sprout into a Seedling, and become an Adult Plant with flowers.' },
-        { topic: 'Light & Sound', content: 'Light from the sun helps us see. Sound is made by vibrations that travel to our ears.' },
-        { topic: 'Sky Patterns', content: 'The Sun gives us light and warmth during the day. The Moon and stars are visible at night.' }
+        { topic: 'Plant Life Cycles', content: 'Plants start as a Seed, grow roots, sprout into a Seedling, and become an Adult.' },
+        { topic: 'Sky Patterns', content: 'The Sun gives us light and warmth during the day. The Moon is out at night.' }
       ],
       language: [
-        { topic: 'Sentences & Punctuation', content: 'A sentence always starts with a Capital Letter and ends with punctuation like a period (.) or question mark (?).' },
-        { topic: 'Nouns & Verbs', content: 'A Noun is a person, place, or thing (Dog, School, Apple). A Verb is an action word (Run, Jump, Read).' }
+        { topic: 'Sentences & Punctuation', content: 'A sentence always ends with punctuation like a Period (.).' },
+        { topic: 'Nouns & Verbs', content: 'A Noun is a person, place, or thing (Apple). A Verb is an action word (Run).' }
       ],
       history: [
-        { topic: 'Past vs. Present', content: 'The Past is what happened before (long ago, people rode horses). The Present is happening now (we drive cars).' },
-        { topic: 'Maps & Globes', content: 'A map is a flat picture of a place. A globe is a round model of the whole Earth.' }
+        { topic: 'Past vs. Present', content: 'The Past is what happened before. The Present is happening now.' },
+        { topic: 'Maps & Globes', content: 'A globe is a round model of the Earth.' }
       ]
     },
-    '2nd': { math: [{topic:'Notice', content:'Module currently under construction.'}], science: [], language: [], history: [] }
+    '2nd': { 
+      math: [
+        { topic: 'Two-Digit Arithmetic', content: 'Adding larger numbers requires stacking them. 25 + 14 = 39. Always start with the ones column.' },
+        { topic: 'Money', content: 'A Penny is 1¢. A Nickel is 5¢. A Dime is 10¢. A Quarter is 25¢. 4 Quarters make 1 Dollar ($1.00).' },
+        { topic: 'Measurement', content: 'We measure length in inches or centimeters. There are 12 inches in 1 foot.' }
+      ],
+      science: [
+        { topic: 'States of Matter', content: 'Solid (keeps its shape, like ice). Liquid (flows, like water). Gas (spreads out, like steam).' },
+        { topic: 'Ecosystems', content: 'A community of living and non-living things working together, like a Forest or a Desert.' }
+      ],
+      chemistry: [
+        { topic: 'Reversible vs Irreversible Changes', content: 'Melting ice is a reversible change (you can freeze it back). Burning wood is an irreversible change (it becomes ash and cannot be wood again).' }
+      ],
+      history: [
+        { topic: 'Local Geography & Map Skills', content: 'A Compass Rose shows directions: North, South, East, West.' },
+        { topic: 'Civics', content: 'A Mayor is the leader of a city or town. A Governor leads a state. A President leads a country.' }
+      ]
+    },
+    '3rd': { 
+      math: [
+        { topic: 'Multiplication', content: 'Multiplication is fast addition. 4 x 5 means four groups of five, which equals 20.' },
+        { topic: 'Fractions', content: 'A fraction shows parts of a whole. In 1/2, the top number is the Numerator, and the bottom is the Denominator.' },
+        { topic: 'Geometry', content: 'Perimeter is the total distance around the outside of a shape. Area is the space inside.' }
+      ],
+      science: [
+        { topic: 'Life Cycles', content: 'Metamorphosis is a drastic physical change in an animal\'s life, like a caterpillar turning into a butterfly.' },
+        { topic: 'Forces & Motion', content: 'A Force is a push or a pull on an object. Gravity is a force that pulls things to Earth.' },
+        { topic: 'Magnets', content: 'Magnets have a North and South pole. Opposite poles Attract (pull together). Like poles Repel (push away).' }
+      ],
+      chemistry: [
+        { topic: 'Atoms & Molecules', content: 'An Atom is the smallest building block of all matter. When two or more atoms bond together, they form a Molecule.' }
+      ],
+      history: [
+        { topic: 'World Geography', content: 'There are 7 continents on Earth: North America, South America, Europe, Africa, Asia, Australia, and Antarctica.' },
+        { topic: 'Ancient Civilizations', content: 'Ancient Egypt was built along the Nile River and is famous for building the Pyramids.' }
+      ]
+    }
   };
 
   const quizzes = {
@@ -94,39 +129,62 @@ export default function LearningHub() {
       { q: 'What is 1 + 1?', options: ['1', '2', '3', '11'], answer: '2' },
       { q: 'Which body part do we use for the sense of Smell?', options: ['Ears', 'Hands', 'Eyes', 'Nose'], answer: 'Nose' },
       { q: 'Which of these is a Living thing?', options: ['A Rock', 'A Toy Car', 'A Tree', 'A Pencil'], answer: 'A Tree' },
-      { q: 'How many days are in a week?', options: ['5', '7', '10', '12'], answer: '7' }
+      { q: 'How many days are in a week?', options: ['5', '7', '10', '12'], answer: '7' },
+      { q: 'What letter comes after A?', options: ['C', 'B', 'D', 'Z'], answer: 'B' },
+      { q: 'What body part do you use to see?', options: ['Eyes', 'Ears', 'Mouth', 'Hands'], answer: 'Eyes' },
+      { q: 'Which of these is a Sight Word?', options: ['Tyrannosaurus', 'The', 'Helicopter', 'Photosynthesis'], answer: 'The' },
+      { q: 'Who puts out fires?', options: ['Teacher', 'Doctor', 'Firefighter', 'Police Officer'], answer: 'Firefighter' },
+      { q: 'Is a dog living or non-living?', options: ['Living', 'Non-Living', 'Both', 'Neither'], answer: 'Living' }
     ],
     '1st': [
       { q: 'How many Tens are in the number 42?', options: ['2', '4', '6', '42'], answer: '4' },
       { q: 'What goes at the end of a regular sentence?', options: ['A Capital Letter', 'A Number', 'A Period (.)', 'A Noun'], answer: 'A Period (.)' },
-      { q: 'What is 12 - 4?', options: ['8', '16', '6', '9'], answer: '8' },
+      { q: 'What is 15 - 5?', options: ['5', '10', '20', '9'], answer: '10' },
       { q: 'Which word is a Verb (an action word)?', options: ['Apple', 'Run', 'School', 'Blue'], answer: 'Run' },
-      { q: 'What does a plant start as before it grows?', options: ['A Flower', 'A Leaf', 'A Seed', 'A Tree'], answer: 'A Seed' }
+      { q: 'What does a plant start as before it grows?', options: ['A Flower', 'A Leaf', 'A Seed', 'A Tree'], answer: 'A Seed' },
+      { q: 'What is 10 + 5?', options: ['11', '12', '15', '20'], answer: '15' },
+      { q: 'How many minutes are in an hour?', options: ['30', '50', '60', '100'], answer: '60' },
+      { q: 'What gives us light during the day?', options: ['The Moon', 'The Stars', 'The Sun', 'A Lamp'], answer: 'The Sun' },
+      { q: 'A globe is a round model of what?', options: ['The Moon', 'The Sun', 'The Earth', 'A City'], answer: 'The Earth' },
+      { q: 'Which word is a Noun?', options: ['Jump', 'Apple', 'Quickly', 'Run'], answer: 'Apple' }
+    ],
+    '2nd': [
+      { q: 'What is 25 + 14?', options: ['30', '39', '41', '49'], answer: '39' },
+      { q: 'How many quarters make 1 Dollar?', options: ['2', '3', '4', '10'], answer: '4' },
+      { q: 'What state of matter is water?', options: ['Solid', 'Liquid', 'Gas', 'Plasma'], answer: 'Liquid' },
+      { q: 'Which of these is an ecosystem?', options: ['A Forest', 'A Car', 'A House', 'A Book'], answer: 'A Forest' },
+      { q: 'Who is the leader of a city or town?', options: ['President', 'Governor', 'Mayor', 'Teacher'], answer: 'Mayor' },
+      { q: 'What shows directions on a map?', options: ['Compass Rose', 'Legend', 'Scale', 'Title'], answer: 'Compass Rose' },
+      { q: 'Is melting ice a reversible change?', options: ['Yes', 'No', 'Sometimes', 'Never'], answer: 'Yes' },
+      { q: 'What type of change is burning wood?', options: ['Reversible', 'Irreversible', 'Temporary', 'Liquid'], answer: 'Irreversible' },
+      { q: 'How many inches are in 1 foot?', options: ['10', '12', '24', '36'], answer: '12' },
+      { q: 'Which coin is worth 10¢?', options: ['Penny', 'Nickel', 'Dime', 'Quarter'], answer: 'Dime' }
+    ],
+    '3rd': [
+      { q: 'What is 4 x 5?', options: ['9', '16', '20', '25'], answer: '20' },
+      { q: 'In the fraction 1/2, what is the top number called?', options: ['Denominator', 'Numerator', 'Quotient', 'Factor'], answer: 'Numerator' },
+      { q: 'What is the process of a caterpillar turning into a butterfly?', options: ['Photosynthesis', 'Erosion', 'Metamorphosis', 'Evaporation'], answer: 'Metamorphosis' },
+      { q: 'Opposite poles of a magnet will do what?', options: ['Repel', 'Attract', 'Explode', 'Nothing'], answer: 'Attract' },
+      { q: 'Which ancient civilization built the Pyramids?', options: ['Greece', 'Rome', 'Egypt', 'China'], answer: 'Egypt' },
+      { q: 'How many continents are there on Earth?', options: ['5', '6', '7', '8'], answer: '7' },
+      { q: 'What is the smallest building block of matter?', options: ['Cell', 'Atom', 'Molecule', 'Proton'], answer: 'Atom' },
+      { q: 'Two or more atoms bonded together make a...', options: ['Molecule', 'Nucleus', 'Liquid', 'Force'], answer: 'Molecule' },
+      { q: 'The distance around the outside of a shape is called its...', options: ['Area', 'Volume', 'Perimeter', 'Mass'], answer: 'Perimeter' },
+      { q: 'A push or a pull on an object is called a...', options: ['Friction', 'Gravity', 'Force', 'Energy'], answer: 'Force' }
     ]
   };
 
-  // --- ACTIONS ---
   const toggleExpand = (name) => setExpandedItem(expandedItem === name ? null : name);
 
   const handleAnswer = (opt, correct) => {
     if (opt === correct) setScore(s => s + 1);
-    if (currentQ < quizzes[activeGrade].length - 1) {
-      setCurrentQ(q => q + 1);
-    } else {
-      setShowResults(true);
-    }
+    if (currentQ < quizzes[activeGrade].length - 1) { setCurrentQ(q => q + 1); } 
+    else { setShowResults(true); }
   };
 
-  const resetQuiz = () => {
-    setQuizActive(false); setShowResults(false); setCurrentQ(0); setScore(0);
-  };
+  const resetQuiz = () => { setQuizActive(false); setShowResults(false); setCurrentQ(0); setScore(0); };
 
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
-  const tertTabStyle = (tabName, activeName, color) => ({
-    flex: '0 0 auto', padding: '6px 14px', borderRadius: '20px', fontSize: '0.85em', fontWeight: 'bold', border: `1px solid ${color}`,
-    background: activeName === tabName ? color : 'transparent', color: activeName === tabName ? '#fff' : color
-  });
-
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
       <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -139,7 +197,6 @@ export default function LearningHub() {
         <button onClick={() => setActiveCategory('starthere')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'starthere' ? '#3b82f6' : '#222', color: activeCategory === 'starthere' ? '#fff' : '#888' }}>📑 Start Here</button>
         <button onClick={() => setActiveCategory('school')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'school' ? '#f59e0b' : '#222', color: activeCategory === 'school' ? '#000' : '#888' }}>📚 School</button>
         <button onClick={() => setActiveCategory('supernatural')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'supernatural' ? '#a855f7' : '#222', color: activeCategory === 'supernatural' ? '#fff' : '#888' }}>🔮 Supernatural</button>
-        <button onClick={() => setActiveCategory('paganism')} style={{ flex: '0 0 auto', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeCategory === 'paganism' ? '#10b981' : '#222', color: activeCategory === 'paganism' ? '#fff' : '#888' }}>🌿 Paganism</button>
       </div>
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
@@ -186,11 +243,11 @@ export default function LearningHub() {
                 </div>
 
                 <div style={{ padding: '20px' }}>
-                  {['math', 'science', 'language', 'history'].map((subj) => (
+                  {['math', 'science', 'chemistry', 'history', 'language'].map((subj) => (
                     schoolCurriculum[activeGrade][subj]?.length > 0 && (
                       <div key={subj} style={{ marginBottom: '20px' }}>
                         <div style={{ color: '#fff', fontSize: '1.1em', textTransform: 'uppercase', fontWeight: '900', borderBottom: '2px solid #333', paddingBottom: '5px', marginBottom: '10px' }}>
-                          {subj === 'math' ? '🔢 Math' : subj === 'science' ? '🔬 Science' : subj === 'language' ? '📖 Language & Reading' : '🌍 History & Society'}
+                          {subj === 'math' ? '🔢 Math' : subj === 'science' ? '🔬 Science' : subj === 'chemistry' ? '🧪 Chemistry' : subj === 'language' ? '📖 Language & Reading' : '🌍 History & Civics'}
                         </div>
                         {schoolCurriculum[activeGrade][subj].map((item, idx) => (
                           <div key={idx} style={{ background: '#0a0a0a', padding: '12px', borderRadius: '6px', marginBottom: '8px', borderLeft: '2px solid #555' }}>
@@ -215,61 +272,48 @@ export default function LearningHub() {
           </div>
         )}
 
-        {/* QUIZ MODAL */}
-        {quizActive && quizzes[activeGrade] && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #f59e0b', paddingBottom: '15px', marginBottom: '20px' }}>
-              <h2 style={{ color: '#f59e0b', margin: 0, textTransform: 'uppercase' }}>{activeGrade} Exam</h2>
-              <button onClick={resetQuiz} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Exit</button>
-            </div>
+        {/* QUIZ MODAL - 80% TO PASS */}
+        {quizActive && quizzes[activeGrade] && (() => {
+          const passThreshold = Math.ceil(quizzes[activeGrade].length * 0.8);
+          const hasPassed = score >= passThreshold;
+          
+          return (
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #f59e0b', paddingBottom: '15px', marginBottom: '20px' }}>
+                <h2 style={{ color: '#f59e0b', margin: 0, textTransform: 'uppercase' }}>{activeGrade} Exam</h2>
+                <button onClick={resetQuiz} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Exit</button>
+              </div>
 
-            {!showResults ? (
-              <div style={{ background: '#111', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
-                <div style={{ color: '#888', fontWeight: 'bold', marginBottom: '15px', textTransform: 'uppercase' }}>Question {currentQ + 1} of {quizzes[activeGrade].length}</div>
-                <h3 style={{ color: '#fff', margin: '0 0 20px 0', fontSize: '1.2em', lineHeight: '1.4' }}>{quizzes[activeGrade][currentQ].q}</h3>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {quizzes[activeGrade][currentQ].options.map((opt, idx) => (
-                    <button key={idx} onClick={() => handleAnswer(opt, quizzes[activeGrade][currentQ].answer)} style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '15px', borderRadius: '8px', fontSize: '1.05em', textAlign: 'left', fontWeight: 'bold' }}>
-                      {opt}
-                    </button>
-                  ))}
+              {!showResults ? (
+                <div style={{ background: '#111', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
+                  <div style={{ color: '#888', fontWeight: 'bold', marginBottom: '15px', textTransform: 'uppercase' }}>Question {currentQ + 1} of {quizzes[activeGrade].length}</div>
+                  <h3 style={{ color: '#fff', margin: '0 0 20px 0', fontSize: '1.2em', lineHeight: '1.4' }}>{quizzes[activeGrade][currentQ].q}</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {quizzes[activeGrade][currentQ].options.map((opt, idx) => (
+                      <button key={idx} onClick={() => handleAnswer(opt, quizzes[activeGrade][currentQ].answer)} style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '15px', borderRadius: '8px', fontSize: '1.05em', textAlign: 'left', fontWeight: 'bold' }}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div style={{ background: '#111', padding: '30px 20px', borderRadius: '12px', border: `2px solid ${(score / quizzes[activeGrade].length) >= 0.8 ? '#10b981' : '#ef4444'}`, textAlign: 'center' }}>
-                <h2 style={{ color: (score / quizzes[activeGrade].length) >= 0.8 ? '#10b981' : '#ef4444', margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '2em' }}>
-                  {(score / quizzes[activeGrade].length) >= 0.8 ? 'PASSED!' : 'FAILED'}
-                </h2>
-                <div style={{ color: '#fff', fontSize: '1.2em', marginBottom: '20px' }}>You scored {score} out of {quizzes[activeGrade].length}.</div>
-                <p style={{ color: '#ccc', marginBottom: '30px' }}>
-                  {(score / quizzes[activeGrade].length) >= 0.8 ? `Great job! You have mastered the Grade ${activeGrade} curriculum.` : 'Please review the reference books and try the exam again.'}
-                </p>
-                <button onClick={resetQuiz} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '15px 30px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>
-                  Return to Books
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* SUPERNATURAL CONTENT */}
-        {activeCategory === 'supernatural' && (
-          <div style={{ borderTop: '4px solid #a855f7', paddingTop: '10px' }}>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', overflowX: 'auto' }}>
-              <button onClick={() => setActiveSubTab('tarot')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'tarot' ? '1px solid #a855f7' : '1px solid #333', background: activeSubTab === 'tarot' ? 'rgba(168, 85, 247, 0.1)' : 'transparent', color: activeSubTab === 'tarot' ? '#a855f7' : '#888', fontWeight: 'bold' }}>Tarot</button>
-              <button onClick={() => setActiveSubTab('wicca')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: activeSubTab === 'wicca' ? '1px solid #10b981' : '1px solid #333', background: activeSubTab === 'wicca' ? 'rgba(16, 185, 129, 0.1)' : 'transparent', color: activeSubTab === 'wicca' ? '#10b981' : '#888', fontWeight: 'bold' }}>Wicca</button>
+              ) : (
+                <div style={{ background: '#111', padding: '30px 20px', borderRadius: '12px', border: `2px solid ${hasPassed ? '#10b981' : '#ef4444'}`, textAlign: 'center' }}>
+                  <h2 style={{ color: hasPassed ? '#10b981' : '#ef4444', margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '2em' }}>
+                    {hasPassed ? 'PASSED!' : 'FAILED'}
+                  </h2>
+                  <div style={{ color: '#fff', fontSize: '1.2em', marginBottom: '20px' }}>You scored {score} out of {quizzes[activeGrade].length}.</div>
+                  <div style={{ color: '#888', marginBottom: '20px', fontSize: '0.9em' }}>Required to pass: {passThreshold} ({Math.round((passThreshold/quizzes[activeGrade].length)*100)}%)</div>
+                  <p style={{ color: '#ccc', marginBottom: '30px' }}>
+                    {hasPassed ? `Great job! You have mastered the Grade ${activeGrade} curriculum.` : 'Please review the reference books and try the exam again.'}
+                  </p>
+                  <button onClick={resetQuiz} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '15px 30px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>
+                    Return to Books
+                  </button>
+                </div>
+              )}
             </div>
-            {activeSubTab === 'tarot' && tarotDeck.map((card, idx) => (
-              <div key={idx} style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
-                <div onClick={() => toggleExpand(card.name)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}><h4 style={{ margin: 0, color: '#fff', fontSize: '1.1em' }}>{card.name}</h4><span style={{ color: '#a855f7', fontWeight: 'bold' }}>{expandedItem === card.name ? '−' : '+'}</span></div>
-                {expandedItem === card.name && (
-                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}><div style={{ color: '#00ffff', fontSize: '0.85em', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px' }}>Interpretation</div><div style={{ color: '#eee', lineHeight: '1.5', fontSize: '0.95em' }}>{card.desc}</div></div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+          );
+        })()}
 
       </div>
     </div>
