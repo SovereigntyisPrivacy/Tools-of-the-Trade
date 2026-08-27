@@ -5,11 +5,9 @@ export default function BudgetEngine() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   
-  // Persistence
   const [incomes, setIncomes] = useState(() => JSON.parse(localStorage.getItem('tot_incomes')) || []);
   const [bills, setBills] = useState(() => JSON.parse(localStorage.getItem('tot_bills')) || []);
 
-  // Form State
   const [incomeName, setIncomeName] = useState('');
   const [incomeAmount, setIncomeAmount] = useState('');
   const [incomeDate, setIncomeDate] = useState(() => new Date().toISOString().substring(0, 10));
@@ -22,22 +20,24 @@ export default function BudgetEngine() {
   const [billFrequency, setBillFrequency] = useState('Monthly');
   const [billNote, setBillNote] = useState('');
 
-  // Auto-save
   useEffect(() => { localStorage.setItem('tot_incomes', JSON.stringify(incomes)); }, [incomes]);
   useEffect(() => { localStorage.setItem('tot_bills', JSON.stringify(bills)); }, [bills]);
 
-  // Auto-Sort
   const sortedIncomes = [...incomes].sort((a, b) => new Date(a.date) - new Date(b.date));
   const sortedBills = [...bills].sort((a, b) => new Date(a.due) - new Date(b.due));
 
-  // The 4 Core Metrics
+  // --- THE CORRECTED OMNISCIENT MATH ---
   const totalCashPool = incomes.reduce((acc, inc) => acc + inc.amount, 0);
-  const totalLiability = bills.reduce((acc, b) => acc + b.cost, 0);
-  // Used cash is now strictly tied to whether the bill is marked PAID
-  const usedCash = bills.filter(b => b.isPaid).reduce((acc, b) => acc + b.cost, 0);
-  const availableCash = totalCashPool - usedCash;
+  
+  // Liability = Only bills that are UNLINKED and UNPAID
+  const totalLiability = bills.filter(b => !b.routeTo && !b.isPaid).reduce((acc, b) => acc + b.cost, 0);
+  
+  // Used Cash = Any bill that is LINKED to a check OR physically PAID
+  const usedCash = bills.filter(b => b.routeTo || b.isPaid).reduce((acc, b) => acc + b.cost, 0);
+  
+  // Available Cash correctly deducts both routed/paid bills AND looming unassigned liabilities
+  const availableCash = totalCashPool - usedCash - totalLiability;
 
-  // --- ACTIONS ---
   const handleAddIncome = () => {
     if (!incomeName || !incomeAmount) return;
     setIncomes([...incomes, { id: `inc_${Date.now()}`, name: incomeName, amount: parseFloat(incomeAmount), date: incomeDate, frequency: incomeFrequency, note: incomeNote }]);
@@ -66,7 +66,6 @@ export default function BudgetEngine() {
     alert(`${item.name} synced to Master Calendar!`);
   };
 
-  // --- REPORT GENERATOR ---
   const generateReport = () => {
     let text = `=== DETAILED BUDGET LEDGER ===\nGenerated: ${new Date().toLocaleDateString()}\n\n`;
     text += `TOTAL CASH POOL: $${totalCashPool.toFixed(2)}\n`;
@@ -89,11 +88,9 @@ export default function BudgetEngine() {
     window.location.href = `mailto:?subject=Detailed Budget Ledger&body=${encodeURIComponent(text)}`;
   };
 
-  // --- STYLES ---
   const glassCard = { background: 'rgba(17, 17, 17, 0.6)', backdropFilter: 'blur(10px)', borderRadius: '12px', padding: '20px', marginBottom: '15px' };
   const inputStyle = { background: 'transparent', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '6px', width: '100%', marginBottom: '15px' };
   
-  // --- VIEWS ---
   const DashboardView = () => (
     <div style={{ marginTop: '20px' }}>
       <div style={{ ...glassCard, border: '1px solid #a855f7', textAlign: 'center' }}>
@@ -122,10 +119,13 @@ export default function BudgetEngine() {
     </div>
   );
 
+  // NO MORE DOUBLE SCROLLBARS. Native HTML Preformat tag allows natural page stretching.
   const HistoryView = () => (
     <div style={{ marginTop: '20px', textAlign: 'center' }}>
       <h3 style={{ color: '#3b82f6', textTransform: 'uppercase', marginBottom: '15px' }}>Detailed Export Preview</h3>
-      <textarea readOnly value={generateReport()} style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid #333', padding: '15px', borderRadius: '12px', width: '100%', minHeight: '350px', fontSize: '0.85rem', fontFamily: 'monospace', resize: 'vertical', marginBottom: '20px', lineHeight: '1.5' }} />
+      <div style={{ background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid #333', padding: '15px', borderRadius: '12px', width: '100%', fontSize: '0.85rem', fontFamily: 'monospace', textAlign: 'left', whiteSpace: 'pre-wrap', marginBottom: '20px', lineHeight: '1.5' }}>
+        {generateReport()}
+      </div>
       <button onClick={handleShareExport} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', width: '100%' }}>📤 Email / Export Report</button>
     </div>
   );
