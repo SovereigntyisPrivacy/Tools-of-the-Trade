@@ -21,28 +21,29 @@ export default function MasterCalendar() {
     try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } 
     catch (e) { return []; }
   };
+  
   const normalizeDate = (dStr) => {
     if (!dStr) return null;
+    if (typeof dStr !== 'string') dStr = String(dStr);
+    if (dStr.includes('T')) dStr = dStr.split('T')[0];
     if (dStr.includes('/')) {
       const parts = dStr.split('/');
       if (parts.length === 3) return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
     }
     return dStr.substring(0, 10);
   };
+  
   const toYMD = (dateObj) => `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
 
-  // --- AUTO-SNAP TO TODAY ON MOUNT ---
   useEffect(() => {
     const t = new Date();
     setCurrentDate(t);
-    setSelectedDate(toYYMD(t));
+    setSelectedDate(toYMD(t));
   }, []);
 
-  // --- STATE PERSISTENCE ---
   useEffect(() => { localStorage.setItem('tot_custom_agenda', JSON.stringify(customEvents)); }, [customEvents]);
 
-  // --- THE NEW UNIVERSAL OCCURRENCE GENERATOR ---
-  // Calculates all actual instances of a recurring event within the viewable month.
+  // --- THE UNIVERSAL OCCURRENCE GENERATOR ---
   const getOccurrencesInMonth = (baseDateStr, frequency, year, month) => {
     if (!baseDateStr || !frequency || frequency === 'None') return [];
     
@@ -81,7 +82,7 @@ export default function MasterCalendar() {
     return occurrences;
   };
 
-  // --- THE NEW RICH, OMNISCIENT DATA SCANNER ---
+  // --- THE NEW DATA SCANNER ---
   useEffect(() => {
     const scanModules = () => {
       let globalEvents = customEvents.map(e => ({ ...e, icon: '📌', type: 'Custom Event' }));
@@ -89,18 +90,19 @@ export default function MasterCalendar() {
       // Data Sources
       const incomes = [...getSafe('tot_incomes'), ...getSafe('fleet_incomes')];
       const bills = [...getSafe('tot_bills'), ...getSafe('fleet_bills')];
-      const assets = getSafe('tot_assets');
-      const manualSyncs = getSafe('tot_calendar_events'); 
+      const assets = [...getSafe('tot_assets'), ...getSafe('asset_ledger')];
+      const manualSyncs = [...getSafe('tot_calendar_events'), ...getSafe('fleet_schedules')]; 
 
-      // 1. Explicit Sync Buttons
+      // 1. Explicit Sync Buttons & Legacy Schedules
       manualSyncs.forEach(e => {
-        if(e.date) globalEvents.push({ id: e.id, date: normalizeDate(e.date), title: e.title, amount: e.amount, color: '#3b82f6', icon: '🔄', type: 'Synced Event' });
+        const d = normalizeDate(e.date || e.due || e.shiftDate);
+        if(d) globalEvents.push({ id: e.id || `sync_${Date.now()}`, date: d, title: e.title || e.name || 'Synced Event', amount: e.amount || e.cost, color: e.color || '#3b82f6', icon: '🔄', type: 'Manual Sync' });
       });
 
-      // 2. Budget Recurrences (The Fixed Logic)
-      const processRecurringData = (items, color, icon, processFn) => {
+      // 2. Budget Recurrences (Fixed date/due keys)
+      const processRecurringData = (items, color, icon, type) => {
         items.forEach(item => {
-          const rawDateStr = normalizeDate(item.date || item.dueDate || item.shiftDate);
+          const rawDateStr = normalizeDate(item.date || item.due || item.dueDate);
           if (!rawDateStr) return;
           const name = item.name || item.service || 'Item';
           const occurrences = getOccurrencesInMonth(rawDateStr, item.frequency, currentYear, currentMonth);
@@ -112,37 +114,31 @@ export default function MasterCalendar() {
           occurrences.forEach(occStr => {
             const isRecurring = item.frequency && item.frequency !== 'None';
             const displayTitle = isRecurring ? `${name} 🔁` : name;
-            let eventObj = { id: `${item.id || Date.now()}_${occStr}`, date: occStr, title: displayTitle, amount: item.amount || item.cost, color, icon };
-            if(processFn) processFn(eventObj, item, occStr);
+            let eventObj = { id: `${item.id || Date.now()}_${occStr}`, date: occStr, title: displayTitle, amount: item.amount || item.cost, color, icon, type };
+            if (type === 'Bill' && item.isPaid) { eventObj.isPaid = true; eventObj.color = '#555'; }
             globalEvents.push(eventObj);
           });
         });
       };
 
-      processRecurringData(incomes, '#10b981', '💵', (obj, incItem) => obj.type = 'Income');
-      processRecurringData(bills, '#ef4444', '🔴', (obj, billItem) => {
-        obj.type = 'Bill Due';
-        // Add Paid Status Visualization
-        if (billItem.status === 'Paid') {
-          obj.isPaid = true;
-          obj.color = '#555'; // Greyscale for paid
-        }
-      });
+      processRecurringData(incomes, '#10b981', '💵', 'Income');
+      processRecurringData(bills, '#ef4444', '🔴', 'Bill');
 
-      // 3. Asset Warranties (Omniscient Math)
+      // 3. Asset Warranties (Fixed 'purchased' key)
       assets.forEach(a => {
-        const baseDate = a.purchaseDate || a.date;
-        if (a.warranty && a.warranty !== 'None' && a.warranty !== 'Lifetime' && baseDate) {
+        const baseDate = a.purchased || a.purchaseDate || a.date;
+        if (a.warranty && !['None', 'N/A', 'Lifetime'].includes(a.warranty) && baseDate) {
            const nDate = normalizeDate(baseDate);
            if(nDate) {
              const [y, m, d] = nDate.split('-');
              let exp = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-             if (a.warranty === '30 Days') exp.setDate(exp.getDate() + 30);
-             else if (a.warranty === '90 Days') exp.setDate(exp.getDate() + 90);
-             else if (a.warranty === '1 Year') exp.setFullYear(exp.getFullYear() + 1);
-             else if (a.warranty === '2 Years') exp.setFullYear(exp.getFullYear() + 2);
-             else if (a.warranty === '5 Years') exp.setFullYear(exp.getFullYear() + 5);
-             globalEvents.push({ id: `ast_${Date.now()}`, date: toYMD(exp), title: a.name || 'Asset', type: 'Warranty Exp', icon: '🛡️', color: '#a855f7' });
+             if (a.warranty.includes('30 Day')) exp.setDate(exp.getDate() + 30);
+             else if (a.warranty.includes('90 Day')) exp.setDate(exp.getDate() + 90);
+             else if (a.warranty.includes('1 Year')) exp.setFullYear(exp.getFullYear() + 1);
+             else if (a.warranty.includes('2 Year')) exp.setFullYear(exp.getFullYear() + 2);
+             else if (a.warranty.includes('5 Year')) exp.setFullYear(exp.getFullYear() + 5);
+             
+             globalEvents.push({ id: `ast_${a.id || Date.now()}`, date: toYMD(exp), title: a.name || 'Asset', type: 'Warranty Exp', icon: '🛡️', color: '#a855f7' });
            }
         }
       });
@@ -160,9 +156,9 @@ export default function MasterCalendar() {
     return () => clearInterval(intervalId);
   }, [customEvents, currentMonth, currentYear]); 
 
-  // --- CALENDAR UI ---
   const prevMonth = () => setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
+  const goToToday = () => { const t = new Date(); setCurrentDate(t); setSelectedDate(toYMD(t)); };
   const handleDayClick = (day) => setSelectedDate(`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
 
   const handleAddCustomEvent = () => {
@@ -180,13 +176,14 @@ export default function MasterCalendar() {
       const cellDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const dayEvents = events.filter(e => e.date === cellDateStr);
       const isSelected = cellDateStr === selectedDate;
-      const isToday = cellDateStr === normalizeDate(new Date().toISOString());
+      const isToday = cellDateStr === toYMD(new Date());
 
       cells.push(
-        <div key={day} onClick={() => handleDayClick(day)} style={{ background: '#111', border: isSelected ? '2px solid #a855f7' : isToday ? '1px solid #06b6d4' : '1px solid #222', minHeight: '60px', padding: '5px', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
+        <div key={day} onClick={() => handleDayClick(day)} style={{ background: '#111', border: isSelected ? '2px solid #a855f7' : isToday ? '1px solid #06b6d4' : '1px solid #222', minHeight: '60px', padding: '5px', display: 'flex', flexDirection: 'column', cursor: 'pointer', position: 'relative' }}>
           <span style={{ color: isSelected ? '#a855f7' : isToday ? '#06b6d4' : '#fff', fontWeight: 'bold', fontSize: '0.9em', alignSelf: 'center', marginBottom: '5px' }}>{day}</span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', justifyContent: 'center' }}>
             {dayEvents.slice(0, 4).map((e, idx) => (<div key={idx} style={{ width: '8px', height: '8px', borderRadius: '50%', background: e.color }}></div>))}
+            {dayEvents.length > 4 && <span style={{ color: '#888', fontSize: '0.6em', fontWeight: 'bold' }}>+</span>}
           </div>
         </div>
       );
@@ -195,21 +192,23 @@ export default function MasterCalendar() {
   };
 
   const selectedDayEvents = events.filter(e => e.date === selectedDate);
-  // Sort paid bills to the bottom
   selectedDayEvents.sort((a,b) => (a.isPaid===b.isPaid)?0: a.isPaid?1:-1);
   const displayDateText = selectedDate ? new Date(selectedDate + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
   const inputStyle = { background: '#0a0a0a', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '6px' };
 
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
-      <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.8)' }}>
-        <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
+      <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.8)' }}>
+        <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', marginRight: '15px' }}>← Hub</button>
         <h2 style={{ margin: 0, color: '#fff', fontSize: '1.2em' }}>Master Calendar</h2>
       </header>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: '#111', borderBottom: '1px solid #222', borderRadius: '12px 12px 0 0', margin: '10px 10px 0 10px' }}>
         <button onClick={prevMonth} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold' }}>◀</button>
-        <h2 style={{ margin: 0, color: '#ef4444', fontSize: '1.2em', textTransform: 'uppercase' }}>{monthNamesFull[currentMonth]} {currentYear}</h2>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ margin: 0, color: '#ef4444', fontSize: '1.2em', textTransform: 'uppercase' }}>{monthNamesFull[currentMonth]} {currentYear}</h2>
+          <button onClick={goToToday} style={{ background: 'transparent', color: '#3b82f6', border: 'none', marginTop: '5px', fontWeight: 'bold', fontSize: '0.85em', padding: 0 }}>Go to Today</button>
+        </div>
         <button onClick={nextMonth} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold' }}>▶</button>
       </div>
 
@@ -220,7 +219,6 @@ export default function MasterCalendar() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>{renderCells()}</div>
       </div>
 
-      {/* THE RICH AGENDA DASHBOARD */}
       <div style={{ background: '#111', margin: '15px 10px 100px 10px', borderRadius: '12px', padding: '20px', borderTop: '4px solid #a855f7' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '20px' }}>
           <h3 style={{ color: '#ef4444', margin: 0, fontSize: '1.3em', textTransform: 'uppercase' }}>Agenda</h3>
