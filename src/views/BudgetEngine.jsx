@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 export default function BudgetEngine() {
   const navigate = useNavigate();
-  // Tabs: 'dashboard' (Mom's View), 'manage' (Edit/Add/Sync), 'export'
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [showLedger, setShowLedger] = useState(false); // Toggle for Envelope Ledger
   
   const [incomes, setIncomes] = useState(() => JSON.parse(localStorage.getItem('tot_incomes')) || []);
   const [bills, setBills] = useState(() => JSON.parse(localStorage.getItem('tot_bills')) || []);
@@ -67,20 +67,21 @@ export default function BudgetEngine() {
     text += `GLOBAL CASH POOL: $${totalCashPool.toFixed(2)}\n`;
     text += `TOTAL LIABILITY:  $${totalLiability.toFixed(2)}\n`;
     text += `USED CASH:        $${usedCash.toFixed(2)}\n`;
-    text += `UNASSIGNED CASH:  $${availableCash.toFixed(2)}\n\n`;
+    text += `AVAILABLE CASH:   $${availableCash.toFixed(2)}\n\n`;
     text += `-- ENVELOPE LEDGER --\n`;
     sortedIncomes.forEach(i => {
       text += `\n[ ${i.name} (${i.date}) | +$${i.amount.toFixed(2)} ]\n`;
+      if(i.note) text += `  Note: ${i.note}\n`;
       const routed = sortedBills.filter(b => b.routeTo === i.id);
       let rem = i.amount;
       if (routed.length === 0) text += `  No bills assigned.\n`;
-      routed.forEach(b => { text += `  - ${b.name} (${b.due}): -$${b.cost.toFixed(2)} ${b.isPaid ? '(PAID)' : ''}\n`; rem -= b.cost; });
+      routed.forEach(b => { text += `  - ${b.name} (${b.due}): -$${b.cost.toFixed(2)} ${b.isPaid ? '(PAID)' : ''}\n`; if(b.note) text += `    Note: ${b.note}\n`; rem -= b.cost; });
       text += `  Remaining Cash: $${rem.toFixed(2)}\n`;
     });
     const unassigned = sortedBills.filter(b => !b.routeTo);
     if (unassigned.length > 0) {
       text += `\n-- UNASSIGNED LIABILITIES --\n`;
-      unassigned.forEach(b => text += `  - ${b.name} (${b.due}): -$${b.cost.toFixed(2)} ${b.isPaid ? '(PAID)' : ''}\n`);
+      unassigned.forEach(b => { text += `  - ${b.name} (${b.due}): -$${b.cost.toFixed(2)} ${b.isPaid ? '(PAID)' : ''}\n`; if(b.note) text += `    Note: ${b.note}\n`; });
     }
     return text;
   };
@@ -91,74 +92,76 @@ export default function BudgetEngine() {
     window.location.href = `mailto:?subject=Detailed Budget Ledger&body=${encodeURIComponent(text)}`;
   };
 
-  // --- STYLES ---
   const glassCard = { background: 'rgba(17, 17, 17, 0.6)', backdropFilter: 'blur(10px)', borderRadius: '12px', padding: '20px', marginBottom: '15px' };
-  const inputStyle = { background: 'transparent', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '6px', width: '100%', marginBottom: '15px' };
+  const inputStyle = { background: 'transparent', color: '#fff', border: '1px solid #333', padding: '10px', borderRadius: '6px', width: '100%', marginBottom: '10px', fontSize: '0.9rem' };
   
-  // --- VIEWS ---
   const DashboardView = () => {
     const unassignedBills = sortedBills.filter(b => !b.routeTo);
     return (
       <div style={{ marginTop: '20px' }}>
-        {/* Top Metric Cards */}
-        <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '15px', textAlign: 'center', marginBottom: '10px' }}>
-          <h4 style={{ color: '#888', margin: '0 0 5px 0', textTransform: 'uppercase', fontSize: '0.8rem' }}>Global Cash Pool</h4>
-          <h2 style={{ color: '#10b981', margin: 0 }}>${totalCashPool.toFixed(2)}</h2>
+        <div style={{ ...glassCard, border: '1px solid #a855f7', textAlign: 'center' }}>
+          <h4 style={{ color: '#a855f7', margin: '0 0 10px 0', textTransform: 'uppercase' }}>Total Cash Pool</h4>
+          <h1 style={{ color: '#fff', margin: 0, fontSize: '2.5rem' }}>${totalCashPool.toFixed(2)}</h1>
         </div>
-        <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '15px', textAlign: 'center', marginBottom: '15px' }}>
-          <h4 style={{ color: '#888', margin: '0 0 5px 0', textTransform: 'uppercase', fontSize: '0.8rem' }}>Total Unassigned Cash</h4>
-          <h2 style={{ color: '#06b6d4', margin: 0 }}>${availableCash.toFixed(2)}</h2>
+        <div style={{ ...glassCard, border: '1px solid #ef4444', textAlign: 'center', padding: '15px' }}>
+          <h4 style={{ color: '#ef4444', margin: '0 0 5px 0', textTransform: 'uppercase' }}>Total Liability</h4>
+          <h2 style={{ color: '#ef4444', margin: 0 }}>${totalLiability.toFixed(2)}</h2>
         </div>
-        
-        <button onClick={() => setActiveTab('manage')} style={{ background: '#06b6d4', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>✏️ Edit Ledgers</button>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+          <div style={{ ...glassCard, border: '1px solid #ef4444', textAlign: 'center', margin: 0 }}>
+            <h4 style={{ color: '#ef4444', margin: '0 0 5px 0', fontSize: '0.85rem' }}>USED CASH</h4>
+            <h2 style={{ color: '#ef4444', margin: 0 }}>${usedCash.toFixed(2)}</h2>
+          </div>
+          <div style={{ ...glassCard, border: '1px solid #10b981', textAlign: 'center', margin: 0 }}>
+            <h4 style={{ color: '#10b981', margin: '0 0 5px 0', fontSize: '0.85rem' }}>AVAILABLE CASH</h4>
+            <h2 style={{ color: '#10b981', margin: 0 }}>${availableCash.toFixed(2)}</h2>
+          </div>
+        </div>
 
-        {/* The Classic Envelope Ledger */}
-        <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '15px', border: '1px solid #222' }}>
-          {sortedIncomes.length === 0 && <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No ledgers established.</p>}
-          
-          {sortedIncomes.map(inc => {
-            const routedBills = sortedBills.filter(b => b.routeTo === inc.id);
-            const remaining = inc.amount - routedBills.reduce((sum, b) => sum + b.cost, 0);
-            
-            return (
-              <div key={inc.id} style={{ marginBottom: '20px', borderBottom: '1px solid #222', paddingBottom: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #10b981', paddingBottom: '5px', marginBottom: '8px' }}>
-                  <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>{inc.name} ({inc.date})</span>
-                  <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>${inc.amount.toFixed(2)}</span>
+        <button onClick={() => setShowLedger(!showLedger)} style={{ width: '100%', background: showLedger ? '#222' : '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '20px' }}>
+          {showLedger ? 'Hide Envelope Ledger' : '👁️ Preview Envelope Ledger'}
+        </button>
+
+        {showLedger && (
+          <div style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '12px', padding: '15px', border: '1px solid #333' }}>
+            {sortedIncomes.length === 0 && <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No ledgers established.</p>}
+            {sortedIncomes.map(inc => {
+              const routedBills = sortedBills.filter(b => b.routeTo === inc.id);
+              const remaining = inc.amount - routedBills.reduce((sum, b) => sum + b.cost, 0);
+              return (
+                <div key={inc.id} style={{ marginBottom: '20px', borderBottom: '1px solid #222', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #10b981', paddingBottom: '5px', marginBottom: '8px' }}>
+                    <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>{inc.name} ({inc.date})</span>
+                    <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>${inc.amount.toFixed(2)}</span>
+                  </div>
+                  {routedBills.length === 0 ? <p style={{ color: '#888', fontStyle: 'italic', textAlign: 'center', fontSize: '0.9rem', margin: '10px 0' }}>No bills assigned to this check.</p> : (
+                    routedBills.map(b => (
+                      <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', opacity: b.isPaid ? 0.5 : 1 }}>
+                        <span style={{ color: '#fff', fontSize: '1rem' }}>- {b.name} {b.isPaid && '✅'}</span>
+                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>${b.cost.toFixed(2)}</span>
+                      </div>
+                    ))
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                    <span style={{ color: '#ccc', fontSize: '1rem' }}>Remaining Cash:</span>
+                    <span style={{ color: '#06b6d4', fontWeight: 'bold', fontSize: '1.1rem' }}>${remaining.toFixed(2)}</span>
+                  </div>
                 </div>
-                
-                {routedBills.length === 0 ? (
-                  <p style={{ color: '#888', fontStyle: 'italic', textAlign: 'center', fontSize: '0.9rem', margin: '10px 0' }}>No bills assigned to this check.</p>
-                ) : (
-                  routedBills.map(b => (
-                    <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', opacity: b.isPaid ? 0.5 : 1 }}>
-                      <span style={{ color: '#fff', fontSize: '1rem' }}>- {b.name} ({b.due}) {b.isPaid && '✅'}</span>
-                      <span style={{ color: '#ef4444', fontWeight: 'bold' }}>${b.cost.toFixed(2)}</span>
-                    </div>
-                  ))
-                )}
-                
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
-                  <span style={{ color: '#ccc', fontSize: '1rem' }}>Remaining Cash:</span>
-                  <span style={{ color: '#06b6d4', fontWeight: 'bold', fontSize: '1.1rem' }}>${remaining.toFixed(2)}</span>
-                </div>
+              );
+            })}
+            {unassignedBills.length > 0 && (
+              <div style={{ marginTop: '20px', borderTop: '2px dashed #ef4444', paddingTop: '15px' }}>
+                <h4 style={{ color: '#ef4444', textAlign: 'center', textTransform: 'uppercase', margin: '0 0 15px 0' }}>Unassigned Liabilities</h4>
+                {unassignedBills.map(b => (
+                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', opacity: b.isPaid ? 0.5 : 1 }}>
+                    <span style={{ color: '#fff', fontSize: '1rem' }}>- {b.name} ({b.due}) {b.isPaid && '✅'}</span>
+                    <span style={{ color: '#ef4444', fontWeight: 'bold' }}>${b.cost.toFixed(2)}</span>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-
-          {/* Unassigned Liabilities Block */}
-          {unassignedBills.length > 0 && (
-            <div style={{ marginTop: '30px', borderTop: '2px dashed #ef4444', paddingTop: '15px' }}>
-              <h4 style={{ color: '#ef4444', textAlign: 'center', textTransform: 'uppercase', margin: '0 0 15px 0' }}>Unassigned Liabilities</h4>
-              {unassignedBills.map(b => (
-                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', opacity: b.isPaid ? 0.5 : 1 }}>
-                  <span style={{ color: '#fff', fontSize: '1rem' }}>- {b.name} ({b.due}) {b.isPaid && '✅'}</span>
-                  <span style={{ color: '#ef4444', fontWeight: 'bold' }}>${b.cost.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -168,49 +171,55 @@ export default function BudgetEngine() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
         <div style={{ ...glassCard, borderTop: '4px solid #10b981', margin: 0, padding: '15px' }}>
           <h4 style={{ color: '#10b981', marginTop: 0, textTransform: 'uppercase' }}>Log Income</h4>
-          <input type="text" placeholder="Name" value={incomeName} onChange={e=>setIncomeName(e.target.value)} style={{...inputStyle, marginBottom:'8px'}} />
-          <input type="number" placeholder="Amount ($)" value={incomeAmount} onChange={e=>setIncomeAmount(e.target.value)} style={{...inputStyle, marginBottom:'8px'}} />
-          <input type="date" value={incomeDate} onChange={e=>setIncomeDate(e.target.value)} style={{...inputStyle, marginBottom:'8px'}} />
+          <input type="text" placeholder="Name" value={incomeName} onChange={e=>setIncomeName(e.target.value)} style={inputStyle} />
+          <input type="number" placeholder="Amount ($)" value={incomeAmount} onChange={e=>setIncomeAmount(e.target.value)} style={inputStyle} />
+          <input type="date" value={incomeDate} onChange={e=>setIncomeDate(e.target.value)} style={inputStyle} />
+          <input type="text" placeholder="Notes..." value={incomeNote} onChange={e=>setIncomeNote(e.target.value)} style={inputStyle} />
           <button onClick={handleAddIncome} style={{ width: '100%', background: '#10b981', color: '#000', padding: '10px', borderRadius: '8px', fontWeight: 'bold', border: 'none' }}>Save</button>
         </div>
         <div style={{ ...glassCard, borderTop: '4px solid #ef4444', margin: 0, padding: '15px' }}>
           <h4 style={{ color: '#ef4444', marginTop: 0, textTransform: 'uppercase' }}>Log Liability</h4>
-          <input type="text" placeholder="Name" value={billName} onChange={e=>setBillName(e.target.value)} style={{...inputStyle, marginBottom:'8px'}} />
-          <input type="number" placeholder="Cost ($)" value={billCost} onChange={e=>setBillCost(e.target.value)} style={{...inputStyle, marginBottom:'8px'}} />
-          <input type="date" value={billDue} onChange={e=>setBillDue(e.target.value)} style={{...inputStyle, marginBottom:'8px'}} />
+          <input type="text" placeholder="Name" value={billName} onChange={e=>setBillName(e.target.value)} style={inputStyle} />
+          <input type="number" placeholder="Cost ($)" value={billCost} onChange={e=>setBillCost(e.target.value)} style={inputStyle} />
+          <input type="date" value={billDue} onChange={e=>setBillDue(e.target.value)} style={inputStyle} />
+          <input type="text" placeholder="Notes..." value={billNote} onChange={e=>setBillNote(e.target.value)} style={inputStyle} />
           <button onClick={handleAddBill} style={{ width: '100%', background: '#ef4444', color: '#fff', padding: '10px', borderRadius: '8px', fontWeight: 'bold', border: 'none' }}>Save</button>
         </div>
       </div>
 
-      <h3 style={{ color: '#a855f7', textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px' }}>Manage Income Ledgers</h3>
+      <h3 style={{ color: '#10b981', textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px' }}>Manage Income Ledgers</h3>
       {sortedIncomes.map(inc => (
         <div key={inc.id} style={{ ...glassCard, borderLeft: '4px solid #10b981', padding: '15px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ color: '#a855f7', margin: 0 }}>{inc.name} ({inc.date})</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+            <h3 style={{ color: '#10b981', margin: 0 }}>{inc.name} ({inc.date})</h3>
             <div style={{ color: '#10b981', fontSize: '1.2rem', fontWeight: 'bold' }}>${inc.amount.toFixed(2)}</div>
           </div>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          {inc.note && <p style={{ color: '#888', fontSize: '0.85rem', margin: '0 0 10px 0', fontStyle: 'italic' }}>Note: {inc.note}</p>}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
             <button onClick={() => manualSyncToCalendar(inc, 'Income')} style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold' }}>Sync 📅</button>
             <button onClick={() => deleteIncome(inc.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold', fontSize: '1.2rem' }}>×</button>
           </div>
         </div>
       ))}
 
-      <h3 style={{ color: '#a855f7', textTransform: 'uppercase', textAlign: 'center', marginTop: '20px', marginBottom: '15px' }}>Manage Bills</h3>
+      <h3 style={{ color: '#ef4444', textTransform: 'uppercase', textAlign: 'center', marginTop: '20px', marginBottom: '15px' }}>Manage Bills</h3>
       {sortedBills.map(bill => (
         <div key={bill.id} style={{ ...glassCard, borderLeft: '4px solid #ef4444', padding: '15px', opacity: bill.isPaid ? 0.6 : 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ color: '#a855f7', margin: 0, textDecoration: bill.isPaid ? 'line-through' : 'none' }}>{bill.name} ({bill.due})</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+            <h3 style={{ color: '#ef4444', margin: 0, textDecoration: bill.isPaid ? 'line-through' : 'none' }}>{bill.name} ({bill.due})</h3>
             <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: 'bold', textDecoration: bill.isPaid ? 'line-through' : 'none' }}>${bill.cost.toFixed(2)}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+          {bill.note && <p style={{ color: '#888', fontSize: '0.85rem', margin: '0 0 10px 0', fontStyle: 'italic' }}>Note: {bill.note}</p>}
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '15px 0' }}>
             <span style={{ color: '#888', fontSize: '0.9rem' }}>Route To:</span>
             <select value={bill.routeTo} onChange={(e) => updateBillRoute(bill.id, e.target.value)} style={{ background: '#000', color: '#3b82f6', border: '1px solid #333', padding: '8px', borderRadius: '6px', flex: 1 }}>
               <option value="">Unassigned</option>
               {sortedIncomes.map(inc => <option key={inc.id} value={inc.id}>{inc.name}</option>)}
             </select>
           </div>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <button onClick={() => togglePaidStatus(bill.id)} style={{ background: bill.isPaid ? '#333' : '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold' }}>{bill.isPaid ? 'Mark Unpaid' : 'Mark Paid ✅'}</button>
             <button onClick={() => manualSyncToCalendar(bill, 'Bill')} style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold' }}>Sync 📅</button>
             <button onClick={() => deleteBill(bill.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold', fontSize: '1.2rem' }}>×</button>
