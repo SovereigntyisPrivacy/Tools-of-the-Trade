@@ -30,14 +30,16 @@ export default function ChronosHub() {
   const [matSn, setMatSn] = useState('');
   const [crewName, setCrewName] = useState('');
   const [crewRate, setCrewRate] = useState('');
+  
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [receiptTab, setReceiptTab] = useState('customer');
+  const [receiptTab, setReceiptTab] = useState('customer'); // Active Receipt Toggle
 
   // --- ARCHIVE & VIEWING STATE ---
   const [dotArchives, setDotArchives] = useState(() => JSON.parse(localStorage.getItem('hos_dotArchives')) || []);
   const [invoiceArchives, setInvoiceArchives] = useState(() => JSON.parse(localStorage.getItem('hos_invoiceArchives')) || []);
   const [viewingDot, setViewingDot] = useState(null);
   const [viewingInvoice, setViewingInvoice] = useState(null);
+  const [archiveReceiptTab, setArchiveReceiptTab] = useState('customer'); // Archived Receipt Toggle
 
   // --- PERSISTENCE ---
   useEffect(() => {
@@ -185,7 +187,7 @@ export default function ChronosHub() {
 
   const archiveInvoice = () => {
     if (grossBillable === 0) return alert("No financials to save.");
-    setInvoiceArchives([{ id: Date.now(), date: new Date().toLocaleDateString(), total: grossBillable.toFixed(2), fee: fixedFee, materials, crew: displayCrew }, ...invoiceArchives]);
+    setInvoiceArchives([{ id: Date.now(), date: new Date().toLocaleDateString(), total: grossBillable.toFixed(2), fee: fixedFee, discount: discount, notes: jobNotes, materials, crew: displayCrew }, ...invoiceArchives]);
     setMaterials([]); setCrew([]); setJobNotes(''); setShowReceiptModal(false); alert("Invoice Archived to History.");
   };
 
@@ -369,7 +371,7 @@ export default function ChronosHub() {
                   {invoiceArchives.map((arc) => (
                     <div key={arc.id} style={{ background: '#0a0a0a', padding: '15px', borderRadius: '8px', borderLeft: '2px solid #10b981', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div><strong style={{ color: '#fff', display: 'block' }}>Job: {arc.date}</strong><span style={{ color: '#10b981', fontSize: '0.9em' }}>${arc.total}</span></div>
-                      <button onClick={() => setViewingInvoice(arc)} style={{ background: '#222', border: '1px solid #10b981', color: '#10b981', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>View</button>
+                      <button onClick={() => { setViewingInvoice(arc); setArchiveReceiptTab('customer'); }} style={{ background: '#222', border: '1px solid #10b981', color: '#10b981', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>View</button>
                     </div>
                   ))}
                   <button onClick={() => exportCSV('invoice')} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>📤 Native Share Invoices (CSV)</button>
@@ -432,52 +434,97 @@ export default function ChronosHub() {
         </div>
       )}
 
-      {/* --- ACTIVE RECEIPT MODAL --- */}
+      {/* --- RESTORED ACTIVE RECEIPT MODAL --- */}
       {showReceiptModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100, padding: '15px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #222', paddingBottom: '10px', marginBottom: '15px' }}>
             <h2 style={{ color: '#10b981', margin: 0, textTransform: 'uppercase' }}>Receipt Engine</h2>
             <button onClick={() => setShowReceiptModal(false)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
           </div>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            <button onClick={archiveInvoice} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Archive Job</button>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+            <button onClick={() => setReceiptTab('customer')} style={{ flex: 1, background: receiptTab === 'customer' ? '#fff' : '#222', color: receiptTab === 'customer' ? '#000' : '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Customer View</button>
+            <button onClick={() => setReceiptTab('operator')} style={{ flex: 1, background: receiptTab === 'operator' ? '#3b82f6' : '#222', color: receiptTab === 'operator' ? '#fff' : '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Operator View</button>
           </div>
-          
-          <div style={{ background: '#fff', color: '#000', padding: '20px', borderRadius: '8px' }}>
-            <h2 style={{ color: '#10b981', textAlign: 'center', margin: '0 0 5px 0', textTransform: 'uppercase' }}>INVOICE PREVIEW</h2>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #000', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.3em', marginTop: '20px' }}>
-              <span>TOTAL DUE</span><span>${grossBillable.toFixed(2)}</span>
+          <button onClick={archiveInvoice} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>💾 Archive Job</button>
+
+          {receiptTab === 'customer' ? (
+            <div style={{ background: '#fff', color: '#000', padding: '20px', borderRadius: '8px' }}>
+              <h2 style={{ color: '#10b981', textAlign: 'center', margin: '0 0 5px 0', textTransform: 'uppercase' }}>INVOICE</h2>
+              <h4 style={{ textAlign: 'center', margin: '0 0 20px 0', color: '#666' }}>{new Date().toLocaleDateString()}</h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}><span>Service Fee</span><span>${parseFloat(fixedFee).toFixed(2)}</span></div>
+              {discount > 0 && (<div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', color: '#ef4444', marginBottom: '15px' }}><span>Discount Applied</span><span>-${parseFloat(discount).toFixed(2)}</span></div>)}
+              <h4 style={{ textAlign: 'center', textTransform: 'uppercase', color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>Materials & Hardware</h4>
+              {materials.map(m => (<div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}><span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span></div>))}
+              <h4 style={{ textAlign: 'center', textTransform: 'uppercase', color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Labor</h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '20px' }}><span>Site Labor (Total)</span><span>${totalCrewPayout.toFixed(2)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #000', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.3em' }}><span>TOTAL DUE</span><span>${grossBillable.toFixed(2)}</span></div>
+              {jobNotes && (<div style={{ marginTop: '30px', padding: '15px', background: '#f9f9f9', borderLeft: '3px solid #10b981', fontSize: '0.9em', color: '#444', fontStyle: 'italic' }}><strong>Notes: </strong>{jobNotes}</div>)}
             </div>
-            {jobNotes && <div style={{ marginTop: '20px', padding: '15px', background: '#f9f9f9', borderLeft: '3px solid #10b981', fontSize: '0.9em', color: '#444', fontStyle: 'italic' }}><strong>Notes: </strong>{jobNotes}</div>}
-          </div>
+          ) : (
+            <div style={{ background: '#111', padding: '20px', borderRadius: '8px', border: '1px solid #333' }}>
+              <h3 style={{ color: '#10b981', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Internal Cost Breakdown</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '20px', fontSize: '1.1em' }}><span>Flat Fee:</span><span>${parseFloat(fixedFee).toFixed(2)}</span></div>
+              <h4 style={{ color: '#f59e0b', textAlign: 'center', textTransform: 'uppercase' }}>Materials & S/N</h4>
+              {materials.map(m => (
+                <div key={m.id} style={{ marginBottom: '15px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '1.1em' }}><span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span></div>
+                  <div style={{ textAlign: 'center', color: '#666', fontSize: '0.9em' }}>S/N: {m.sn || 'N/A'}</div>
+                </div>
+              ))}
+              <h4 style={{ color: '#10b981', textAlign: 'center', textTransform: 'uppercase', marginTop: '20px' }}>Crew Payouts</h4>
+              {displayCrew.map(c => (
+                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '10px', fontSize: '1.1em' }}><span>{c.name || 'Unnamed'} (${c.rate}/hr)</span><span style={{ color: '#10b981' }}>${((c.liveElapsed / 3600) * c.rate).toFixed(2)}</span></div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px dashed #444', paddingTop: '15px', marginTop: '20px', fontWeight: 'bold', fontSize: '1.2em' }}><span style={{ color: '#888' }}>GROSS BILLABLE:</span><span style={{ color: '#10b981' }}>${grossBillable.toFixed(2)}</span></div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* --- ARCHIVED INVOICE VIEWER MODAL --- */}
+      {/* --- RESTORED ARCHIVED INVOICE VIEWER MODAL --- */}
       {viewingInvoice && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100, padding: '15px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #222', paddingBottom: '10px', marginBottom: '15px' }}>
             <h2 style={{ color: '#10b981', margin: 0, textTransform: 'uppercase' }}>Archived Invoice</h2>
             <button onClick={() => setViewingInvoice(null)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
           </div>
-          <button onClick={() => emailInvoiceArchive(viewingInvoice)} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>📧 Email This Invoice</button>
-          
-          <div style={{ background: '#fff', color: '#000', padding: '20px', borderRadius: '8px' }}>
-            <h2 style={{ color: '#10b981', textAlign: 'center', margin: '0 0 5px 0', textTransform: 'uppercase' }}>INVOICE RECORD</h2>
-            <h4 style={{ textAlign: 'center', margin: '0 0 20px 0', color: '#666' }}>{viewingInvoice.date}</h4>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}><span>Service Fee</span><span>${parseFloat(viewingInvoice.fee).toFixed(2)}</span></div>
-            <h4 style={{ textAlign: 'center', textTransform: 'uppercase', color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>Materials</h4>
-            {viewingInvoice.materials.map(m => (
-               <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}><span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span></div>
-            ))}
-            <h4 style={{ textAlign: 'center', textTransform: 'uppercase', color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Labor</h4>
-            {viewingInvoice.crew.map(c => (
-              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}><span>{c.name}</span><span>${((c.liveElapsed / 3600) * c.rate).toFixed(2)}</span></div>
-            ))}
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #000', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.3em', marginTop: '20px' }}>
-              <span>TOTAL BILLED</span><span>${viewingInvoice.total}</span>
-            </div>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+            <button onClick={() => setArchiveReceiptTab('customer')} style={{ flex: 1, background: archiveReceiptTab === 'customer' ? '#fff' : '#222', color: archiveReceiptTab === 'customer' ? '#000' : '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Customer View</button>
+            <button onClick={() => setArchiveReceiptTab('operator')} style={{ flex: 1, background: archiveReceiptTab === 'operator' ? '#3b82f6' : '#222', color: archiveReceiptTab === 'operator' ? '#fff' : '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Operator View</button>
           </div>
+          <button onClick={() => emailInvoiceArchive(viewingInvoice)} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>📧 Email This Invoice</button>
+
+          {archiveReceiptTab === 'customer' ? (
+            <div style={{ background: '#fff', color: '#000', padding: '20px', borderRadius: '8px' }}>
+              <h2 style={{ color: '#10b981', textAlign: 'center', margin: '0 0 5px 0', textTransform: 'uppercase' }}>INVOICE RECORD</h2>
+              <h4 style={{ textAlign: 'center', margin: '0 0 20px 0', color: '#666' }}>{viewingInvoice.date}</h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}><span>Service Fee</span><span>${parseFloat(viewingInvoice.fee).toFixed(2)}</span></div>
+              {viewingInvoice.discount > 0 && (<div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', color: '#ef4444', marginBottom: '15px' }}><span>Discount Applied</span><span>-${parseFloat(viewingInvoice.discount).toFixed(2)}</span></div>)}
+              <h4 style={{ textAlign: 'center', textTransform: 'uppercase', color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>Materials & Hardware</h4>
+              {viewingInvoice.materials.map(m => (<div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: 'bold' }}><span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span></div>))}
+              <h4 style={{ textAlign: 'center', textTransform: 'uppercase', color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Labor</h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '20px' }}><span>Site Labor (Total)</span><span>${viewingInvoice.crew.reduce((acc, c) => acc + ((c.liveElapsed / 3600) * c.rate), 0).toFixed(2)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #000', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.3em' }}><span>TOTAL BILLED</span><span>${viewingInvoice.total}</span></div>
+              {viewingInvoice.notes && (<div style={{ marginTop: '30px', padding: '15px', background: '#f9f9f9', borderLeft: '3px solid #10b981', fontSize: '0.9em', color: '#444', fontStyle: 'italic' }}><strong>Notes: </strong>{viewingInvoice.notes}</div>)}
+            </div>
+          ) : (
+            <div style={{ background: '#111', padding: '20px', borderRadius: '8px', border: '1px solid #333' }}>
+              <h3 style={{ color: '#10b981', textAlign: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Internal Cost Breakdown</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '20px', fontSize: '1.1em' }}><span>Flat Fee:</span><span>${parseFloat(viewingInvoice.fee).toFixed(2)}</span></div>
+              <h4 style={{ color: '#f59e0b', textAlign: 'center', textTransform: 'uppercase' }}>Materials & S/N</h4>
+              {viewingInvoice.materials.map(m => (
+                <div key={m.id} style={{ marginBottom: '15px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: '1.1em' }}><span>{m.name} (x{m.qty})</span><span>${(m.cost * m.qty).toFixed(2)}</span></div>
+                  <div style={{ textAlign: 'center', color: '#666', fontSize: '0.9em' }}>S/N: {m.sn || 'N/A'}</div>
+                </div>
+              ))}
+              <h4 style={{ color: '#10b981', textAlign: 'center', textTransform: 'uppercase', marginTop: '20px' }}>Crew Payouts</h4>
+              {viewingInvoice.crew.map(c => (
+                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', marginBottom: '10px', fontSize: '1.1em' }}><span>{c.name || 'Unnamed'} (${c.rate}/hr)</span><span style={{ color: '#10b981' }}>${((c.liveElapsed / 3600) * c.rate).toFixed(2)}</span></div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px dashed #444', paddingTop: '15px', marginTop: '20px', fontWeight: 'bold', fontSize: '1.2em' }}><span style={{ color: '#888' }}>GROSS BILLABLE:</span><span style={{ color: '#10b981' }}>${viewingInvoice.total}</span></div>
+            </div>
+          )}
         </div>
       )}
 
