@@ -3,24 +3,35 @@ import { useNavigate } from 'react-router-dom';
 
 export default function MasterCalendar() {
   const navigate = useNavigate();
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
   const [events, setEvents] = useState([]);
+  
   const [customEvents, setCustomEvents] = useState(() => JSON.parse(localStorage.getItem('tot_custom_agenda')) || []);
   const [customText, setCustomText] = useState('');
   const [customType, setCustomType] = useState('Normal');
 
+  // Auto-Snap to Today on Mount
+  useEffect(() => {
+    const t = new Date();
+    const tStr = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    setCurrentDate(t);
+    setSelectedDate(tStr);
+  }, []);
+
+  const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+  
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
-  const monthNamesFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-  // --- GENERAL TOOLS ---
   const getSafe = (key) => {
     try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : []; } 
     catch (e) { return []; }
   };
+
   const normalizeDate = (dStr) => {
     if (!dStr) return null;
     if (dStr.includes('/')) {
@@ -31,103 +42,37 @@ export default function MasterCalendar() {
   };
   const toYMD = (dateObj) => `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
 
-  // --- AUTO-SNAP TO TODAY ON MOUNT ---
-  useEffect(() => {
-    const t = new Date();
-    setCurrentDate(t);
-    setSelectedDate(toYYMD(t));
-  }, []);
-
-  // --- STATE PERSISTENCE ---
   useEffect(() => { localStorage.setItem('tot_custom_agenda', JSON.stringify(customEvents)); }, [customEvents]);
 
-  // --- THE NEW UNIVERSAL OCCURRENCE GENERATOR ---
-  // Calculates all actual instances of a recurring event within the viewable month.
-  const getOccurrencesInMonth = (baseDateStr, frequency, year, month) => {
-    if (!baseDateStr || !frequency || frequency === 'None') return [];
-    
-    const baseDate = new Date(baseDateStr + 'T12:00:00Z');
-    const viewStart = new Date(year, month, 1);
-    const viewEnd = new Date(year, month + 1, 0);
-
-    const occurrences = [];
-    let interval = 0;
-    if (frequency === 'Weekly') interval = 7;
-    else if (frequency === 'Bi-Weekly') interval = 14;
-    else if (frequency === 'Monthly') {
-      const targetDay = baseDate.getDate();
-      const daysInTargetMonth = new Date(year, month + 1, 0).getDate();
-      const actualDay = targetDay > daysInTargetMonth ? daysInTargetMonth : targetDay;
-      const occurrence = new Date(year, month, actualDay);
-      if (occurrence >= baseDate) return [toYMD(occurrence)];
-      return [];
-    }
-    
-    if (interval > 0) {
-      let stepDate = new Date(baseDate);
-      if (stepDate < viewStart) {
-        const msPerDay = 1000 * 60 * 60 * 24;
-        const diffDays = Math.ceil((viewStart - baseDate) / msPerDay);
-        const stepsNeeded = Math.ceil(diffDays / interval);
-        stepDate.setDate(baseDate.getDate() + (stepsNeeded * interval));
-      }
-      let safety = 0;
-      while (stepDate <= viewEnd && safety < 100) {
-        if (stepDate >= baseDate && stepDate >= viewStart) occurrences.push(toYMD(stepDate));
-        stepDate.setDate(stepDate.getDate() + interval);
-        safety++;
-      }
-    }
-    return occurrences;
-  };
-
-  // --- THE NEW RICH, OMNISCIENT DATA SCANNER ---
   useEffect(() => {
     const scanModules = () => {
       let globalEvents = customEvents.map(e => ({ ...e, icon: '📌', type: 'Custom Event' }));
 
-      // Data Sources
       const incomes = [...getSafe('tot_incomes'), ...getSafe('fleet_incomes')];
       const bills = [...getSafe('tot_bills'), ...getSafe('fleet_bills')];
-      const assets = getSafe('tot_assets');
+      const assets = [...getSafe('tot_assets'), ...getSafe('asset_ledger')];
       const manualSyncs = getSafe('tot_calendar_events'); 
 
-      // 1. Explicit Sync Buttons
+      // 1. Manual Syncs
       manualSyncs.forEach(e => {
         if(e.date) globalEvents.push({ id: e.id, date: normalizeDate(e.date), title: e.title, amount: e.amount, color: '#3b82f6', icon: '🔄', type: 'Synced Event' });
       });
 
-      // 2. Budget Recurrences (The Fixed Logic)
-      const processRecurringData = (items, color, icon, processFn) => {
+      // 2. Budget Recurrences
+      const processRecurring = (items, type, color, icon) => {
         items.forEach(item => {
-          const rawDateStr = normalizeDate(item.date || item.dueDate || item.shiftDate);
-          if (!rawDateStr) return;
+          const rawDate = normalizeDate(item.date || item.dueDate);
+          if (!rawDate) return;
           const name = item.name || item.service || 'Item';
-          const occurrences = getOccurrencesInMonth(rawDateStr, item.frequency, currentYear, currentMonth);
-          
-          if (!occurrences.length && rawDateStr.startsWith(`${currentYear}-${String(currentMonth+1).padStart(2, '0')}`)) {
-             occurrences.push(rawDateStr);
+          if (!item.frequency || item.frequency === 'None') {
+            globalEvents.push({ id: `${type}_${Date.now()}`, date: rawDate, title: name, type: type, amount: item.amount || item.cost, color, icon });
+          } else {
+            globalEvents.push({ id: `${type}_${Date.now()}`, date: rawDate, title: `${name} 🔁`, type: type, amount: item.amount || item.cost, color, icon });
           }
-
-          occurrences.forEach(occStr => {
-            const isRecurring = item.frequency && item.frequency !== 'None';
-            const displayTitle = isRecurring ? `${name} 🔁` : name;
-            let eventObj = { id: `${item.id || Date.now()}_${occStr}`, date: occStr, title: displayTitle, amount: item.amount || item.cost, color, icon };
-            if(processFn) processFn(eventObj, item, occStr);
-            globalEvents.push(eventObj);
-          });
         });
       };
-
-      processRecurringData(incomes, '#10b981', '💵', (obj, incItem) => obj.type = 'Income');
-      processRecurringData(bills, '#ef4444', '🔴', (obj, billItem) => {
-        obj.type = 'Bill Due';
-        // Add Paid Status Visualization
-        if (billItem.status === 'Paid') {
-          obj.isPaid = true;
-          obj.color = '#555'; // Greyscale for paid
-        }
-      });
+      processRecurring(incomes, 'Income', '#10b981', '💵'); 
+      processRecurring(bills, 'Bill Due', '#ef4444', '🔴');
 
       // 3. Asset Warranties (Omniscient Math)
       assets.forEach(a => {
@@ -142,12 +87,13 @@ export default function MasterCalendar() {
              else if (a.warranty === '1 Year') exp.setFullYear(exp.getFullYear() + 1);
              else if (a.warranty === '2 Years') exp.setFullYear(exp.getFullYear() + 2);
              else if (a.warranty === '5 Years') exp.setFullYear(exp.getFullYear() + 5);
+             
              globalEvents.push({ id: `ast_${Date.now()}`, date: toYMD(exp), title: a.name || 'Asset', type: 'Warranty Exp', icon: '🛡️', color: '#a855f7' });
            }
         }
       });
 
-      // 4. Contractor & Shifts
+      // 4. Chronos & Shifts
       getSafe('hos_dotArchives').forEach(d => { if (d.date) globalEvents.push({ id: `dot_${Date.now()}`, date: normalizeDate(d.date), title: `HOS Logged`, type: 'DOT Shift', icon: '🚚', color: '#f59e0b' }); });
       getSafe('hos_invoiceArchives').forEach(i => { if (i.date) globalEvents.push({ id: `inv_${Date.now()}`, date: normalizeDate(i.date), title: `Invoice`, type: 'Contractor Job', icon: '🛠️', amount: i.total, color: '#f59e0b' }); });
       [...getSafe('fleet_shifts'), ...getSafe('my_personal_shifts')].forEach(s => { if (s.date) globalEvents.push({ id: `shft_${Date.now()}`, date: normalizeDate(s.date), title: `Shift Logged`, type: 'Work', icon: '🏢', color: '#06b6d4' }); });
@@ -160,9 +106,10 @@ export default function MasterCalendar() {
     return () => clearInterval(intervalId);
   }, [customEvents, currentMonth, currentYear]); 
 
-  // --- CALENDAR UI ---
   const prevMonth = () => setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
+  const goToToday = () => { setCurrentDate(new Date()); setSelectedDate(todayStr); };
+  
   const handleDayClick = (day) => setSelectedDate(`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
 
   const handleAddCustomEvent = () => {
@@ -180,13 +127,14 @@ export default function MasterCalendar() {
       const cellDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const dayEvents = events.filter(e => e.date === cellDateStr);
       const isSelected = cellDateStr === selectedDate;
-      const isToday = cellDateStr === normalizeDate(new Date().toISOString());
+      const isToday = cellDateStr === todayStr;
 
       cells.push(
-        <div key={day} onClick={() => handleDayClick(day)} style={{ background: '#111', border: isSelected ? '2px solid #a855f7' : isToday ? '1px solid #06b6d4' : '1px solid #222', minHeight: '60px', padding: '5px', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
+        <div key={day} onClick={() => handleDayClick(day)} style={{ background: '#111', border: isSelected ? '2px solid #a855f7' : isToday ? '1px solid #06b6d4' : '1px solid #222', minHeight: '60px', padding: '5px', display: 'flex', flexDirection: 'column', cursor: 'pointer', position: 'relative' }}>
           <span style={{ color: isSelected ? '#a855f7' : isToday ? '#06b6d4' : '#fff', fontWeight: 'bold', fontSize: '0.9em', alignSelf: 'center', marginBottom: '5px' }}>{day}</span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', justifyContent: 'center' }}>
             {dayEvents.slice(0, 4).map((e, idx) => (<div key={idx} style={{ width: '8px', height: '8px', borderRadius: '50%', background: e.color }}></div>))}
+            {dayEvents.length > 4 && <span style={{ color: '#888', fontSize: '0.6em', fontWeight: 'bold' }}>+</span>}
           </div>
         </div>
       );
@@ -195,10 +143,10 @@ export default function MasterCalendar() {
   };
 
   const selectedDayEvents = events.filter(e => e.date === selectedDate);
-  // Sort paid bills to the bottom
-  selectedDayEvents.sort((a,b) => (a.isPaid===b.isPaid)?0: a.isPaid?1:-1);
   const displayDateText = selectedDate ? new Date(selectedDate + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
   const inputStyle = { background: '#0a0a0a', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '6px' };
+
+  const monthNamesFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
@@ -209,7 +157,10 @@ export default function MasterCalendar() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', background: '#111', borderBottom: '1px solid #222', borderRadius: '12px 12px 0 0', margin: '10px 10px 0 10px' }}>
         <button onClick={prevMonth} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold' }}>◀</button>
-        <h2 style={{ margin: 0, color: '#ef4444', fontSize: '1.2em', textTransform: 'uppercase' }}>{monthNamesFull[currentMonth]} {currentYear}</h2>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ margin: 0, color: '#ef4444', fontSize: '1.2em', textTransform: 'uppercase' }}>{monthNamesFull[currentMonth]} {currentYear}</h2>
+          <button onClick={goToToday} style={{ background: 'transparent', color: '#3b82f6', border: 'none', marginTop: '5px', fontWeight: 'bold', fontSize: '0.85em', padding: 0 }}>Go to Today</button>
+        </div>
         <button onClick={nextMonth} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 15px', borderRadius: '6px', fontWeight: 'bold' }}>▶</button>
       </div>
 
@@ -220,30 +171,31 @@ export default function MasterCalendar() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>{renderCells()}</div>
       </div>
 
-      {/* THE RICH AGENDA DASHBOARD */}
+      {/* THE NEW PREMIUM AGENDA UI */}
       <div style={{ background: '#111', margin: '15px 10px 100px 10px', borderRadius: '12px', padding: '20px', borderTop: '4px solid #a855f7' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '20px' }}>
           <h3 style={{ color: '#ef4444', margin: 0, fontSize: '1.3em', textTransform: 'uppercase' }}>Agenda</h3>
           <span style={{ color: '#a855f7', fontWeight: 'bold', fontSize: '1.1em' }}>{displayDateText}</span>
         </div>
         
-        {selectedDayEvents.length === 0 ? <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>No events logged.</p> : (
+        {selectedDayEvents.length === 0 ? <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>No events found for this date.</p> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
             {selectedDayEvents.map((e, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', background: '#0a0a0a', padding: '15px', borderRadius: '10px', borderLeft: `4px solid ${e.color}`, border: '1px solid #222', opacity: e.isPaid ? 0.6 : 1 }}>
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', background: '#0a0a0a', padding: '15px', borderRadius: '10px', borderLeft: `4px solid ${e.color}`, border: '1px solid #222' }}>
                 <div style={{ fontSize: '1.8em', marginRight: '15px' }}>{e.icon}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ color: e.color, fontSize: '0.75em', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>{e.type}{e.isPaid && ' ✅'}</div>
-                  <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1em', textDecoration: e.isPaid ? 'line-through' : 'none' }}>{e.title}</div>
+                  <div style={{ color: e.color, fontSize: '0.75em', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '3px' }}>{e.type}</div>
+                  <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1em' }}>{e.title}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                  {e.amount && <div style={{ color: '#fff', fontSize: '1.1em', fontWeight: 'bold', textDecoration: e.isPaid ? 'line-through' : 'none' }}>${parseFloat(e.amount).toFixed(2)}</div>}
+                  {e.amount && <div style={{ color: '#fff', fontSize: '1.1em', fontWeight: 'bold' }}>${parseFloat(e.amount).toFixed(2)}</div>}
                   {e.isCustom && <button onClick={() => deleteCustomEvent(e.id)} style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: 'none', padding: '4px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.8em' }}>DELETE</button>}
                 </div>
               </div>
             ))}
           </div>
         )}
+
         <div style={{ borderTop: '1px solid #222', paddingTop: '20px' }}>
           <div style={{ display: 'flex', gap: '10px' }}>
             <input type="text" placeholder="Add custom event..." value={customText} onChange={(e) => setCustomText(e.target.value)} style={{ ...inputStyle, flex: 2, margin: 0 }} />
