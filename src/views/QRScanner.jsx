@@ -2,21 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { QRCodeCanvas } from 'qrcode.react';
+import { Camera } from '@capacitor/camera'; // <--- NEW NATIVE BRIDGE
 
 export default function QRScanner() {
   const navigate = useNavigate();
-  // 4 Tabs: Scanner, Create, Saved Scans (Data), My QRs (Images)
   const [activeTab, setActiveTab] = useState('scanner');
   
-  // Scanner State
   const [scanResult, setScanResult] = useState(null);
-  const [isScanning, setIsScanning] = useState(false); // Wait for explicit start to trigger permissions
+  const [isScanning, setIsScanning] = useState(false); 
   
-  // Saved Scans (Data)
   const [savedScans, setSavedScans] = useState(() => JSON.parse(localStorage.getItem('tot_saved_scans')) || []);
   const [scanNote, setScanNote] = useState('');
 
-  // Generator & My QRs (Images)
   const [createData, setCreateData] = useState('');
   const [qrTitle, setQrTitle] = useState('');
   const [myQRs, setMyQRs] = useState(() => JSON.parse(localStorage.getItem('tot_my_qrs')) || []);
@@ -26,15 +23,24 @@ export default function QRScanner() {
     localStorage.setItem('tot_my_qrs', JSON.stringify(myQRs));
   }, [savedScans, myQRs]);
 
-
-  // --- CAMERA & SCANNER LOGIC ---
+  // --- CAPACITOR NATIVE PERMISSION ENGINE ---
   const startLiveScanner = async () => {
     try {
-      // Force the Android permission prompt
-      await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      setIsScanning(true);
+      // Ask Android OS for native camera permission directly via Capacitor
+      const permissions = await Camera.requestPermissions({ permissions: ['camera'] });
+      if (permissions.camera === 'granted' || permissions.camera === 'prompt-with-rationale') {
+        setIsScanning(true);
+      } else {
+        alert("Permission denied. You can still use 'Scan from Image' to upload a QR code.");
+      }
     } catch (err) {
-      alert("Camera blocked. Please allow permissions in Android Settings, or use the 'Scan from Image' option below.");
+      // Fallback to web permission if native plugin fails
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        setIsScanning(true);
+      } catch (webErr) {
+        alert("Camera blocked. Please allow permissions in Android Settings, or use 'Scan from Image'.");
+      }
     }
   };
 
@@ -44,7 +50,7 @@ export default function QRScanner() {
       scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 }, false);
       scanner.render(
         (decodedText) => { setScanResult(decodedText); setIsScanning(false); scanner.clear().catch(console.error); },
-        (error) => {} // Silent errors during frame seeks
+        (error) => {} 
       );
     }
     return () => { if (scanner) scanner.clear().catch(console.error); };
@@ -59,7 +65,6 @@ export default function QRScanner() {
     e.target.value = null;
   };
 
-  // --- DATA ACTIONS ---
   const copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied to clipboard!"); };
 
   const openLink = (text) => {
@@ -83,7 +88,7 @@ export default function QRScanner() {
 
   const scanAgain = () => { setScanResult(null); setScanNote(''); setIsScanning(false); };
 
-  // --- NEW: GENERATOR & VISUAL VAULT LOGIC ---
+  // --- VISUAL VAULT LOGIC ---
   const saveGeneratedQR = () => {
     if (!qrTitle) return alert("Please give your QR code a title before saving.");
     const canvas = document.getElementById('qr-canvas');
@@ -134,8 +139,6 @@ export default function QRScanner() {
 
       <div id="hidden-qr-canvas" style={{ display: 'none' }}></div>
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
-
-        {/* --- 1. SCANNER TAB --- */}
         {activeTab === 'scanner' && (
           <>
             {!scanResult ? (
@@ -178,7 +181,6 @@ export default function QRScanner() {
           </>
         )}
 
-        {/* --- 2. CREATE TAB --- */}
         {activeTab === 'create' && (
           <div style={{ ...cardStyle, borderTop: '4px solid #a855f7', textAlign: 'center' }}>
             <h2 style={{ color: '#a855f7', marginTop: 0, textTransform: 'uppercase' }}>Offline Generator</h2>
@@ -194,7 +196,6 @@ export default function QRScanner() {
           </div>
         )}
 
-        {/* --- 3. SAVED SCANS LOG --- */}
         {activeTab === 'saved' && (
           <>
             <h3 style={{ color: '#10b981', textAlign: 'center', textTransform: 'uppercase', marginBottom: '20px' }}>Scan Log</h3>
@@ -221,7 +222,6 @@ export default function QRScanner() {
           </>
         )}
 
-        {/* --- 4. MY QRS (THE VISUAL VAULT) --- */}
         {activeTab === 'vault' && (
           <>
             <h3 style={{ color: '#f59e0b', textAlign: 'center', textTransform: 'uppercase', marginBottom: '20px' }}>My QRs</h3>
@@ -230,11 +230,7 @@ export default function QRScanner() {
                 <div key={qr.id} style={{ ...cardStyle, borderTop: '4px solid #f59e0b', textAlign: 'center' }}>
                   <h3 style={{ color: '#fff', margin: '0 0 5px 0', fontSize: '1.2em', textTransform: 'uppercase' }}>{qr.title}</h3>
                   <span style={{ color: '#888', fontSize: '0.8em', display: 'block', marginBottom: '15px' }}>Created: {qr.date}</span>
-                  
-                  <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', display: 'inline-block', marginBottom: '15px' }}>
-                    <img src={qr.image} alt={qr.title} style={{ width: '200px', height: '200px' }} />
-                  </div>
-
+                  <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', display: 'inline-block', marginBottom: '15px' }}><img src={qr.image} alt={qr.title} style={{ width: '200px', height: '200px' }} /></div>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={() => downloadVaultQR(qr.image, qr.title)} style={{ flex: 2, background: '#f59e0b', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Share / Save Image</button>
                     <button onClick={() => deleteVaultQR(qr.id)} style={{ flex: 1, background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>🗑️ Delete</button>
