@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import Tesseract from 'tesseract.js'; // THE NEW OCR ENGINE
 
 export default function QRScanner() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('scanner');
   
   const [scanResult, setScanResult] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false); // New Loading State
+  
   const [savedScans, setSavedScans] = useState(() => JSON.parse(localStorage.getItem('tot_saved_scans')) || []);
   const [scanNote, setScanNote] = useState('');
 
@@ -21,36 +24,59 @@ export default function QRScanner() {
     localStorage.setItem('tot_my_qrs', JSON.stringify(myQRs));
   }, [savedScans, myQRs]);
 
-  // --- NATIVE CAMERA DECODER (BYPASSES WEBVIEW PERMISSION) ---
+  // --- 1. BARCODE & DATA MATRIX ENGINE ---
   const scanNativeCamera = async () => {
     try {
-      const photo = await Camera.getPhoto({
-        quality: 100,
-        allowEditing: false,
-        resultType: CameraResultType.Uri,
-        source: CameraSource.Camera
-      });
+      const photo = await Camera.getPhoto({ quality: 100, allowEditing: false, resultType: CameraResultType.Uri, source: CameraSource.Camera });
+      setIsProcessing(true);
       
+      const img = new Image();
+      img.src = photo.webPath;
+      await new Promise(resolve => img.onload = resolve);
+
+      // Attempt Native Android Hardware Decoding first (Incredible for Data Matrix)
+      if ('BarcodeDetector' in window) {
+        try {
+          const detector = new window.BarcodeDetector({ formats: ['qr_code', 'data_matrix', 'code_128', 'code_39', 'ean_13', 'ean_8', 'itf', 'pdf417', 'upc_a', 'upc_e', 'aztec'] });
+          const barcodes = await detector.detect(img);
+          if (barcodes.length > 0) {
+            setScanResult(barcodes[0].rawValue); setIsProcessing(false); return;
+          }
+        } catch (e) { console.log('Native detector unavailable, falling back...'); }
+      }
+
+      // Fallback to Html5Qrcode
       const response = await fetch(photo.webPath);
-      const blob = await response.blob();
-      const file = new File([blob], 'qr_capture.jpg', { type: 'image/jpeg' });
-      
+      const file = new File([await response.blob()], 'qr.jpg', { type: 'image/jpeg' });
       const html5QrCode = new Html5Qrcode("hidden-qr-canvas");
       const decodedText = await html5QrCode.scanFile(file, true);
-      setScanResult(decodedText);
+      
+      setScanResult(decodedText); setIsProcessing(false);
     } catch (err) {
+      setIsProcessing(false);
       if (err.message && err.message.includes('User cancelled')) return;
-      alert("No QR code detected in that photo. Make sure it's clear and in focus.");
+      alert("No code detected. Make sure it's clear and in focus.");
     }
   };
 
-  const scanImageFile = (e) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const html5QrCode = new Html5Qrcode("hidden-qr-canvas");
-    html5QrCode.scanFile(e.target.files[0], true)
-      .then(decodedText => setScanResult(decodedText))
-      .catch(err => alert("No QR code detected in that image."));
-    e.target.value = null;
+  // --- 2. THE NEW OCR TEXT ENGINE ---
+  const extractTextNative = async () => {
+    try {
+      const photo = await Camera.getPhoto({ quality: 100, allowEditing: false, resultType: CameraResultType.Uri, source: CameraSource.Camera });
+      setIsProcessing(true);
+      
+      const result = await Tesseract.recognize(photo.webPath, 'eng');
+      const text = result.data.text.trim();
+      
+      if (text) setScanResult(text);
+      else alert("No readable text found in that image.");
+      
+      setIsProcessing(false);
+    } catch (err) {
+      setIsProcessing(false);
+      if (err.message && err.message.includes('User cancelled')) return;
+      alert("Failed to extract text. Make sure the lighting is good.");
+    }
   };
 
   const copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied!"); };
@@ -65,12 +91,31 @@ export default function QRScanner() {
   };
   const deleteScan = (id) => { if(window.confirm("Delete this scan?")) setSavedScans(savedScans.filter(s => s.id !== id)); };
   
+  const moveScan = (index, direction) => {
+    const newScans = [...savedScans];
+    if (direction === 'up' && index > 0) [newScans[index - 1], newScans[index]] = [newScans[index], newScans[index - 1]];
+    else if (direction === 'down' && index < newScans.length - 1) [newScans[index + 1], newScans[index]] = [newScans[index], newScans[index + 1]];
+    setSavedScans(newScans);
+  };
+
   const saveGeneratedQR = () => {
     if (!qrTitle) return alert("Please add a title.");
     const canvas = document.getElementById('qr-canvas');
     if (!canvas) return;
     setMyQRs([{ id: Date.now(), title: qrTitle, data: createData, date: new Date().toLocaleDateString(), image: canvas.toDataURL('image/png') }, ...myQRs]);
     alert("Saved to Vault!"); setCreateData(''); setQrTitle(''); setActiveTab('vault');
+  };
+  
+  const downloadVaultQR = async (imageSrc, title) => {
+    try {
+      const blob = await (await fetch(imageSrc)).blob();
+      const file = new File([blob], `QR_${title.replace(/\s+/g, '_')}_${Date.now()}.png`, { type: 'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: title });
+      else {
+        const link = document.createElement('a'); link.href = imageSrc; link.download = file.name;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      }
+    } catch (err) { console.error('Error sharing:', err); }
   };
   const deleteVaultQR = (id) => { if(window.confirm("Delete this QR?")) setMyQRs(myQRs.filter(q => q.id !== id)); };
 
@@ -96,34 +141,36 @@ export default function QRScanner() {
 
       <div id="hidden-qr-canvas" style={{ width: '0px', height: '0px', overflow: 'hidden' }}></div>
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
-        
         {activeTab === 'scanner' && (
           <>
-            {!scanResult ? (
+            {isProcessing ? (
+              <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6', textAlign: 'center', marginTop: '20px' }}>
+                <h2 style={{ color: '#3b82f6', textTransform: 'uppercase', margin: '0 0 10px 0' }}>Processing Image...</h2>
+                <p style={{ color: '#888' }}>Extracting data. This may take a few seconds.</p>
+              </div>
+            ) : !scanResult ? (
               <div style={{ ...cardStyle, borderTop: '4px solid #06b6d4', textAlign: 'center', marginTop: '20px' }}>
-                <h3 style={{ color: '#06b6d4', marginTop: 0, textTransform: 'uppercase' }}>Snap to Decode</h3>
-                <p style={{ color: '#888', fontSize: '0.9em', marginBottom: '20px', lineHeight: '1.5' }}>Use your native camera to snap a photo of a code, or extract one from your gallery.</p>
-                <button onClick={scanNativeCamera} style={{ ...btnStyle('#06b6d4', '#000'), marginBottom: '15px' }}>📷 Take Photo of Code</button>
-                <label style={{ ...btnStyle('transparent', '#a855f7'), border: '1px dashed #a855f7', display: 'block' }}>
-                  🖼️ Scan from Gallery
-                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={scanImageFile} />
-                </label>
+                <h3 style={{ color: '#06b6d4', marginTop: 0, textTransform: 'uppercase' }}>Universal Reader</h3>
+                <p style={{ color: '#888', fontSize: '0.9em', marginBottom: '20px', lineHeight: '1.5' }}>Scan a Data Matrix, QR, or extract raw text (OCR).</p>
+                <button onClick={scanNativeCamera} style={{ ...btnStyle('#06b6d4', '#000'), marginBottom: '15px' }}>📷 Decode Barcode / Matrix</button>
+                <button onClick={extractTextNative} style={{ ...btnStyle('transparent', '#a855f7'), border: '1px dashed #a855f7' }}>📝 Extract Text (OCR)</button>
               </div>
             ) : (
               <div style={{ ...cardStyle, borderTop: '4px solid #10b981', marginTop: '20px' }}>
-                <h2 style={{ color: '#10b981', margin: '0 0 15px 0', textAlign: 'center' }}>SCAN SUCCESS</h2>
-                <div style={{ background: '#0a0a0a', border: '1px solid #333', padding: '15px', borderRadius: '8px', marginBottom: '20px', wordWrap: 'break-word', fontFamily: 'monospace', fontSize: '1.1em', color: '#fff' }}>{scanResult}</div>
+                <h2 style={{ color: '#10b981', margin: '0 0 15px 0', textAlign: 'center' }}>EXTRACTION SUCCESS</h2>
+                <textarea readOnly value={scanResult} style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }} />
                 <input type="text" placeholder="Add a Note (e.g. WiFi Password)" value={scanNote} onChange={(e) => setScanNote(e.target.value)} style={inputStyle} />
                 <button onClick={saveScan} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '15px' }}>💾 Save to Scan Log</button>
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                   <button onClick={() => copyToClipboard(scanResult)} style={{ flex: 1, background: '#a855f7', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📋 Copy</button>
-                  <button onClick={() => openLink(scanResult)} style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>🌐 Open</button>
+                  <button onClick={() => openLink(scanResult)} style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>🌐 Search</button>
                 </div>
                 <button onClick={() => setScanResult(null)} style={{ width: '100%', background: 'transparent', color: '#06b6d4', border: '1px dashed #06b6d4', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>📷 Scan Another</button>
               </div>
             )}
           </>
         )}
+
         {activeTab === 'create' && (
           <div style={{ ...cardStyle, borderTop: '4px solid #a855f7', textAlign: 'center', marginTop: '20px' }}>
             <h2 style={{ color: '#a855f7', marginTop: 0, textTransform: 'uppercase' }}>Offline Generator</h2>
@@ -140,9 +187,15 @@ export default function QRScanner() {
 
         {activeTab === 'saved' && (
           <div style={{ marginTop: '20px' }}>
-            {savedScans.map((scan) => (
+            {savedScans.map((scan, index) => (
               <div key={scan.id} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
-                <span style={{ color: '#10b981', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>{scan.date}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>{scan.date}</span>
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <button onClick={() => moveScan(index, 'up')} disabled={index === 0} style={{ background: '#222', color: index === 0 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▲</button>
+                    <button onClick={() => moveScan(index, 'down')} disabled={index === savedScans.length - 1} style={{ background: '#222', color: index === savedScans.length - 1 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▼</button>
+                  </div>
+                </div>
                 {scan.note && <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>{scan.note}</h3>}
                 <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #333', color: '#ccc', fontFamily: 'monospace', wordWrap: 'break-word', marginBottom: '15px' }}>{scan.data}</div>
                 <button onClick={() => deleteScan(scan.id)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '8px', borderRadius: '6px', fontWeight: 'bold' }}>🗑️ Delete</button>
@@ -158,6 +211,7 @@ export default function QRScanner() {
                 <h3 style={{ color: '#fff', margin: '0 0 5px 0', textTransform: 'uppercase' }}>{qr.title}</h3>
                 <span style={{ color: '#888', fontSize: '0.8em', display: 'block', marginBottom: '15px' }}>{qr.date}</span>
                 <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', display: 'inline-block', marginBottom: '15px' }}><img src={qr.image} alt={qr.title} style={{ width: '200px', height: '200px' }} /></div>
+                <button onClick={() => downloadVaultQR(qr.image, qr.title)} style={{ width: '100%', background: '#f59e0b', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>📤 Share / Save Image</button>
                 <button onClick={() => deleteVaultQR(qr.id)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>🗑️ Delete</button>
               </div>
             ))}
