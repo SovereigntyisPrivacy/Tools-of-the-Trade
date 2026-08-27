@@ -119,7 +119,8 @@ function Dashboard() {
     { id: "learning", name: "Learning Center", path: "/learning", icon: "📚", badge: "NEW", badgeColor: "#00ffff" },
     { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮" },
     { id: "ledger", name: "Asset Ledger", path: "/ledger", icon: "📋" },
-    { id: "civics", name: "Civics & Rights", path: "/civics", icon: "⚖️" }
+    { id: "civics", name: "Civics & Rights", path: "/civics", icon: "⚖️" },
+  { id: "qrscanner", name: "Universal Lens", path: "/qr-scanner", icon: "📷", badge: "NEW", badgeColor: "#06b6d4" }
   ];
 
   return (

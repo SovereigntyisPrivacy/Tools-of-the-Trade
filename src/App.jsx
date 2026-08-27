@@ -22,6 +22,7 @@ const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
 
 // --- Standalone Modules ---
 const SupportCreator = lazy(() => import('./views/SupportCreator'));
+const QRScanner = lazy(() => import('./views/QRScanner'));
 const BudgetEngine = lazy(() => import('./views/BudgetEngine'));
 const ChronosHub = lazy(() => import('./views/ChronosHub'));
 const BurnerPad = lazy(() => import('./views/BurnerPad'));
@@ -124,6 +125,7 @@ function App() {
           <Route path="/chronos" element={<ChronosHub />} />
           <Route path="/budget" element={<BudgetEngine />} />
           <Route path="/support" element={<SupportCreator />} />
+        <Route path="/qr-scanner" element={<QRScanner />} />
         </Routes>
           </Suspense>
         </Router>
