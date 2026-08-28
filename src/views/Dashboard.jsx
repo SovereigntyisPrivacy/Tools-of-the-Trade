@@ -5,7 +5,17 @@ import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admo
 
 export default function Dashboard() {
   const [devTaps, setDevTaps] = useState(0);
-  const [showLegal, setShowLegal] = useState(false);
+  
+  // FIRST-LAUNCH EULA LOGIC: Checks if they've accepted it previously
+  const [showLegal, setShowLegal] = useState(() => {
+    return localStorage.getItem('tot_eula_accepted') !== 'true';
+  });
+
+  const handleAcceptEula = (e) => {
+    e.stopPropagation();
+    localStorage.setItem('tot_eula_accepted', 'true');
+    setShowLegal(false);
+  };
 
   const handleTitleTap = () => {
     const t = devTaps + 1;
@@ -54,7 +64,7 @@ export default function Dashboard() {
 
       const schedules = JSON.parse(localStorage.getItem('fleet_schedules') || '[]');
       if (schedules.length > 0) {
-        const activeWk = schedules[schedules.length - 1]; // Grabs the most recently generated week
+        const activeWk = schedules[schedules.length - 1];
         activeWk.roster.forEach(emp => {
           let hrs = 0;
           Object.values(activeWk.shifts[emp.id] || {}).forEach(s => {
@@ -83,7 +93,7 @@ export default function Dashboard() {
       try {
         await AdMob.initialize();
         await AdMob.showBanner({
-          adId: "ca-app-pub-3940256099942544/6300978111", // Standard Google Test ID
+          adId: "ca-app-pub-3940256099942544/6300978111", 
           adSize: BannerAdSize.BANNER,
           position: BannerAdPosition.BOTTOM_CENTER,
           margin: 0,
@@ -95,7 +105,6 @@ export default function Dashboard() {
     };
     showBanner();
 
-    // SURGICAL FIX: Destroy the native banner when the component unmounts
     return () => {
       AdMob.removeBanner().catch(e => console.error('Remove Error:', e));
     };
@@ -130,7 +139,6 @@ export default function Dashboard() {
         </button>
         <h1 onClick={handleTitleTap} className="friendly-title" style={{ marginTop: '20px', cursor: 'pointer', lineHeight: '1.2' }}>T⚙️⚙️ls of the Trade</h1>
         
-        {/* INJECTED LEGAL BUTTON HERE */}
         <div style={{ textAlign: 'center', marginTop: '10px', position: 'relative', zIndex: 20 }}>
           <button onClick={(e) => { e.stopPropagation(); setShowLegal(true); }} style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold' }}>⚖️ Legal & Privacy Info</button>
         </div>
@@ -138,28 +146,12 @@ export default function Dashboard() {
 
       <div className="grid-container" style={{ marginTop: '40px' }}>
         {tools.map((tool) => (
-          <button
-            key={tool.id}
-            className="tool-card"
-            style={{ position: 'relative' }}
-            onClick={() => navigate(tool.path)}
-          >
+          <button key={tool.id} className="tool-card" style={{ position: 'relative' }} onClick={() => navigate(tool.path)}>
             {tool.badge && (
               <div style={{
-                position: 'absolute',
-                top: '-10px',
-                right: '-10px',
-                background: tool.badgeColor,
-                color: '#fff',
-                fontSize: '0.75rem',
-                fontWeight: '900',
-                padding: '6px 10px',
-                borderRadius: '8px',
-                border: '2px solid #111',
-                transform: 'rotate(5deg)',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.6)',
-                zIndex: 10,
-                whiteSpace: 'nowrap'
+                position: 'absolute', top: '-10px', right: '-10px', background: tool.badgeColor, color: '#fff', fontSize: '0.75rem',
+                fontWeight: '900', padding: '6px 10px', borderRadius: '8px', border: '2px solid #111', transform: 'rotate(5deg)',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.6)', zIndex: 10, whiteSpace: 'nowrap'
               }}>
                 {tool.id === 'calendar' && alertCount > 0 ? alertCount : tool.badge}
               </div>
@@ -170,18 +162,25 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* INJECTED LEGAL MODAL HERE */}
+      {/* UPGRADED FIRST-LAUNCH LEGAL MODAL */}
       {showLegal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '20px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
-            <h2 style={{ color: '#ef4444', textTransform: 'uppercase', marginTop: 0 }}>Liability & Privacy EULA</h2>
-            <p style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.5', textAlign: 'left' }}>
-              <strong>1. As-Is Software:</strong> Tools of the Trade (ToT) is provided "as is" and "as available" without warranty of any kind. The developer assumes no liability for data loss, financial discrepancies, or hardware failure resulting from the use of this software.<br/><br/>
-              <strong>2. Zero Data Collection:</strong> This application operates entirely offline. No personal data, camera feeds, or financial logs are transmitted to external servers. All data remains exclusively on local device storage.<br/><br/>
-              <strong>3. Mesh & Network Broadcasts:</strong> The Pro Generator is capable of creating unencrypted data payloads for local mesh networks. The user assumes all responsibility for managing unencrypted broadcasts and shielding sensitive keys.<br/><br/>
-              <strong>4. User Responsibility:</strong> By bypassing this screen, you acknowledge that you are solely responsible for compliance with your local laws regarding cryptography, data routing, and scanning hardware.
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '20px', width: '100%', maxHeight: '85vh', overflowY: 'auto', paddingBottom: '70px' }}>
+            <h2 style={{ color: '#ef4444', textTransform: 'uppercase', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>Liability & Privacy EULA</h2>
+            <p style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.6', textAlign: 'left' }}>
+              <strong>1. As-Is Software:</strong> Tools of the Trade (ToT) is provided "as is" and "as available" without warranty of any kind. The developer assumes no liability for data loss, hardware failure, or service interruptions.<br/><br/>
+              
+              <strong>2. Zero Data Collection:</strong> This application operates entirely offline. No personal data, camera feeds, or logs are transmitted to external servers. Your data is your sovereign property and remains exclusively on local device storage.<br/><br/>
+              
+              <strong>3. Mesh & Network Broadcasts:</strong> The Pro Generator creates unencrypted payloads for local mesh networks. You assume all responsibility for managing unencrypted broadcasts and shielding sensitive keys.<br/><br/>
+              
+              <strong>4. Financial & Tax Information:</strong> Budgeting, tax routing, and ledger tools are provided for organizational purposes only and do not constitute professional financial, tax, or legal advice.<br/><br/>
+              
+              <strong>5. Safety & Medical Information:</strong> Technical calculators and reference databases (including survival, pharmacology, and ballistics parameters) are strictly for educational reference. The developer assumes no liability for physical injury, legal repercussions, or medical incidents resulting from the use of this data.<br/><br/>
+              
+              <strong>6. User Responsibility:</strong> By bypassing this screen, you acknowledge that you are solely responsible for compliance with your local, state, and federal laws regarding cryptography, data routing, and physical applications.
             </p>
-            <button onClick={(e) => { e.stopPropagation(); setShowLegal(false); }} style={{ width: '100%', background: '#06b6d4', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', marginTop: '15px', fontSize: '1.1rem' }}>I Agree & Understand</button>
+            <button onClick={handleAcceptEula} style={{ width: '100%', background: '#06b6d4', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', marginTop: '15px', fontSize: '1.1rem', boxShadow: '0 4px 10px rgba(6, 182, 212, 0.3)' }}>I Agree & Understand</button>
           </div>
         </div>
       )}
