@@ -12,7 +12,7 @@ export default function QRScanner() {
   
   const [scanResult, setScanResult] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false); 
-  const [enableOCR, setEnableOCR] = useState(false); // THE NEW LEASH
+  const [enableOCR, setEnableOCR] = useState(false);
   const [savedScans, setSavedScans] = useState(() => JSON.parse(localStorage.getItem('tot_saved_scans')) || []);
   const [scanNote, setScanNote] = useState('');
 
@@ -81,7 +81,6 @@ export default function QRScanner() {
         playSuccessBeep(); setScanResult(decodedText); setIsProcessing(false); return;
       } catch (e) { }
       
-      // THE LEASH: Only run OCR if the user explicitly checked the box
       if (enableOCR) {
         const result = await Tesseract.recognize(photoPath, 'eng'); const text = result.data.text.trim();
         if (text && text.length > 1) { playSuccessBeep(); setScanResult(text); } 
@@ -139,8 +138,15 @@ export default function QRScanner() {
     if (!qrTitle) return alert("Please add a title.");
     const canvas = document.querySelector('#canvas-container canvas'); if (!canvas) return;
     setMyQRs([{ id: Date.now(), title: qrTitle, data: getCompiledQrData(), date: new Date().toLocaleDateString(), image: canvas.toDataURL('image/png'), folder: qrCategory }, ...myQRs]);
+    
+    // --- THE AUTO-WIPE NUKE ---
+    setCreateData(''); setWifiSsid(''); setWifiPass(''); setSmsPhone(''); setSmsMsg(''); 
+    setCryptoAddr(''); setCryptoAmt(''); setVFirst(''); setVLast(''); setVOrg(''); 
+    setVTitle(''); setVPhone(''); setVEmail(''); setGeoLat(''); setGeoLong(''); setQrTitle('');
+    
     alert("Saved to Vault!"); setActiveTab('vault');
   };
+
   const downloadVaultQR = async (img, title) => {
     try { const b = await (await fetch(img)).blob(); const f = new File([b], `${title.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
       if (navigator.share) await navigator.share({ files: [f], title });
@@ -182,7 +188,6 @@ export default function QRScanner() {
                 <h3 style={{ color: '#06b6d4', marginTop: 0, textTransform: 'uppercase' }}>Omni-Scan Engine</h3>
                 <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '20px', lineHeight: '1.5' }}>Point it at a Barcode or QR Code to extract it automatically.</p>
                 
-                {/* THE NEW OCR TOGGLE */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '20px', background: 'rgba(0,0,0,0.4)', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
                   <input type="checkbox" id="ocrToggle" checked={enableOCR} onChange={(e) => setEnableOCR(e.target.checked)} style={{ transform: 'scale(1.5)', accentColor: '#06b6d4' }} />
                   <label htmlFor="ocrToggle" style={{ color: '#ccc', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>Enable Deep Text Extraction (OCR)</label>
@@ -258,6 +263,7 @@ export default function QRScanner() {
           </div>
         )}
 
+        {/* SCROLLABLE LOG BOXES */}
         {activeTab === 'saved' && (
           <div style={{ marginTop: '20px' }}>
             <button onClick={exportScanLogToCSV} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', marginBottom: '15px' }}>📥 Download Log as CSV</button>
@@ -272,7 +278,9 @@ export default function QRScanner() {
                   </div>
                 </div>
                 {scan.note && <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>{scan.note}</h3>}
-                <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #333', color: '#ccc', fontFamily: 'monospace', wordWrap: 'break-word', marginBottom: '15px' }}>{scan.data}</div>
+                
+                <textarea readOnly value={scan.data} style={{ width: '100%', background: '#0a0a0a', padding: '12px', borderRadius: '8px', border: '1px solid #333', color: '#ccc', fontFamily: 'monospace', marginBottom: '15px', minHeight: '80px', resize: 'vertical' }} />
+                
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={() => copyToClipboard(scan.data)} style={{ flex: 1, background: 'transparent', color: '#a855f7', border: '1px solid #a855f7', padding: '8px', borderRadius: '6px', fontWeight: 'bold' }}>📋 Copy</button>
                   <button onClick={() => deleteScan(scan.id)} style={{ flex: 1, background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '8px', borderRadius: '6px', fontWeight: 'bold' }}>🗑️ Delete</button>
@@ -282,6 +290,7 @@ export default function QRScanner() {
           </div>
         )}
 
+        {/* SCROLLABLE VAULT BOXES */}
         {activeTab === 'vault' && (
           <div style={{ marginTop: '20px' }}>
             <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '20px', paddingBottom: '10px' }}>
@@ -301,7 +310,9 @@ export default function QRScanner() {
                   <span style={{ color: '#888', fontSize: '0.8rem' }}>{qr.date}</span>
                 </div>
                 <h3 style={{ color: '#fff', margin: '0 0 15px 0', textTransform: 'uppercase' }}>{qr.title}</h3>
-                <p style={{ color: '#ccc', fontSize: '0.85rem', wordWrap: 'break-word', margin: '0 0 15px 0', background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #333' }}>{qr.data}</p>
+                
+                <textarea readOnly value={qr.data} style={{ width: '100%', background: '#0a0a0a', padding: '12px', borderRadius: '8px', border: '1px solid #333', color: '#06b6d4', fontFamily: 'monospace', marginBottom: '15px', minHeight: '80px', resize: 'vertical', fontSize: '0.9rem' }} />
+                
                 <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', display: 'inline-block', marginBottom: '15px', border: '1px solid #333' }}><img src={qr.image} alt={qr.title} style={{ maxWidth: '100%', height: 'auto' }} /></div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
