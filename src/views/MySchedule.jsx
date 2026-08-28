@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Preferences } from '@capacitor/preferences';
 
 const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const STATE_TAXES = [
@@ -14,22 +15,50 @@ export default function MySchedule() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('tracker');
   const [showReport, setShowReport] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false); // Prevents wiping data before it loads
 
-  // --- PERSISTENT STATE ---
-  const [hourlyRate, setHourlyRate] = useState(() => localStorage.getItem('tot_hourly_rate') || '16.00');
-  const [shifts, setShifts] = useState(() => JSON.parse(localStorage.getItem('tot_shifts')) || []);
-  const [taxProfile, setTaxProfile] = useState(() => localStorage.getItem('tot_tax_profile') || 'W2 Employee');
-  const [stateTax, setStateTax] = useState(() => localStorage.getItem('tot_state_tax') || 'Arizona (2.5%)');
-  const [fedTax, setFedTax] = useState(() => localStorage.getItem('tot_fed_tax') || '10');
-  const [archives, setArchives] = useState(() => JSON.parse(localStorage.getItem('tot_shift_archives')) || []);
+  // Initialize empty state, we will pull from native hardware instantly
+  const [hourlyRate, setHourlyRate] = useState('16.00');
+  const [shifts, setShifts] = useState([]);
+  const [taxProfile, setTaxProfile] = useState('W2 Employee');
+  const [stateTax, setStateTax] = useState('Arizona (2.5%)');
+  const [fedTax, setFedTax] = useState('10');
+  const [archives, setArchives] = useState([]);
 
-  // --- SYNC TO HARD DRIVE ---
-  useEffect(() => { localStorage.setItem('tot_hourly_rate', hourlyRate); }, [hourlyRate]);
-  useEffect(() => { localStorage.setItem('tot_shifts', JSON.stringify(shifts)); }, [shifts]);
-  useEffect(() => { localStorage.setItem('tot_tax_profile', taxProfile); }, [taxProfile]);
-  useEffect(() => { localStorage.setItem('tot_state_tax', stateTax); }, [stateTax]);
-  useEffect(() => { localStorage.setItem('tot_fed_tax', fedTax); }, [fedTax]);
-  useEffect(() => { localStorage.setItem('tot_shift_archives', JSON.stringify(archives)); }, [archives]);
+  // --- NATIVE HARDWARE BOOT SEQUENCE ---
+  useEffect(() => {
+    const initDB = async () => {
+      const { value: hr } = await Preferences.get({ key: 'tot_hourly_rate' });
+      if (hr) setHourlyRate(hr);
+      
+      const { value: sh } = await Preferences.get({ key: 'tot_shifts' });
+      if (sh) try { setShifts(JSON.parse(sh)); } catch(e){}
+      
+      const { value: tp } = await Preferences.get({ key: 'tot_tax_profile' });
+      if (tp) setTaxProfile(tp);
+      
+      const { value: st } = await Preferences.get({ key: 'tot_state_tax' });
+      if (st) setStateTax(st);
+      
+      const { value: ft } = await Preferences.get({ key: 'tot_fed_tax' });
+      if (ft) setFedTax(ft);
+      
+      const { value: ar } = await Preferences.get({ key: 'tot_shift_archives' });
+      if (ar) try { setArchives(JSON.parse(ar)); } catch(e){}
+      
+      setIsLoaded(true);
+    };
+    initDB();
+  }, []);
+
+  // --- WRITE TO HARDWARE ON EVERY CHANGE ---
+  // The 'isLoaded' check ensures we don't accidentally save blank defaults over your data during boot
+  useEffect(() => { if (isLoaded) Preferences.set({ key: 'tot_hourly_rate', value: hourlyRate.toString() }); }, [hourlyRate, isLoaded]);
+  useEffect(() => { if (isLoaded) Preferences.set({ key: 'tot_shifts', value: JSON.stringify(shifts) }); }, [shifts, isLoaded]);
+  useEffect(() => { if (isLoaded) Preferences.set({ key: 'tot_tax_profile', value: taxProfile }); }, [taxProfile, isLoaded]);
+  useEffect(() => { if (isLoaded) Preferences.set({ key: 'tot_state_tax', value: stateTax }); }, [stateTax, isLoaded]);
+  useEffect(() => { if (isLoaded) Preferences.set({ key: 'tot_fed_tax', value: fedTax.toString() }); }, [fedTax, isLoaded]);
+  useEffect(() => { if (isLoaded) Preferences.set({ key: 'tot_shift_archives', value: JSON.stringify(archives) }); }, [archives, isLoaded]);
 
   // --- MATH ENGINE ---
   const calculateShiftHours = (inTime, outTime) => {
@@ -38,7 +67,7 @@ export default function MySchedule() {
     const [h2, m2] = outTime.split(':').map(Number);
     let m1Total = h1 * 60 + m1;
     let m2Total = h2 * 60 + m2;
-    if (m2Total < m1Total) m2Total += 24 * 60; // Handles overnight shifts passing midnight
+    if (m2Total < m1Total) m2Total += 24 * 60; 
     return (m2Total - m1Total) / 60;
   };
 
@@ -55,8 +84,8 @@ export default function MySchedule() {
 
   // Deductions
   const isW2 = taxProfile === 'W2 Employee';
-  const ssDed = isW2 ? grossPay * 0.062 : 0; // 6.2% FICA
-  const medDed = isW2 ? grossPay * 0.0145 : 0; // 1.45% FICA
+  const ssDed = isW2 ? grossPay * 0.062 : 0; 
+  const medDed = isW2 ? grossPay * 0.0145 : 0; 
   
   const stateRate = STATE_TAXES.find(t => t.name === stateTax)?.rate || 0;
   const stateDed = grossPay * (stateRate / 100);
@@ -66,21 +95,10 @@ export default function MySchedule() {
   const netPay = grossPay - totalDed;
 
   // --- HANDLERS ---
-  const handleAddShift = (day) => {
-    setShifts([...shifts, { id: Date.now(), day, in: '16:00', out: '22:00' }]);
-  };
-
-  const handleRemoveShift = (id) => {
-    setShifts(shifts.filter(s => s.id !== id));
-  };
-
-  const handleUpdateShift = (id, field, value) => {
-    setShifts(shifts.map(s => s.id === id ? { ...s, [field]: value } : s));
-  };
-
-  const handleClearWeek = () => {
-    if (window.confirm('Wipe all shifts for this week?')) setShifts([]);
-  };
+  const handleAddShift = (day) => { setShifts([...shifts, { id: Date.now(), day, in: '16:00', out: '22:00' }]); };
+  const handleRemoveShift = (id) => { setShifts(shifts.filter(s => s.id !== id)); };
+  const handleUpdateShift = (id, field, value) => { setShifts(shifts.map(s => s.id === id ? { ...s, [field]: value } : s)); };
+  const handleClearWeek = () => { if (window.confirm('Wipe all shifts for this week?')) setShifts([]); };
 
   const handleSaveToArchives = () => {
     const report = {
@@ -101,6 +119,8 @@ export default function MySchedule() {
   // --- STYLES ---
   const glassCard = { background: 'rgba(17,17,17,0.6)', backdropFilter: 'blur(10px)', borderRadius: '12px', padding: '20px', marginBottom: '15px', border: '1px solid #222' };
   const inputStyle = { background: '#0a0a0a', color: '#fff', border: '1px solid #333', padding: '10px', borderRadius: '6px', fontSize: '1rem' };
+
+  if (!isLoaded) return <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: '#e879f9' }}><h2>Loading Data...</h2></div>;
 
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'transparent', color: '#fff' }}>
@@ -158,7 +178,6 @@ export default function MySchedule() {
               <button onClick={handleClearWeek} style={{ width: '100%', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>CLEAR WEEK</button>
             </div>
 
-            {/* PAYCHECK ESTIMATOR */}
             <div style={{ ...glassCard, borderLeft: '4px solid #10b981' }}>
               <h3 style={{ color: '#e879f9', textAlign: 'center', marginTop: 0 }}>PAYCHECK ESTIMATOR</h3>
               
@@ -224,7 +243,6 @@ export default function MySchedule() {
           </div>
         )}
 
-        {/* TIMESHEET REPORT MODAL */}
         {showReport && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 9999, overflowY: 'auto', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '15px' }}>
