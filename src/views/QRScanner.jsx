@@ -15,7 +15,6 @@ export default function QRScanner() {
   const [savedScans, setSavedScans] = useState(() => JSON.parse(localStorage.getItem('tot_saved_scans')) || []);
   const [scanNote, setScanNote] = useState('');
 
-  // Generator States
   const [qrType, setQrType] = useState('text'); 
   const [createData, setCreateData] = useState('');
   const [qrEcc, setQrEcc] = useState('H');
@@ -27,7 +26,6 @@ export default function QRScanner() {
   const [vFirst, setVFirst] = useState(''); const [vLast, setVLast] = useState(''); const [vOrg, setVOrg] = useState(''); const [vTitle, setVTitle] = useState(''); const [vPhone, setVPhone] = useState(''); const [vEmail, setVEmail] = useState('');
   const [geoLat, setGeoLat] = useState(''); const [geoLong, setGeoLong] = useState('');
 
-  // Folder States
   const [qrCategory, setQrCategory] = useState('Misc');
   const [activeFolder, setActiveFolder] = useState('All');
 
@@ -65,108 +63,43 @@ export default function QRScanner() {
     else setQrCategory('Misc');
   }, [qrType]);
 
-  const playSuccessBeep = () => { 
-    try { 
-      const ctx = new (window.AudioContext || window.webkitAudioContext)(); 
-      const osc = ctx.createOscillator(); 
-      osc.type = 'sine'; 
-      osc.frequency.setValueAtTime(800, ctx.currentTime); 
-      osc.connect(ctx.destination); 
-      osc.start(); 
-      osc.stop(ctx.currentTime + 0.1); 
-    } catch(e) {} 
-  };
+  const playSuccessBeep = () => { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime); osc.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.1); } catch(e) {} };
 
   const processImageForEverything = async (photoPath) => {
     setIsProcessing(true);
     try {
       const img = new Image(); img.src = photoPath; await new Promise(resolve => img.onload = resolve);
-      
-      // STAGE 1: Native Hardware Detector
       if ('BarcodeDetector' in window) {
-        try { 
-          const detector = new window.BarcodeDetector(); 
-          const barcodes = await detector.detect(img); 
-          if (barcodes.length > 0) { 
-            playSuccessBeep(); 
-            setScanResult(barcodes[0].rawValue); 
-            setIsProcessing(false); 
-            return; 
-          } 
-        } catch (e) { }
+        try { const detector = new window.BarcodeDetector(); const barcodes = await detector.detect(img); if (barcodes.length > 0) { playSuccessBeep(); setScanResult(barcodes[0].rawValue); setIsProcessing(false); return; } } catch (e) { }
       }
-      
-      // STAGE 2: HTML5 Software Fallback
       try {
-        const response = await fetch(photoPath); 
-        const file = new File([await response.blob()], 'temp.jpg', { type: 'image/jpeg' });
-        const html5QrCode = new Html5Qrcode("hidden-qr-canvas"); 
-        const decodedText = await html5QrCode.scanFile(file, true);
-        playSuccessBeep(); 
-        setScanResult(decodedText); 
-        setIsProcessing(false); 
-        return;
+        const response = await fetch(photoPath); const file = new File([await response.blob()], 'temp.jpg', { type: 'image/jpeg' });
+        const html5QrCode = new Html5Qrcode("hidden-qr-canvas"); const decodedText = await html5QrCode.scanFile(file, true);
+        playSuccessBeep(); setScanResult(decodedText); setIsProcessing(false); return;
       } catch (e) { }
-      
-      // STAGE 3: Tesseract OCR Engine
-      const result = await Tesseract.recognize(photoPath, 'eng'); 
-      const text = result.data.text.trim();
-      if (text && text.length > 1) { 
-        playSuccessBeep(); 
-        setScanResult(text); 
-      } else {
-        alert("No codes or readable text found.");
-      }
-    } catch (err) { 
-      alert("Error processing image."); 
-    }
+      const result = await Tesseract.recognize(photoPath, 'eng'); const text = result.data.text.trim();
+      if (text && text.length > 1) { playSuccessBeep(); setScanResult(text); } else alert("No codes or readable text found.");
+    } catch (err) { alert("Error processing image."); }
     setIsProcessing(false);
   };
 
-  const scanNativeCamera = async () => { 
-    try { 
-      const photo = await Camera.getPhoto({ quality: 100, allowEditing: false, resultType: CameraResultType.Uri, source: CameraSource.Camera }); 
-      await processImageForEverything(photo.webPath); 
-    } catch (err) { 
-      if (err.message && !err.message.includes('User cancelled')) alert("Camera error: " + err.message); 
-    } 
-  };
-
-  const scanImageFile = (e) => { 
-    if (!e.target.files || e.target.files.length === 0) return; 
-    processImageForEverything(URL.createObjectURL(e.target.files[0])); 
-    e.target.value = null; 
-  };
+  const scanNativeCamera = async () => { try { const photo = await Camera.getPhoto({ quality: 100, allowEditing: false, resultType: CameraResultType.Uri, source: CameraSource.Camera }); await processImageForEverything(photo.webPath); } catch (err) { if (err.message && !err.message.includes('User cancelled')) alert("Camera error: " + err.message); } };
+  const scanImageFile = (e) => { if (!e.target.files || e.target.files.length === 0) return; processImageForEverything(URL.createObjectURL(e.target.files[0])); e.target.value = null; };
 
   const renderSmartActions = () => {
     if (!scanResult) return null;
     if (scanResult.startsWith('WIFI:')) {
-      const passMatch = scanResult.match(/P:(.*?);/); 
-      const pass = passMatch ? passMatch[1] : 'No Password';
+      const passMatch = scanResult.match(/P:(.*?);/); const pass = passMatch ? passMatch[1] : 'No Password';
       return <button onClick={() => { navigator.clipboard.writeText(pass); alert("WiFi Password Copied!"); }} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>📶 Copy WiFi Password</button>;
     }
     if (scanResult.startsWith('BEGIN:VCARD')) {
-      const downloadVCard = () => { 
-        const blob = new Blob([scanResult], { type: 'text/vcard' }); 
-        const url = URL.createObjectURL(blob); 
-        const link = document.createElement('a'); 
-        link.href = url; 
-        link.download = 'contact.vcf'; 
-        document.body.appendChild(link); 
-        link.click(); 
-        document.body.removeChild(link); 
-        URL.revokeObjectURL(url); 
-      };
+      const downloadVCard = () => { const blob = new Blob([scanResult], { type: 'text/vcard' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'contact.vcf'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); };
       return <button onClick={downloadVCard} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>👤 Save as Contact</button>;
     }
     if (scanResult.startsWith('http')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>🌐 Open Link</button>;
     if (scanResult.startsWith('tel:')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>📞 Call Phone Number</button>;
     if (scanResult.startsWith('mailto:')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#ef4444', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>📧 Send Email</button>;
-    if (scanResult.startsWith('smsto:')) { 
-      const parts = scanResult.split(':'); 
-      const phone = parts[1] || ''; 
-      return <button onClick={() => window.open(`sms:${phone}`, '_system')} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>💬 Open Text Message</button>; 
-    }
+    if (scanResult.startsWith('smsto:')) { const parts = scanResult.split(':'); const phone = parts[1] || ''; return <button onClick={() => window.open(`sms:${phone}`, '_system')} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>💬 Open Text Message</button>; }
     if (scanResult.startsWith('geo:')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#f59e0b', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>🗺️ Open Map Location</button>;
     return null;
   };
@@ -177,17 +110,8 @@ export default function QRScanner() {
     savedScans.forEach(s => { csv += `"${s.date}","${s.note || ''}","${s.data.replace(/"/g, '""')}"\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
     const file = new File([blob], `Scan_Log_${Date.now()}.csv`, { type: 'text/csv' });
-    if (navigator.share) { 
-      try { await navigator.share({ files: [file], title: 'Scan Log Export' }); return; } catch(e){} 
-    }
-    const url = URL.createObjectURL(blob); 
-    const link = document.createElement('a'); 
-    link.href = url; 
-    link.download = file.name; 
-    document.body.appendChild(link); 
-    link.click(); 
-    document.body.removeChild(link); 
-    URL.revokeObjectURL(url);
+    if (navigator.share) { try { await navigator.share({ files: [file], title: 'Scan Log Export' }); return; } catch(e){} }
+    const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = file.name; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
   };
 
   const copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied!"); };
@@ -196,42 +120,20 @@ export default function QRScanner() {
     else window.open(`https://duckduckgo.com/?q=${encodeURIComponent(text)}`, '_system');
   };
 
-  const saveScan = () => { 
-    setSavedScans([{ id: Date.now(), data: scanResult, note: scanNote, date: new Date().toLocaleDateString() }, ...savedScans]); 
-    setScanNote(''); 
-    alert("Saved to Log!"); 
-    setActiveTab('saved'); 
-  };
+  const saveScan = () => { setSavedScans([{ id: Date.now(), data: scanResult, note: scanNote, date: new Date().toLocaleDateString() }, ...savedScans]); setScanNote(''); alert("Saved to Log!"); setActiveTab('saved'); };
   const deleteScan = (id) => { if(window.confirm("Delete this scan?")) setSavedScans(savedScans.filter(s => s.id !== id)); };
-  const moveScan = (i, dir) => { 
-    const n = [...savedScans]; 
-    if (dir === 'up' && i > 0) [n[i-1], n[i]] = [n[i], n[i-1]]; 
-    else if (dir === 'down' && i < n.length - 1) [n[i+1], n[i]] = [n[i], n[i+1]]; 
-    setSavedScans(n); 
-  };
+  const moveScan = (i, dir) => { const n = [...savedScans]; if (dir === 'up' && i > 0) [n[i-1], n[i]] = [n[i], n[i-1]]; else if (dir === 'down' && i < n.length - 1) [n[i+1], n[i]] = [n[i], n[i+1]]; setSavedScans(n); };
 
   const saveGeneratedQR = () => {
     if (!qrTitle) return alert("Please add a title.");
-    const canvas = document.querySelector('#canvas-container canvas'); 
-    if (!canvas) return;
+    const canvas = document.querySelector('#canvas-container canvas'); if (!canvas) return;
     setMyQRs([{ id: Date.now(), title: qrTitle, data: getCompiledQrData(), date: new Date().toLocaleDateString(), image: canvas.toDataURL('image/png'), folder: qrCategory }, ...myQRs]);
-    alert("Saved to Vault!"); 
-    setActiveTab('vault');
+    alert("Saved to Vault!"); setActiveTab('vault');
   };
-
   const downloadVaultQR = async (img, title) => {
-    try { 
-      const b = await (await fetch(img)).blob(); 
-      const f = new File([b], `${title.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+    try { const b = await (await fetch(img)).blob(); const f = new File([b], `${title.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
       if (navigator.share) await navigator.share({ files: [f], title });
-      else { 
-        const l = document.createElement('a'); 
-        l.href = img; 
-        l.download = f.name; 
-        document.body.appendChild(l); 
-        l.click(); 
-        document.body.removeChild(l); 
-      }
+      else { const l = document.createElement('a'); l.href = img; l.download = f.name; document.body.appendChild(l); l.click(); document.body.removeChild(l); }
     } catch (e) { }
   };
   const deleteVaultQR = (id) => { if(window.confirm("Delete this Code?")) setMyQRs(myQRs.filter(q => q.id !== id)); };
@@ -344,13 +246,7 @@ export default function QRScanner() {
             {savedScans.length === 0 && <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No scans logged yet.</p>}
             {savedScans.map((scan, index) => (
               <div key={scan.id} style={{ ...glassCard, borderLeft: '4px solid #10b981' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>{scan.date}</span>
-                  <div style={{ display: 'flex', gap: '5px' }}>
-                    <button onClick={() => moveScan(index, 'up')} disabled={index === 0} style={{ background: '#222', color: index === 0 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▲</button>
-                    <button onClick={() => moveScan(index, 'down')} disabled={index === savedScans.length - 1} style={{ background: '#222', color: index === savedScans.length - 1 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▼</button>
-                  </div>
-                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}><span style={{ color: '#10b981', fontWeight: 'bold' }}>{scan.date}</span><div style={{ display: 'flex', gap: '5px' }}><button onClick={() => moveScan(index, 'up')} disabled={index === 0} style={{ background: '#222', color: index === 0 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▲</button><button onClick={() => moveScan(index, 'down')} disabled={index === savedScans.length - 1} style={{ background: '#222', color: index === savedScans.length - 1 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▼</button></div></div>
                 {scan.note && <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>{scan.note}</h3>}
                 <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #333', color: '#ccc', fontFamily: 'monospace', wordWrap: 'break-word', marginBottom: '15px' }}>{scan.data}</div>
                 <div style={{ display: 'flex', gap: '10px' }}>
