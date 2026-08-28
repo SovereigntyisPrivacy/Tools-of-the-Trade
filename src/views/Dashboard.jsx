@@ -1,20 +1,17 @@
-import GhostTap from '../components/GhostTap';
 import React, { useState, useEffect } from 'react';
-
-
-
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
 
-function Dashboard() {
-
+export default function Dashboard() {
   const [devTaps, setDevTaps] = useState(0);
+  const [showLegal, setShowLegal] = useState(false);
+
   const handleTitleTap = () => {
     const t = devTaps + 1;
     setDevTaps(t);
     if (t >= 5) {
-      localStorage.setItem('fleet_dev_mode', 'true');
+      localStorage.setItem('fleet_dev_node', 'true');
       alert('Developer Mode Unlocked: Wipe Data & Screenshot Shield exposed.');
       setDevTaps(0);
     } else {
@@ -22,16 +19,14 @@ function Dashboard() {
     }
   };
 
-  
-
   const navigate = useNavigate();
   const { alertCount } = useCalendar();
 
   const [time, setTime] = useState(new Date());
-  const [clockConfig, setClockConfig] = useState({ 
-    tz: Intl.DateTimeFormat().resolvedOptions().timeZone, 
-    color: '#00ffff', 
-    opacity: '1.0' 
+  const [clockConfig, setClockConfig] = useState({
+    tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    color: '#00ffff',
+    opacity: '1.0'
   });
 
   useEffect(() => {
@@ -44,43 +39,43 @@ function Dashboard() {
       });
     };
     loadConfig();
-    
-  // --- EXECUTIVE OMNI-TELEMETRY HUD ---
-  let totalAssetValue = 0;
-  let monthlyBurn = 0;
-  let activePayroll = 0;
 
-  try {
-    const assets = JSON.parse(localStorage.getItem('asset_ledger') || '[]');
-    totalAssetValue = assets.reduce((sum, a) => sum + parseFloat(a.price || 0), 0);
+    // --- EXECUTIVE OMNI-TELEMETRY HUD ---
+    let totalAssetValue = 0;
+    let monthlyBurn = 0;
+    let activePayroll = 0;
 
-    const subs = JSON.parse(localStorage.getItem('fleet_subscriptions') || '[]');
-    monthlyBurn = subs.reduce((sum, s) => sum + (s.cycle === 'Monthly' ? parseFloat(s.cost || 0) : parseFloat(s.cost || 0)/12), 0);
+    try {
+      const assets = JSON.parse(localStorage.getItem('asset_ledger') || '[]');
+      totalAssetValue = assets.reduce((sum, a) => sum + parseFloat(a.price || 0), 0);
 
-    const schedules = JSON.parse(localStorage.getItem('fleet_schedules') || '[]');
-    if (schedules.length > 0) {
-      const activeWk = schedules[schedules.length - 1]; // Grabs the most recently generated week
-      activeWk.roster.forEach(emp => {
-        let hrs = 0;
-        Object.values(activeWk.shifts[emp.id] || {}).forEach(s => {
-          if (s && s.in && s.out) {
-            const [h1, m1] = s.in.split(':').map(Number);
-            const [h2, m2] = s.out.split(':').map(Number);
-            let m1Total = h1 * 60 + m1;
-            let m2Total = h2 * 60 + m2;
-            if (m2Total < m1Total) m2Total += 24 * 60;
-            hrs += (m2Total - m1Total) / 60;
-          }
+      const subs = JSON.parse(localStorage.getItem('fleet_subscriptions') || '[]');
+      monthlyBurn = subs.reduce((sum, s) => sum + (s.cycle === 'Monthly' ? parseFloat(s.cost || 0) : parseFloat(s.cost || 0)/12), 0);
+
+      const schedules = JSON.parse(localStorage.getItem('fleet_schedules') || '[]');
+      if (schedules.length > 0) {
+        const activeWk = schedules[schedules.length - 1]; // Grabs the most recently generated week
+        activeWk.roster.forEach(emp => {
+          let hrs = 0;
+          Object.values(activeWk.shifts[emp.id] || {}).forEach(s => {
+            if (s && s.in && s.out) {
+              const [h1, m1] = s.in.split(':').map(Number);
+              const [h2, m2] = s.out.split(':').map(Number);
+              let m1Total = h1 * 60 + m1;
+              let m2Total = h2 * 60 + m2;
+              if (m2Total < m1Total) m2Total += 24 * 60;
+              hrs += (m2Total - m1Total) / 60;
+            }
+          });
+          const rate = parseFloat(emp.rate) || 0;
+          const reg = Math.min(hrs, 40);
+          const ot = Math.max(0, hrs - 40);
+          activePayroll += (reg * rate) + (ot * rate * 1.5);
         });
-        const rate = parseFloat(emp.rate) || 0;
-        const reg = Math.min(hrs, 40);
-        const ot = Math.max(0, hrs - 40);
-        activePayroll += (reg * rate) + (ot * rate * 1.5);
-      });
-    }
-  } catch(e) {}
+      }
+    } catch (e) {}
 
-  return () => clearInterval(timer);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -110,25 +105,20 @@ function Dashboard() {
     { id: "chronos", name: "Chronos Hub", path: "/chronos", icon: "⏱️", badge: "", badgeColor: "#222" },
     { id: "burner", name: "Burner Pad", path: "/burner", icon: "🔥", badge: "WIPES", badgeColor: "#ef4444" },
     { id: "sop", name: "SOP Engine", path: "/sop", icon: "📋", badge: "CORE", badgeColor: "#3b82f6" },
-    
     { id: "subscriptions", name: "Sub Tracker", path: "/subscriptions", icon: "🔄", badge: "NEW", badgeColor: "#a855f7" },
     { id: "vault", name: "Data Vault", path: "/datavault", icon: "💾", badge: "SAFE", badgeColor: "#00ffff" },
     { id: "calendar", name: "Master Calendar", path: "/calendar", icon: "📅", badge: "CORE", badgeColor: "#a855f7" },
     { id: "quick", name: "Quick Tip & Tax", path: "/quick", icon: "💸", badge: "FAST", badgeColor: "#00cc66" },
     { id: "budget", name: "Budget Engine", path: "/budget", icon: "💵", badge: "CORE", badgeColor: "#00cc66" },
     { id: "learning", name: "Learning Center", path: "/learning", icon: "📚", badge: "NEW", badgeColor: "#00ffff" },
-    { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮" },
-    { id: "ledger", name: "Asset Ledger", path: "/ledger", icon: "📋" },
-    { id: "civics", name: "Civics & Rights", path: "/civics", icon: "⚖️" },
-  { id: "qrscanner", name: "Universal Lens", path: "/qr-scanner", icon: "📷", badge: "NEW", badgeColor: "#06b6d4" }
+    { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮", badge: "", badgeColor: "#222" },
+    { id: "ledger", name: "Asset Ledger", path: "/ledger", icon: "📋", badge: "", badgeColor: "#222" },
+    { id: "civics", name: "Civics & Rights", path: "/civics", icon: "⚖️", badge: "", badgeColor: "#222" },
+    { id: "qrscanner", name: "Universal Lens", path: "/qr-scanner", icon: "📷", badge: "NEW", badgeColor: "#06b6d4" }
   ];
 
   return (
     <div className="view-wrapper pb-safe">
-      
-      
-      
-      
       <header className="header" style={{ position: 'relative', paddingTop: '40px', paddingBottom: '20px', textAlign: 'center' }}>
         <div onClick={() => navigate('/worldclock')} style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', cursor: 'pointer', zIndex: 10 }}>
           <span style={{ color: clockConfig.color, fontSize: '1.2rem', textShadow: `0 0 10px ${clockConfig.color}`, fontWeight: 'bold' }}>
@@ -139,12 +129,16 @@ function Dashboard() {
           ⚙️
         </button>
         <h1 onClick={handleTitleTap} className="friendly-title" style={{ marginTop: '20px', cursor: 'pointer', lineHeight: '1.2' }}>T⚙️⚙️ls of the Trade</h1>
+        
+        {/* INJECTED LEGAL BUTTON HERE */}
+        <div style={{ textAlign: 'center', marginTop: '10px', position: 'relative', zIndex: 20 }}>
+          <button onClick={(e) => { e.stopPropagation(); setShowLegal(true); }} style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold' }}>⚖️ Legal & Privacy Info</button>
+        </div>
       </header>
-
 
       <div className="grid-container" style={{ marginTop: '40px' }}>
         {tools.map((tool) => (
-          <button 
+          <button
             key={tool.id}
             className="tool-card"
             style={{ position: 'relative' }}
@@ -175,8 +169,22 @@ function Dashboard() {
           </button>
         ))}
       </div>
+
+      {/* INJECTED LEGAL MODAL HERE */}
+      {showLegal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '20px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
+            <h2 style={{ color: '#ef4444', textTransform: 'uppercase', marginTop: 0 }}>Liability & Privacy EULA</h2>
+            <p style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.5', textAlign: 'left' }}>
+              <strong>1. As-Is Software:</strong> Tools of the Trade (ToT) is provided "as is" and "as available" without warranty of any kind. The developer assumes no liability for data loss, financial discrepancies, or hardware failure resulting from the use of this software.<br/><br/>
+              <strong>2. Zero Data Collection:</strong> This application operates entirely offline. No personal data, camera feeds, or financial logs are transmitted to external servers. All data remains exclusively on local device storage.<br/><br/>
+              <strong>3. Mesh & Network Broadcasts:</strong> The Pro Generator is capable of creating unencrypted data payloads for local mesh networks. The user assumes all responsibility for managing unencrypted broadcasts and shielding sensitive keys.<br/><br/>
+              <strong>4. User Responsibility:</strong> By bypassing this screen, you acknowledge that you are solely responsible for compliance with your local laws regarding cryptography, data routing, and scanning hardware.
+            </p>
+            <button onClick={(e) => { e.stopPropagation(); setShowLegal(false); }} style={{ width: '100%', background: '#06b6d4', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', marginTop: '15px', fontSize: '1.1rem' }}>I Agree & Understand</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export default Dashboard;
