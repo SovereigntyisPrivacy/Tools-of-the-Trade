@@ -27,6 +27,10 @@ export default function QRScanner() {
   const [vFirst, setVFirst] = useState(''); const [vLast, setVLast] = useState(''); const [vOrg, setVOrg] = useState(''); const [vTitle, setVTitle] = useState(''); const [vPhone, setVPhone] = useState(''); const [vEmail, setVEmail] = useState('');
   const [geoLat, setGeoLat] = useState(''); const [geoLong, setGeoLong] = useState('');
 
+  // --- NEW FOLDER STATES ---
+  const [qrCategory, setQrCategory] = useState('Misc');
+  const [activeFolder, setActiveFolder] = useState('All');
+
   const [qrColor, setQrColor] = useState('#000000'); const [qrBg, setQrBg] = useState('#ffffff');
   const [qrTitle, setQrTitle] = useState('');
   const [myQRs, setMyQRs] = useState(() => JSON.parse(localStorage.getItem('tot_my_qrs')) || []);
@@ -53,6 +57,15 @@ export default function QRScanner() {
 
   useEffect(() => { localStorage.setItem('tot_saved_scans', JSON.stringify(savedScans)); localStorage.setItem('tot_my_qrs', JSON.stringify(myQRs)); }, [savedScans, myQRs]);
 
+  // Sync default folder based on selected type
+  useEffect(() => {
+    if (qrType === 'wifi') setQrCategory('WiFi');
+    else if (qrType === 'crypto') setQrCategory('Crypto');
+    else if (qrType === 'barcode') setQrCategory('Barcodes');
+    else if (['sms', 'phone', 'email', 'vcard'].includes(qrType)) setQrCategory('Comms');
+    else setQrCategory('Misc');
+  }, [qrType]);
+
   const playSuccessBeep = () => { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime); osc.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.1); } catch(e) {} };
 
   const processImageForEverything = async (photoPath) => {
@@ -76,7 +89,6 @@ export default function QRScanner() {
   const scanNativeCamera = async () => { try { const photo = await Camera.getPhoto({ quality: 100, allowEditing: false, resultType: CameraResultType.Uri, source: CameraSource.Camera }); await processImageForEverything(photo.webPath); } catch (err) { if (err.message && !err.message.includes('User cancelled')) alert("Camera error: " + err.message); } };
   const scanImageFile = (e) => { if (!e.target.files || e.target.files.length === 0) return; processImageForEverything(URL.createObjectURL(e.target.files[0])); e.target.value = null; };
 
-  // --- THE FULL SMART ACTION ARSENAL ---
   const renderSmartActions = () => {
     if (!scanResult) return null;
     if (scanResult.startsWith('WIFI:')) {
@@ -88,16 +100,10 @@ export default function QRScanner() {
       return <button onClick={downloadVCard} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>👤 Save as Contact</button>;
     }
     if (scanResult.startsWith('http')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>🌐 Open Link</button>;
-    
-    // NEW: Dialers, SMS, Maps, Emails
     if (scanResult.startsWith('tel:')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>📞 Call Phone Number</button>;
     if (scanResult.startsWith('mailto:')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#ef4444', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>📧 Send Email</button>;
-    if (scanResult.startsWith('smsto:')) {
-      const parts = scanResult.split(':'); const phone = parts[1] || '';
-      return <button onClick={() => window.open(`sms:${phone}`, '_system')} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>💬 Open Text Message</button>;
-    }
+    if (scanResult.startsWith('smsto:')) { const parts = scanResult.split(':'); const phone = parts[1] || ''; return <button onClick={() => window.open(`sms:${phone}`, '_system')} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>💬 Open Text Message</button>; }
     if (scanResult.startsWith('geo:')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#f59e0b', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>🗺️ Open Map Location</button>;
-    
     return null;
   };
 
@@ -121,10 +127,11 @@ export default function QRScanner() {
   const deleteScan = (id) => { if(window.confirm("Delete this scan?")) setSavedScans(savedScans.filter(s => s.id !== id)); };
   const moveScan = (i, dir) => { const n = [...savedScans]; if (dir === 'up' && i > 0) [n[i-1], n[i]] = [n[i], n[i-1]]; else if (dir === 'down' && i < n.length - 1) [n[i+1], n[i]] = [n[i], n[i+1]]; setSavedScans(n); };
 
+  // INTEGRATED FOLDER INTO SAVE FUNCTION
   const saveGeneratedQR = () => {
     if (!qrTitle) return alert("Please add a title.");
     const canvas = document.querySelector('#canvas-container canvas'); if (!canvas) return;
-    setMyQRs([{ id: Date.now(), title: qrTitle, data: getCompiledQrData(), date: new Date().toLocaleDateString(), image: canvas.toDataURL('image/png') }, ...myQRs]);
+    setMyQRs([{ id: Date.now(), title: qrTitle, data: getCompiledQrData(), date: new Date().toLocaleDateString(), image: canvas.toDataURL('image/png'), folder: qrCategory }, ...myQRs]);
     alert("Saved to Vault!"); setActiveTab('vault');
   };
   const downloadVaultQR = async (img, title) => {
@@ -215,6 +222,14 @@ export default function QRScanner() {
             {qrType === 'barcode' ? ( <div style={{ marginBottom: '15px' }}><label style={{ color: '#888', fontSize: '0.7rem', display: 'block', marginBottom: '5px' }}>Barcode Format</label><select value={barcodeType} onChange={e => setBarcodeType(e.target.value)} style={inputStyle}><option value="CODE128">CODE128 (Standard Alphanumeric)</option><option value="CODE39">CODE39 (Industrial Alphanumeric)</option></select></div>
             ) : ( <div style={{ marginBottom: '15px' }}><label style={{ color: '#888', fontSize: '0.7rem', display: 'block', marginBottom: '5px' }}>QR Error Correction (Damage Recovery)</label><select value={qrEcc} onChange={e => setQrEcc(e.target.value)} style={inputStyle}><option value="L">Low (7%)</option><option value="M">Medium (15%)</option><option value="Q">Quarter (25%)</option><option value="H">High (30% - Best for Mesh/Screens)</option></select></div> )}
 
+            {/* FOLDER OVERRIDE */}
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ color: '#888', fontSize: '0.7rem', display: 'block', marginBottom: '5px' }}>Vault Folder</label>
+              <select value={qrCategory} onChange={e => setQrCategory(e.target.value)} style={{ ...inputStyle, border: '1px dashed #f59e0b', color: '#f59e0b' }}>
+                <option value="Misc">Misc</option><option value="Barcodes">Barcodes</option><option value="Comms">Contacts & Comms</option><option value="Crypto">Crypto</option><option value="WiFi">WiFi</option>
+              </select>
+            </div>
+
             <div style={{ textAlign: 'center' }}>
               {hasValidData() && (
                 <>
@@ -223,7 +238,7 @@ export default function QRScanner() {
                     ) : ( <QRCodeCanvas value={getCompiledQrData()} size={200} fgColor={qrColor} bgColor={qrBg} level={qrEcc} /> )}
                   </div>
                   <input type="text" placeholder="Title (e.g. Storage Barcode)" value={qrTitle} onChange={(e) => setQrTitle(e.target.value)} style={{ ...inputStyle, textAlign: 'center' }} />
-                  <button onClick={saveGeneratedQR} style={{ width: '100%', background: '#f59e0b', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}>💾 Save to Vault</button>
+                  <button onClick={saveGeneratedQR} style={{ width: '100%', background: '#f59e0b', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}>💾 Save to Vault Folder</button>
                 </>
               )}
             </div>
@@ -239,7 +254,10 @@ export default function QRScanner() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}><span style={{ color: '#10b981', fontWeight: 'bold' }}>{scan.date}</span><div style={{ display: 'flex', gap: '5px' }}><button onClick={() => moveScan(index, 'up')} disabled={index === 0} style={{ background: '#222', color: index === 0 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▲</button><button onClick={() => moveScan(index, 'down')} disabled={index === savedScans.length - 1} style={{ background: '#222', color: index === savedScans.length - 1 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▼</button></div></div>
                 {scan.note && <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>{scan.note}</h3>}
                 <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #333', color: '#ccc', fontFamily: 'monospace', wordWrap: 'break-word', marginBottom: '15px' }}>{scan.data}</div>
-                <button onClick={() => deleteScan(scan.id)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '8px', borderRadius: '6px', fontWeight: 'bold' }}>🗑️ Delete</button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => copyToClipboard(scan.data)} style={{ flex: 1, background: 'transparent', color: '#a855f7', border: '1px solid #a855f7', padding: '8px', borderRadius: '6px', fontWeight: 'bold' }}>📋 Copy</button>
+                  <button onClick={() => deleteScan(scan.id)} style={{ flex: 1, background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '8px', borderRadius: '6px', fontWeight: 'bold' }}>🗑️ Delete</button>
+                </div>
               </div>
             ))}
           </div>
@@ -247,14 +265,34 @@ export default function QRScanner() {
 
         {activeTab === 'vault' && (
           <div style={{ marginTop: '20px' }}>
-            {myQRs.length === 0 && <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No generated QRs saved.</p>}
-            {myQRs.map((qr) => (
+            
+            {/* HORIZONTAL FOLDER FILTERS */}
+            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '20px', paddingBottom: '10px' }}>
+              {['All', 'Barcodes', 'Comms', 'Crypto', 'WiFi', 'Misc'].map(folder => (
+                <button key={folder} onClick={() => setActiveFolder(folder)} style={{ flex: '0 0 auto', background: activeFolder === folder ? '#f59e0b' : '#222', color: activeFolder === folder ? '#000' : '#888', border: 'none', padding: '8px 15px', borderRadius: '20px', fontWeight: 'bold' }}>
+                  {folder}
+                </button>
+              ))}
+            </div>
+
+            {myQRs.filter(q => activeFolder === 'All' || (q.folder || 'Misc') === activeFolder).length === 0 && <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No items in this folder.</p>}
+            
+            {myQRs.filter(q => activeFolder === 'All' || (q.folder || 'Misc') === activeFolder).map((qr) => (
               <div key={qr.id} style={{ ...glassCard, borderTop: '4px solid #f59e0b', textAlign: 'center' }}>
-                <h3 style={{ color: '#fff', margin: '0 0 5px 0', textTransform: 'uppercase' }}>{qr.title}</h3>
-                <span style={{ color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '15px' }}>{qr.date}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                  <span style={{ background: '#222', color: '#f59e0b', padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold' }}>📂 {qr.folder || 'Misc'}</span>
+                  <span style={{ color: '#888', fontSize: '0.8rem' }}>{qr.date}</span>
+                </div>
+                <h3 style={{ color: '#fff', margin: '0 0 15px 0', textTransform: 'uppercase' }}>{qr.title}</h3>
+                
+                <p style={{ color: '#ccc', fontSize: '0.85rem', wordWrap: 'break-word', margin: '0 0 15px 0', background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #333' }}>{qr.data}</p>
                 <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', display: 'inline-block', marginBottom: '15px', border: '1px solid #333' }}><img src={qr.image} alt={qr.title} style={{ maxWidth: '100%', height: 'auto' }} /></div>
-                <button onClick={() => downloadVaultQR(qr.image, qr.title)} style={{ width: '100%', background: '#f59e0b', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>📤 Share / Save Image</button>
-                <button onClick={() => deleteVaultQR(qr.id)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>🗑️ Delete</button>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                  <button onClick={() => copyToClipboard(qr.data)} style={{ width: '100%', background: 'transparent', color: '#a855f7', border: '1px solid #a855f7', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📋 Copy Data</button>
+                  <button onClick={() => downloadVaultQR(qr.image, qr.title)} style={{ width: '100%', background: '#f59e0b', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Share Image</button>
+                </div>
+                <button onClick={() => deleteVaultQR(qr.id)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '10px', borderRadius: '8px', fontWeight: 'bold' }}>🗑️ Delete Entry</button>
               </div>
             ))}
           </div>
