@@ -139,7 +139,6 @@ export default function QRScanner() {
     const canvas = document.querySelector('#canvas-container canvas'); if (!canvas) return;
     setMyQRs([{ id: Date.now(), title: qrTitle, data: getCompiledQrData(), date: new Date().toLocaleDateString(), image: canvas.toDataURL('image/png'), folder: qrCategory }, ...myQRs]);
     
-    // --- THE AUTO-WIPE NUKE ---
     setCreateData(''); setWifiSsid(''); setWifiPass(''); setSmsPhone(''); setSmsMsg(''); 
     setCryptoAddr(''); setCryptoAmt(''); setVFirst(''); setVLast(''); setVOrg(''); 
     setVTitle(''); setVPhone(''); setVEmail(''); setGeoLat(''); setGeoLong(''); setQrTitle('');
@@ -190,7 +189,7 @@ export default function QRScanner() {
                 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '20px', background: 'rgba(0,0,0,0.4)', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
                   <input type="checkbox" id="ocrToggle" checked={enableOCR} onChange={(e) => setEnableOCR(e.target.checked)} style={{ transform: 'scale(1.5)', accentColor: '#06b6d4' }} />
-                  <label htmlFor="ocrToggle" style={{ color: '#ccc', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>Enable Deep Text Extraction (OCR)</label>
+                  <label htmlFor="ocrToggle" style={{ color: '#ccc', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}>Enable Deep Text Extraction (OCR)</label>
                 </div>
 
                 <button onClick={scanNativeCamera} style={{ ...btnStyle('#06b6d4', '#000'), marginBottom: '15px' }}>📸 Omni-Scan (Camera)</button>
@@ -263,7 +262,6 @@ export default function QRScanner() {
           </div>
         )}
 
-        {/* SCROLLABLE LOG BOXES */}
         {activeTab === 'saved' && (
           <div style={{ marginTop: '20px' }}>
             <button onClick={exportScanLogToCSV} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', marginBottom: '15px' }}>📥 Download Log as CSV</button>
@@ -290,7 +288,7 @@ export default function QRScanner() {
           </div>
         )}
 
-        {/* SCROLLABLE VAULT BOXES */}
+        {/* THE UPGRADED VAULT WITH PRIVACY TOGGLES */}
         {activeTab === 'vault' && (
           <div style={{ marginTop: '20px' }}>
             <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '20px', paddingBottom: '10px' }}>
@@ -311,7 +309,13 @@ export default function QRScanner() {
                 </div>
                 <h3 style={{ color: '#fff', margin: '0 0 15px 0', textTransform: 'uppercase' }}>{qr.title}</h3>
                 
-                <textarea readOnly value={qr.data} style={{ width: '100%', background: '#0a0a0a', padding: '12px', borderRadius: '8px', border: '1px solid #333', color: '#06b6d4', fontFamily: 'monospace', marginBottom: '15px', minHeight: '80px', resize: 'vertical', fontSize: '0.9rem' }} />
+                {/* THE PRIVACY DROPDOWN */}
+                <details style={{ marginBottom: '15px', textAlign: 'left' }}>
+                  <summary style={{ color: '#06b6d4', cursor: 'pointer', fontWeight: 'bold', padding: '10px', background: '#222', borderRadius: '8px', display: 'block', textAlign: 'center', border: '1px solid #333', userSelect: 'none' }}>
+                    👁️ Reveal Payload Data
+                  </summary>
+                  <textarea readOnly value={qr.data} style={{ width: '100%', background: '#0a0a0a', padding: '12px', borderRadius: '8px', border: '1px solid #333', color: '#06b6d4', fontFamily: 'monospace', marginTop: '10px', minHeight: '80px', resize: 'vertical', fontSize: '0.9rem' }} />
+                </details>
                 
                 <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', display: 'inline-block', marginBottom: '15px', border: '1px solid #333' }}><img src={qr.image} alt={qr.title} style={{ maxWidth: '100%', height: 'auto' }} /></div>
                 
