@@ -15,26 +15,30 @@ export default function QRScanner() {
   const [savedScans, setSavedScans] = useState(() => JSON.parse(localStorage.getItem('tot_saved_scans')) || []);
   const [scanNote, setScanNote] = useState('');
 
-  // --- GOD MODE GENERATOR STATE ---
+  // Generator States
   const [qrType, setQrType] = useState('text'); 
   const [createData, setCreateData] = useState('');
-  const [qrEcc, setQrEcc] = useState('H'); // Error Correction
+  const [qrEcc, setQrEcc] = useState('H');
   const [barcodeType, setBarcodeType] = useState('CODE128');
   
-  // WiFi
   const [wifiSsid, setWifiSsid] = useState(''); const [wifiPass, setWifiPass] = useState(''); const [wifiType, setWifiType] = useState('WPA');
-  // SMS
   const [smsPhone, setSmsPhone] = useState(''); const [smsMsg, setSmsMsg] = useState('');
-  // Crypto
   const [cryptoType, setCryptoType] = useState('monero'); const [cryptoAddr, setCryptoAddr] = useState(''); const [cryptoAmt, setCryptoAmt] = useState('');
-  // VCard
   const [vFirst, setVFirst] = useState(''); const [vLast, setVLast] = useState(''); const [vOrg, setVOrg] = useState(''); const [vTitle, setVTitle] = useState(''); const [vPhone, setVPhone] = useState(''); const [vEmail, setVEmail] = useState('');
-  // Geo
   const [geoLat, setGeoLat] = useState(''); const [geoLong, setGeoLong] = useState('');
 
   const [qrColor, setQrColor] = useState('#000000'); const [qrBg, setQrBg] = useState('#ffffff');
   const [qrTitle, setQrTitle] = useState('');
   const [myQRs, setMyQRs] = useState(() => JSON.parse(localStorage.getItem('tot_my_qrs')) || []);
+
+  const hasValidData = () => {
+    if (qrType === 'wifi') return wifiSsid.trim() !== '';
+    if (qrType === 'crypto') return cryptoAddr.trim() !== '';
+    if (qrType === 'sms') return smsPhone.trim() !== '';
+    if (qrType === 'geo') return geoLat !== '' && geoLong !== '';
+    if (qrType === 'vcard') return vFirst.trim() !== '' || vLast.trim() !== '' || vOrg.trim() !== '' || vPhone.trim() !== '' || vEmail.trim() !== '';
+    return createData.trim() !== '';
+  };
 
   const getCompiledQrData = () => {
     if (qrType === 'wifi') return `WIFI:S:${wifiSsid};T:${wifiType};P:${wifiPass};;`;
@@ -49,54 +53,30 @@ export default function QRScanner() {
 
   useEffect(() => { localStorage.setItem('tot_saved_scans', JSON.stringify(savedScans)); localStorage.setItem('tot_my_qrs', JSON.stringify(myQRs)); }, [savedScans, myQRs]);
 
-  const playSuccessBeep = () => {
-    try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime); osc.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.1); } catch(e) {}
-  };
+  const playSuccessBeep = () => { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime); osc.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.1); } catch(e) {} };
 
   const processImageForEverything = async (photoPath) => {
     setIsProcessing(true);
     try {
-      const img = new Image(); img.src = photoPath;
-      await new Promise(resolve => img.onload = resolve);
-
+      const img = new Image(); img.src = photoPath; await new Promise(resolve => img.onload = resolve);
       if ('BarcodeDetector' in window) {
-        try {
-          const detector = new window.BarcodeDetector();
-          const barcodes = await detector.detect(img);
-          if (barcodes.length > 0) { playSuccessBeep(); setScanResult(barcodes[0].rawValue); setIsProcessing(false); return; }
-        } catch (e) { }
+        try { const detector = new window.BarcodeDetector(); const barcodes = await detector.detect(img); if (barcodes.length > 0) { playSuccessBeep(); setScanResult(barcodes[0].rawValue); setIsProcessing(false); return; } } catch (e) { }
       }
-
       try {
-        const response = await fetch(photoPath);
-        const file = new File([await response.blob()], 'temp_qr.jpg', { type: 'image/jpeg' });
-        const html5QrCode = new Html5Qrcode("hidden-qr-canvas");
-        const decodedText = await html5QrCode.scanFile(file, true);
+        const response = await fetch(photoPath); const file = new File([await response.blob()], 'temp.jpg', { type: 'image/jpeg' });
+        const html5QrCode = new Html5Qrcode("hidden-qr-canvas"); const decodedText = await html5QrCode.scanFile(file, true);
         playSuccessBeep(); setScanResult(decodedText); setIsProcessing(false); return;
       } catch (e) { }
-
-      const result = await Tesseract.recognize(photoPath, 'eng');
-      const text = result.data.text.trim();
-      
-      if (text && text.length > 1) { playSuccessBeep(); setScanResult(text); }
-      else alert("No codes or readable text found. Ensure good lighting and focus.");
+      const result = await Tesseract.recognize(photoPath, 'eng'); const text = result.data.text.trim();
+      if (text && text.length > 1) { playSuccessBeep(); setScanResult(text); } else alert("No codes or readable text found.");
     } catch (err) { alert("Error processing image."); }
     setIsProcessing(false);
   };
 
-  const scanNativeCamera = async () => {
-    try {
-      const photo = await Camera.getPhoto({ quality: 100, allowEditing: false, resultType: CameraResultType.Uri, source: CameraSource.Camera });
-      await processImageForEverything(photo.webPath);
-    } catch (err) { if (err.message && !err.message.includes('User cancelled')) alert("Camera error: " + err.message); }
-  };
+  const scanNativeCamera = async () => { try { const photo = await Camera.getPhoto({ quality: 100, allowEditing: false, resultType: CameraResultType.Uri, source: CameraSource.Camera }); await processImageForEverything(photo.webPath); } catch (err) { if (err.message && !err.message.includes('User cancelled')) alert("Camera error: " + err.message); } };
+  const scanImageFile = (e) => { if (!e.target.files || e.target.files.length === 0) return; processImageForEverything(URL.createObjectURL(e.target.files[0])); e.target.value = null; };
 
-  const scanImageFile = (e) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    processImageForEverything(URL.createObjectURL(e.target.files[0]));
-    e.target.value = null;
-  };
-
+  // --- THE FULL SMART ACTION ARSENAL ---
   const renderSmartActions = () => {
     if (!scanResult) return null;
     if (scanResult.startsWith('WIFI:')) {
@@ -104,14 +84,20 @@ export default function QRScanner() {
       return <button onClick={() => { navigator.clipboard.writeText(pass); alert("WiFi Password Copied!"); }} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>📶 Copy WiFi Password</button>;
     }
     if (scanResult.startsWith('BEGIN:VCARD')) {
-      const downloadVCard = () => {
-        const blob = new Blob([scanResult], { type: 'text/vcard' }); const url = URL.createObjectURL(blob);
-        const link = document.createElement('a'); link.href = url; link.download = 'contact.vcf';
-        document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
-      };
+      const downloadVCard = () => { const blob = new Blob([scanResult], { type: 'text/vcard' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'contact.vcf'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); };
       return <button onClick={downloadVCard} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>👤 Save as Contact</button>;
     }
-    if (scanResult.startsWith('http')) return <button onClick={() => window.open(scanResult, '_blank')} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>🌐 Open Link</button>;
+    if (scanResult.startsWith('http')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>🌐 Open Link</button>;
+    
+    // NEW: Dialers, SMS, Maps, Emails
+    if (scanResult.startsWith('tel:')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>📞 Call Phone Number</button>;
+    if (scanResult.startsWith('mailto:')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#ef4444', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>📧 Send Email</button>;
+    if (scanResult.startsWith('smsto:')) {
+      const parts = scanResult.split(':'); const phone = parts[1] || '';
+      return <button onClick={() => window.open(`sms:${phone}`, '_system')} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>💬 Open Text Message</button>;
+    }
+    if (scanResult.startsWith('geo:')) return <button onClick={() => window.open(scanResult, '_system')} style={{ width: '100%', background: '#f59e0b', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>🗺️ Open Map Location</button>;
+    
     return null;
   };
 
@@ -127,8 +113,8 @@ export default function QRScanner() {
 
   const copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied!"); };
   const openLink = (text) => {
-    if (text.startsWith('http')) window.open(text, '_blank', 'noopener,noreferrer');
-    else window.open(`https://duckduckgo.com/?q=${encodeURIComponent(text)}`, '_blank');
+    if (text.startsWith('http')) window.open(text, '_system');
+    else window.open(`https://duckduckgo.com/?q=${encodeURIComponent(text)}`, '_system');
   };
 
   const saveScan = () => { setSavedScans([{ id: Date.now(), data: scanResult, note: scanNote, date: new Date().toLocaleDateString() }, ...savedScans]); setScanNote(''); alert("Saved to Log!"); setActiveTab('saved'); };
@@ -193,7 +179,7 @@ export default function QRScanner() {
                 <button onClick={saveScan} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '15px' }}>💾 Save to Scan Log</button>
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                   <button onClick={() => copyToClipboard(scanResult)} style={{ flex: 1, background: 'transparent', color: '#a855f7', border: '1px dashed #a855f7', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📋 Copy Raw Text</button>
-                  <button onClick={() => window.open(`https://duckduckgo.com/?q=${encodeURIComponent(scanResult)}`, '_blank')} style={{ flex: 1, background: 'transparent', color: '#06b6d4', border: '1px dashed #06b6d4', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>🔍 Web Search</button>
+                  <button onClick={() => openLink(scanResult)} style={{ flex: 1, background: 'transparent', color: '#06b6d4', border: '1px dashed #06b6d4', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>🔍 Web Search</button>
                 </div>
                 <button onClick={() => setScanResult(null)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px dashed #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold', marginTop: '10px' }}>📷 Scan Another</button>
               </div>
@@ -209,60 +195,37 @@ export default function QRScanner() {
             </div>
 
             <h3 style={{ color: '#a855f7', marginTop: 0, textTransform: 'uppercase', textAlign: 'center' }}>Pro Generator</h3>
-            
             <label style={{ color: '#888', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Data Type</label>
             <select value={qrType} onChange={(e) => setQrType(e.target.value)} style={inputStyle}>
-              <option value="text">Text / URL (QR)</option>
-              <option value="wifi">WiFi Network (QR)</option>
-              <option value="crypto">Crypto Request (QR)</option>
-              <option value="vcard">Contact Card (QR)</option>
-              <option value="sms">SMS Message (QR)</option>
-              <option value="geo">GPS Coordinates (QR)</option>
-              <option value="phone">Phone Number (QR)</option>
-              <option value="email">Email Address (QR)</option>
-              <option value="barcode">1D Barcode</option>
+              <option value="text">Text / URL (QR)</option><option value="wifi">WiFi Network (QR)</option><option value="crypto">Crypto Request (QR)</option><option value="vcard">Contact Card (QR)</option><option value="sms">SMS Message (QR)</option><option value="geo">GPS Coordinates (QR)</option><option value="phone">Phone Number (QR)</option><option value="email">Email Address (QR)</option><option value="barcode">1D Barcode</option>
             </select>
 
-            {qrType === 'wifi' && (
-              <><input type="text" placeholder="WiFi Network Name (SSID)" value={wifiSsid} onChange={e => setWifiSsid(e.target.value)} style={inputStyle} /><input type="text" placeholder="WiFi Password" value={wifiPass} onChange={e => setWifiPass(e.target.value)} style={inputStyle} /><select value={wifiType} onChange={e => setWifiType(e.target.value)} style={inputStyle}><option value="WPA">WPA/WPA2</option><option value="WEP">WEP</option><option value="nopass">Open (No Password)</option></select></>
-            )}
-            {qrType === 'crypto' && (
-              <><select value={cryptoType} onChange={e => setCryptoType(e.target.value)} style={inputStyle}><option value="monero">Monero (XMR)</option><option value="solana">Solana (SOL)</option><option value="bitcoin">Bitcoin (BTC)</option></select><input type="text" placeholder="Wallet Address" value={cryptoAddr} onChange={e => setCryptoAddr(e.target.value)} style={inputStyle} /><input type="number" placeholder="Amount (Optional)" value={cryptoAmt} onChange={e => setCryptoAmt(e.target.value)} style={inputStyle} /></>
-            )}
-            {qrType === 'sms' && (
-              <><input type="tel" placeholder="Phone Number" value={smsPhone} onChange={e => setSmsPhone(e.target.value)} style={inputStyle} /><textarea placeholder="Pre-filled Message..." value={smsMsg} onChange={e => setSmsMsg(e.target.value)} style={{...inputStyle, minHeight: '80px'}} /></>
-            )}
-            {qrType === 'geo' && (
-              <><input type="number" placeholder="Latitude (e.g. 32.2226)" value={geoLat} onChange={e => setGeoLat(e.target.value)} style={inputStyle} /><input type="number" placeholder="Longitude (e.g. -110.9747)" value={geoLong} onChange={e => setGeoLong(e.target.value)} style={inputStyle} /></>
-            )}
-            {qrType === 'vcard' && (
-              <><div style={{display:'flex', gap:'10px'}}><input type="text" placeholder="First Name" value={vFirst} onChange={e => setVFirst(e.target.value)} style={inputStyle} /><input type="text" placeholder="Last Name" value={vLast} onChange={e => setVLast(e.target.value)} style={inputStyle} /></div><input type="text" placeholder="Company / Org" value={vOrg} onChange={e => setVOrg(e.target.value)} style={inputStyle} /><input type="text" placeholder="Job Title" value={vTitle} onChange={e => setVTitle(e.target.value)} style={inputStyle} /><input type="tel" placeholder="Phone Number" value={vPhone} onChange={e => setVPhone(e.target.value)} style={inputStyle} /><input type="email" placeholder="Email Address" value={vEmail} onChange={e => setVEmail(e.target.value)} style={inputStyle} /></>
-            )}
-            {['text', 'phone', 'email', 'barcode'].includes(qrType) && (
-              <textarea placeholder={`Enter ${qrType} data...`} value={createData} onChange={e => setCreateData(e.target.value)} style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} />
-            )}
+            {qrType === 'wifi' && ( <><input type="text" placeholder="WiFi Network Name (SSID)" value={wifiSsid} onChange={e => setWifiSsid(e.target.value)} style={inputStyle} /><input type="text" placeholder="WiFi Password" value={wifiPass} onChange={e => setWifiPass(e.target.value)} style={inputStyle} /><select value={wifiType} onChange={e => setWifiType(e.target.value)} style={inputStyle}><option value="WPA">WPA/WPA2</option><option value="WEP">WEP</option><option value="nopass">Open (No Password)</option></select></> )}
+            {qrType === 'crypto' && ( <><select value={cryptoType} onChange={e => setCryptoType(e.target.value)} style={inputStyle}><option value="monero">Monero (XMR)</option><option value="solana">Solana (SOL)</option><option value="bitcoin">Bitcoin (BTC)</option></select><input type="text" placeholder="Wallet Address" value={cryptoAddr} onChange={e => setCryptoAddr(e.target.value)} style={inputStyle} /><input type="number" placeholder="Amount (Optional)" value={cryptoAmt} onChange={e => setCryptoAmt(e.target.value)} style={inputStyle} /></> )}
+            {qrType === 'sms' && ( <><input type="tel" placeholder="Phone Number" value={smsPhone} onChange={e => setSmsPhone(e.target.value)} style={inputStyle} /><textarea placeholder="Pre-filled Message..." value={smsMsg} onChange={e => setSmsMsg(e.target.value)} style={{...inputStyle, minHeight: '80px'}} /></> )}
+            {qrType === 'geo' && ( <><input type="number" placeholder="Latitude (e.g. 32.2226)" value={geoLat} onChange={e => setGeoLat(e.target.value)} style={inputStyle} /><input type="number" placeholder="Longitude (e.g. -110.9747)" value={geoLong} onChange={e => setGeoLong(e.target.value)} style={inputStyle} /></> )}
+            {qrType === 'vcard' && ( <><div style={{display:'flex', gap:'10px'}}><input type="text" placeholder="First Name" value={vFirst} onChange={e => setVFirst(e.target.value)} style={inputStyle} /><input type="text" placeholder="Last Name" value={vLast} onChange={e => setVLast(e.target.value)} style={inputStyle} /></div><input type="text" placeholder="Company / Org" value={vOrg} onChange={e => setVOrg(e.target.value)} style={inputStyle} /><input type="text" placeholder="Job Title" value={vTitle} onChange={e => setVTitle(e.target.value)} style={inputStyle} /><input type="tel" placeholder="Phone Number" value={vPhone} onChange={e => setVPhone(e.target.value)} style={inputStyle} /><input type="email" placeholder="Email Address" value={vEmail} onChange={e => setVEmail(e.target.value)} style={inputStyle} /></> )}
+            {['text', 'phone', 'email', 'barcode'].includes(qrType) && ( <textarea placeholder={`Enter ${qrType} data...`} value={createData} onChange={e => setCreateData(e.target.value)} style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} /> )}
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
               <div style={{ flex: 1 }}><label style={{ color: '#888', fontSize: '0.7rem', display: 'block', marginBottom: '5px' }}>Line Color</label><input type="color" value={qrColor} onChange={e => setQrColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', background: 'transparent' }} /></div>
               <div style={{ flex: 1 }}><label style={{ color: '#888', fontSize: '0.7rem', display: 'block', marginBottom: '5px' }}>Background</label><input type="color" value={qrBg} onChange={e => setQrBg(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', background: 'transparent' }} /></div>
             </div>
 
-            {qrType === 'barcode' ? (
-              <div style={{ marginBottom: '15px' }}><label style={{ color: '#888', fontSize: '0.7rem', display: 'block', marginBottom: '5px' }}>Barcode Format</label><select value={barcodeType} onChange={e => setBarcodeType(e.target.value)} style={inputStyle}><option value="CODE128">CODE128 (Standard Alphanumeric)</option><option value="CODE39">CODE39 (Industrial Alphanumeric)</option></select></div>
-            ) : (
-              <div style={{ marginBottom: '15px' }}><label style={{ color: '#888', fontSize: '0.7rem', display: 'block', marginBottom: '5px' }}>QR Error Correction (Damage Recovery)</label><select value={qrEcc} onChange={e => setQrEcc(e.target.value)} style={inputStyle}><option value="L">Low (7%)</option><option value="M">Medium (15%)</option><option value="Q">Quarter (25%)</option><option value="H">High (30% - Best for Mesh/Screens)</option></select></div>
-            )}
+            {qrType === 'barcode' ? ( <div style={{ marginBottom: '15px' }}><label style={{ color: '#888', fontSize: '0.7rem', display: 'block', marginBottom: '5px' }}>Barcode Format</label><select value={barcodeType} onChange={e => setBarcodeType(e.target.value)} style={inputStyle}><option value="CODE128">CODE128 (Standard Alphanumeric)</option><option value="CODE39">CODE39 (Industrial Alphanumeric)</option></select></div>
+            ) : ( <div style={{ marginBottom: '15px' }}><label style={{ color: '#888', fontSize: '0.7rem', display: 'block', marginBottom: '5px' }}>QR Error Correction (Damage Recovery)</label><select value={qrEcc} onChange={e => setQrEcc(e.target.value)} style={inputStyle}><option value="L">Low (7%)</option><option value="M">Medium (15%)</option><option value="Q">Quarter (25%)</option><option value="H">High (30% - Best for Mesh/Screens)</option></select></div> )}
 
             <div style={{ textAlign: 'center' }}>
-              <div id="canvas-container" style={{ background: qrBg, padding: '15px', borderRadius: '12px', display: 'inline-block', marginBottom: '15px', border: '2px solid #333' }}>
-                {qrType === 'barcode' ? (
-                  <Barcode value={createData || '00000000'} format={barcodeType} renderer="canvas" background={qrBg} lineColor={qrColor} displayValue={true} />
-                ) : (
-                  <QRCodeCanvas value={getCompiledQrData()} size={200} fgColor={qrColor} bgColor={qrBg} level={qrEcc} />
-                )}
-              </div>
-              <input type="text" placeholder="Title (e.g. Storage Barcode)" value={qrTitle} onChange={(e) => setQrTitle(e.target.value)} style={{ ...inputStyle, textAlign: 'center' }} />
-              <button onClick={saveGeneratedQR} style={{ width: '100%', background: '#f59e0b', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}>💾 Save to Vault</button>
+              {hasValidData() && (
+                <>
+                  <div id="canvas-container" style={{ background: qrBg, padding: '15px', borderRadius: '12px', display: 'inline-block', marginBottom: '15px', border: '2px solid #333' }}>
+                    {qrType === 'barcode' ? ( <Barcode value={createData || '00000000'} format={barcodeType} renderer="canvas" background={qrBg} lineColor={qrColor} displayValue={true} />
+                    ) : ( <QRCodeCanvas value={getCompiledQrData()} size={200} fgColor={qrColor} bgColor={qrBg} level={qrEcc} /> )}
+                  </div>
+                  <input type="text" placeholder="Title (e.g. Storage Barcode)" value={qrTitle} onChange={(e) => setQrTitle(e.target.value)} style={{ ...inputStyle, textAlign: 'center' }} />
+                  <button onClick={saveGeneratedQR} style={{ width: '100%', background: '#f59e0b', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}>💾 Save to Vault</button>
+                </>
+              )}
             </div>
           </div>
         )}
