@@ -12,6 +12,7 @@ export default function QRScanner() {
   
   const [scanResult, setScanResult] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false); 
+  const [enableOCR, setEnableOCR] = useState(false); // THE NEW LEASH
   const [savedScans, setSavedScans] = useState(() => JSON.parse(localStorage.getItem('tot_saved_scans')) || []);
   const [scanNote, setScanNote] = useState('');
 
@@ -69,16 +70,26 @@ export default function QRScanner() {
     setIsProcessing(true);
     try {
       const img = new Image(); img.src = photoPath; await new Promise(resolve => img.onload = resolve);
+      
       if ('BarcodeDetector' in window) {
         try { const detector = new window.BarcodeDetector(); const barcodes = await detector.detect(img); if (barcodes.length > 0) { playSuccessBeep(); setScanResult(barcodes[0].rawValue); setIsProcessing(false); return; } } catch (e) { }
       }
+      
       try {
         const response = await fetch(photoPath); const file = new File([await response.blob()], 'temp.jpg', { type: 'image/jpeg' });
         const html5QrCode = new Html5Qrcode("hidden-qr-canvas"); const decodedText = await html5QrCode.scanFile(file, true);
         playSuccessBeep(); setScanResult(decodedText); setIsProcessing(false); return;
       } catch (e) { }
-      const result = await Tesseract.recognize(photoPath, 'eng'); const text = result.data.text.trim();
-      if (text && text.length > 1) { playSuccessBeep(); setScanResult(text); } else alert("No codes or readable text found.");
+      
+      // THE LEASH: Only run OCR if the user explicitly checked the box
+      if (enableOCR) {
+        const result = await Tesseract.recognize(photoPath, 'eng'); const text = result.data.text.trim();
+        if (text && text.length > 1) { playSuccessBeep(); setScanResult(text); } 
+        else alert("No codes or readable text found.");
+      } else {
+        alert("No valid QR or Barcode detected.\n\nTip: Ensure the code has dark lines on a light background. If you are trying to scan physical documents, turn on 'Deep Text Extraction'.");
+      }
+
     } catch (err) { alert("Error processing image."); }
     setIsProcessing(false);
   };
@@ -164,12 +175,19 @@ export default function QRScanner() {
             {isProcessing ? (
               <div style={{ ...glassCard, borderTop: '4px solid #3b82f6', textAlign: 'center', marginTop: '20px' }}>
                 <h2 style={{ color: '#3b82f6', textTransform: 'uppercase', margin: '0 0 10px 0' }}>Processing Image...</h2>
-                <p style={{ color: '#888' }}>Running 3-stage extraction protocol. Please wait.</p>
+                <p style={{ color: '#888' }}>Extracting data payload. Please wait.</p>
               </div>
             ) : !scanResult ? (
               <div style={{ ...glassCard, borderTop: '4px solid #06b6d4', textAlign: 'center', marginTop: '20px' }}>
                 <h3 style={{ color: '#06b6d4', marginTop: 0, textTransform: 'uppercase' }}>Omni-Scan Engine</h3>
-                <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '20px', lineHeight: '1.5' }}>Point it at a Barcode, QR Code, Data Matrix, or physical text and we will extract it automatically.</p>
+                <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '20px', lineHeight: '1.5' }}>Point it at a Barcode or QR Code to extract it automatically.</p>
+                
+                {/* THE NEW OCR TOGGLE */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '20px', background: 'rgba(0,0,0,0.4)', padding: '15px', borderRadius: '8px', border: '1px solid #333' }}>
+                  <input type="checkbox" id="ocrToggle" checked={enableOCR} onChange={(e) => setEnableOCR(e.target.checked)} style={{ transform: 'scale(1.5)', accentColor: '#06b6d4' }} />
+                  <label htmlFor="ocrToggle" style={{ color: '#ccc', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}>Enable Deep Text Extraction (OCR)</label>
+                </div>
+
                 <button onClick={scanNativeCamera} style={{ ...btnStyle('#06b6d4', '#000'), marginBottom: '15px' }}>📸 Omni-Scan (Camera)</button>
                 <label style={{ ...btnStyle('transparent', '#a855f7'), border: '1px dashed #a855f7', display: 'block' }}>🖼️ Scan from Gallery<input type="file" accept="image/*" style={{ display: 'none' }} onChange={scanImageFile} /></label>
               </div>
@@ -246,7 +264,13 @@ export default function QRScanner() {
             {savedScans.length === 0 && <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No scans logged yet.</p>}
             {savedScans.map((scan, index) => (
               <div key={scan.id} style={{ ...glassCard, borderLeft: '4px solid #10b981' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}><span style={{ color: '#10b981', fontWeight: 'bold' }}>{scan.date}</span><div style={{ display: 'flex', gap: '5px' }}><button onClick={() => moveScan(index, 'up')} disabled={index === 0} style={{ background: '#222', color: index === 0 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▲</button><button onClick={() => moveScan(index, 'down')} disabled={index === savedScans.length - 1} style={{ background: '#222', color: index === savedScans.length - 1 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▼</button></div></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>{scan.date}</span>
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <button onClick={() => moveScan(index, 'up')} disabled={index === 0} style={{ background: '#222', color: index === 0 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▲</button>
+                    <button onClick={() => moveScan(index, 'down')} disabled={index === savedScans.length - 1} style={{ background: '#222', color: index === savedScans.length - 1 ? '#444' : '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px' }}>▼</button>
+                  </div>
+                </div>
                 {scan.note && <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>{scan.note}</h3>}
                 <div style={{ background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #333', color: '#ccc', fontFamily: 'monospace', wordWrap: 'break-word', marginBottom: '15px' }}>{scan.data}</div>
                 <div style={{ display: 'flex', gap: '10px' }}>
