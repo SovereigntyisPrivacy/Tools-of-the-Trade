@@ -2,42 +2,82 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Preferences } from '@capacitor/preferences';
 
-const CATEGORIES = ['All', 'IDs & Badges', 'Legal & Tax', 'Crypto Seeds', 'Hardware Serials', 'Misc'];
+const DEFAULT_FOLDERS = ['IDs & Badges', 'Legal & Tax', 'Crypto Seeds'];
 
 export default function DataVault() {
   const navigate = useNavigate();
-  const [activeFolder, setActiveFolder] = useState('All');
-  const [documents, setDocuments] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Data States
+  const [activeFolder, setActiveFolder] = useState('All');
+  const [folders, setFolders] = useState([]);
+  const [documents, setDocuments] = useState([]);
 
-  // In-App Sandboxed Camera States
+  // Camera & Image States
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
-
-  // New Document Modal States
-  const [showAddModal, setShowAddModal] = useState(false);
   const [tempImage, setTempImage] = useState(null);
-  const [docTitle, setDocTitle] = useState('');
-  const [docCategory, setDocCategory] = useState('IDs & Badges');
-  const [docNotes, setDocNotes] = useState('');
 
-  // Full Screen Preview Modal
+  // Modal States
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  
+  // Form States
+  const [docTitle, setDocTitle] = useState('');
+  const [docCategory, setDocCategory] = useState(DEFAULT_FOLDERS[0]);
+  const [docNotes, setDocNotes] = useState('');
   const [selectedDoc, setSelectedDoc] = useState(null);
 
-  // --- NATIVE HARDWARE PERSISTENCE ---
+  // --- NATIVE HARDWARE BOOT ---
   useEffect(() => {
     const loadVault = async () => {
-      const { value } = await Preferences.get({ key: 'tot_paperless_safe' });
-      if (value) { try { setDocuments(JSON.parse(value)); } catch(e) {} }
+      const { value: docs } = await Preferences.get({ key: 'tot_paperless_safe' });
+      if (docs) { try { setDocuments(JSON.parse(docs)); } catch(e) {} }
+      
+      const { value: flds } = await Preferences.get({ key: 'tot_custom_folders' });
+      if (flds) { 
+        try { setFolders(JSON.parse(flds)); } catch(e) { setFolders(DEFAULT_FOLDERS); } 
+      } else {
+        setFolders(DEFAULT_FOLDERS);
+      }
       setIsLoaded(true);
     };
     loadVault();
   }, []);
 
+  // --- SYNC ENGINE ---
   useEffect(() => {
-    if (isLoaded) Preferences.set({ key: 'tot_paperless_safe', value: JSON.stringify(documents) });
-  }, [documents, isLoaded]);
+    if (isLoaded) {
+      Preferences.set({ key: 'tot_paperless_safe', value: JSON.stringify(documents) });
+      Preferences.set({ key: 'tot_custom_folders', value: JSON.stringify(folders) });
+    }
+  }, [documents, folders, isLoaded]);
+
+  // --- COMPRESSION ENGINE ---
+  const compressImage = (dataUrl, callback) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_WIDTH = 1200;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > MAX_WIDTH) {
+        height = Math.round((height * MAX_WIDTH) / width);
+        width = MAX_WIDTH;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      // Compress to 70% quality JPEG to save local storage space
+      callback(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = dataUrl;
+  };
 
   // --- SANDBOXED IN-APP CAMERA ---
   const startInAppCamera = async () => {
@@ -51,7 +91,7 @@ export default function DataVault() {
         }
       }, 100);
     } catch (err) {
-      alert("Camera access denied or unavailable.");
+      alert("Camera access denied. Check device permissions.");
     }
   };
 
@@ -71,11 +111,14 @@ export default function DataVault() {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // Grabs the image straight from RAM, never touching the hard drive
-      const base64Image = canvas.toDataURL('image/jpeg', 0.8);
-      setTempImage(base64Image);
+      const rawBase64 = canvas.toDataURL('image/jpeg');
       stopInAppCamera();
-      setShowAddModal(true);
+      
+      // Run through compression before saving to RAM
+      compressImage(rawBase64, (compressed) => {
+        setTempImage(compressed);
+        setShowAddModal(true);
+      });
     }
   };
 
@@ -83,17 +126,34 @@ export default function DataVault() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => { setTempImage(reader.result); setShowAddModal(true); };
+    reader.onload = () => {
+      compressImage(reader.result, (compressed) => {
+        setTempImage(compressed);
+        setShowAddModal(true);
+      });
+    };
     reader.readAsDataURL(file);
     e.target.value = null;
   };
 
+  // --- DATA HANDLERS ---
+  const handleAddFolder = () => {
+    const name = newFolderName.trim();
+    if (!name) return;
+    if (folders.includes(name)) return alert("Folder already exists.");
+    setFolders([...folders, name]);
+    setNewFolderName('');
+    setShowFolderModal(false);
+  };
+
   const handleSaveDocument = () => {
-    if (!docTitle.trim()) return alert("Please provide a title for this document.");
+    if (!docTitle.trim()) return alert("Please provide a title.");
     if (!tempImage) return alert("No image data detected.");
+    
     const newDoc = { id: `doc_${Date.now()}`, title: docTitle.trim(), category: docCategory, notes: docNotes.trim(), date: new Date().toLocaleDateString(), image: tempImage };
     setDocuments([newDoc, ...documents]);
-    setDocTitle(''); setDocNotes(''); setDocCategory('IDs & Badges'); setTempImage(null); setShowAddModal(false);
+    
+    setDocTitle(''); setDocNotes(''); setTempImage(null); setShowAddModal(false);
   };
 
   const handleDeleteDocument = (id) => {
@@ -125,7 +185,7 @@ export default function DataVault() {
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'transparent', color: '#fff' }}>
       
-      {/* THE SANDBOXED CAMERA VIEWFINDER OVERLAY */}
+      {/* CAMERA VIEWFINDER OVERLAY */}
       {isCameraActive && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
           <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '85%', objectFit: 'cover' }} />
@@ -150,19 +210,20 @@ export default function DataVault() {
         </label>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', padding: '15px', overflowX: 'auto' }}>
-        {CATEGORIES.map(cat => (
-          <button key={cat} onClick={() => setActiveFolder(cat)} style={{ flex: '0 0 auto', padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', fontSize: '0.8rem', background: activeFolder === cat ? '#00ffff' : '#222', color: activeFolder === cat ? '#000' : '#888' }}>
-            {cat}
-          </button>
+      {/* DYNAMIC FOLDER PILLS */}
+      <div style={{ display: 'flex', gap: '8px', padding: '15px', overflowX: 'auto', alignItems: 'center' }}>
+        <button onClick={() => setActiveFolder('All')} style={{ flex: '0 0 auto', padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', fontSize: '0.8rem', background: activeFolder === 'All' ? '#00ffff' : '#222', color: activeFolder === 'All' ? '#000' : '#888' }}>All</button>
+        {folders.map(cat => (
+          <button key={cat} onClick={() => setActiveFolder(cat)} style={{ flex: '0 0 auto', padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', fontSize: '0.8rem', background: activeFolder === cat ? '#00ffff' : '#222', color: activeFolder === cat ? '#000' : '#888' }}>{cat}</button>
         ))}
+        <button onClick={() => setShowFolderModal(true)} style={{ flex: '0 0 auto', padding: '8px 14px', borderRadius: '20px', border: '1px dashed #00ffff', background: 'transparent', color: '#00ffff', fontWeight: 'bold', fontSize: '0.8rem' }}>+ New</button>
       </div>
 
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
         {filteredDocs.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: '#666' }}>
             <p style={{ fontSize: '1.5rem', margin: '0 0 10px 0' }}>🗄️</p>
-            <p style={{ margin: 0, fontStyle: 'italic' }}>No documents in this category.</p>
+            <p style={{ margin: 0, fontStyle: 'italic' }}>Vault is empty.</p>
           </div>
         )}
 
@@ -175,15 +236,11 @@ export default function DataVault() {
                   <span style={{ fontSize: '0.65rem', color: '#777' }}>{doc.date}</span>
                 </div>
                 <h4 style={{ margin: '0 0 10px 0', color: '#fff', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.title}</h4>
-                
                 <div onClick={() => setSelectedDoc(doc)} style={{ position: 'relative', width: '100%', height: '110px', background: '#000', borderRadius: '6px', overflow: 'hidden', cursor: 'pointer', border: '1px solid #333' }}>
                   <img src={doc.image} alt={doc.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px)', transform: 'scale(1.1)' }} />
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'rgba(0,0,0,0.3)' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#fff', background: 'rgba(0,0,0,0.75)', padding: '4px 8px', borderRadius: '4px' }}>👁️ Tap to View</span>
-                  </div>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'rgba(0,0,0,0.3)' }}><span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#fff', background: 'rgba(0,0,0,0.75)', padding: '4px 8px', borderRadius: '4px' }}>👁️ Tap to View</span></div>
                 </div>
               </div>
-
               <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
                 <button onClick={() => handleExportDocument(doc)} style={{ flex: 1, background: '#222', color: '#00ffff', border: '1px solid #333', padding: '6px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>📤 Export</button>
                 <button onClick={() => handleDeleteDocument(doc.id)} style={{ background: '#222', color: '#ef4444', border: '1px solid #333', padding: '6px 10px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>🗑️</button>
@@ -193,19 +250,34 @@ export default function DataVault() {
         </div>
       </div>
 
+      {/* NEW FOLDER MODAL */}
+      {showFolderModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '20px', width: '100%' }}>
+            <h3 style={{ color: '#00ffff', marginTop: 0 }}>Create Vault Folder</h3>
+            <input type="text" placeholder="Folder Name" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} style={inputStyle} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <button onClick={() => setShowFolderModal(false)} style={{ background: '#222', color: '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
+              <button onClick={handleAddFolder} style={{ background: '#00ffff', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Create</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD DOCUMENT MODAL */}
       {showAddModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '20px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ color: '#00ffff', marginTop: 0, textTransform: 'uppercase' }}>Secure Document</h3>
             {tempImage && <div style={{ textAlign: 'center', marginBottom: '15px' }}><img src={tempImage} alt="Preview" style={{ maxHeight: '160px', maxWidth: '100%', borderRadius: '8px', border: '1px solid #333' }} /></div>}
             <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Document Title</label>
-            <input type="text" placeholder="e.g. CCW Permit / Seed Phrase" value={docTitle} onChange={(e) => setDocTitle(e.target.value)} style={inputStyle} />
+            <input type="text" placeholder="e.g. Passport" value={docTitle} onChange={(e) => setDocTitle(e.target.value)} style={inputStyle} />
             <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Category</label>
             <select value={docCategory} onChange={(e) => setDocCategory(e.target.value)} style={{ ...inputStyle, background: '#0a0a0a' }}>
-              {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
+              {folders.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Notes / Serial (Optional)</label>
-            <textarea placeholder="Add encrypted notes or extra details..." value={docNotes} onChange={(e) => setDocNotes(e.target.value)} style={{ ...inputStyle, minHeight: '70px', resize: 'vertical' }} />
+            <textarea placeholder="Add secure notes..." value={docNotes} onChange={(e) => setDocNotes(e.target.value)} style={{ ...inputStyle, minHeight: '70px', resize: 'vertical' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
               <button onClick={() => { setShowAddModal(false); setTempImage(null); }} style={{ background: '#222', color: '#888', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
               <button onClick={handleSaveDocument} style={{ background: '#00ffff', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Lock in Safe</button>
@@ -214,6 +286,7 @@ export default function DataVault() {
         </div>
       )}
 
+      {/* FULL-SCREEN PREVIEW */}
       {selectedDoc && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 10001, display: 'flex', flexDirection: 'column', padding: '15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #222', paddingBottom: '10px' }}>
@@ -225,7 +298,7 @@ export default function DataVault() {
           </div>
           {selectedDoc.notes && <div style={{ background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '10px', marginTop: '10px' }}><span style={{ color: '#888', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Notes:</span><p style={{ margin: '4px 0 0 0', color: '#ccc', fontSize: '0.85rem' }}>{selectedDoc.notes}</p></div>}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
-            <button onClick={() => handleExportDocument(selectedDoc)} style={{ background: '#00ffff', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Export / Share</button>
+            <button onClick={() => handleExportDocument(selectedDoc)} style={{ background: '#00ffff', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Export</button>
             <button onClick={() => handleDeleteDocument(selectedDoc.id)} style={{ background: '#222', color: '#ef4444', border: '1px solid #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>🗑️ Delete</button>
           </div>
         </div>
