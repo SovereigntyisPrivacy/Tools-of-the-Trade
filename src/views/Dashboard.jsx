@@ -4,6 +4,7 @@ import { useCalendar } from '../core/CalendarContext';
 import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
 
 export default function Dashboard() {
+  const [hiddenModules, setHiddenModules] = useState(() => JSON.parse(localStorage.getItem("tot_hidden_modules")) || []);
   const [devTaps, setDevTaps] = useState(0);
   
   // FIRST-LAUNCH EULA LOGIC: Checks if they've accepted it previously
@@ -145,7 +146,7 @@ export default function Dashboard() {
       </header>
 
       <div className="grid-container" style={{ marginTop: '40px' }}>
-        {tools.map((tool) => (
+        {tools.filter(tool => !hiddenModules.includes(tool.id)).map((tool) => (
           <button key={tool.id} className="tool-card" style={{ position: 'relative' }} onClick={() => navigate(tool.path)}>
             {tool.badge && (
               <div style={{

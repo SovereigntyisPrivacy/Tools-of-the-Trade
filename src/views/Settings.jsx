@@ -3,6 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
 
 export default function Settings() {
+  const [hiddenModules, setHiddenModules] = useState(() => JSON.parse(localStorage.getItem('tot_hidden_modules')) || []);
+  const toggleModule = (id) => {
+    const newHidden = hiddenModules.includes(id) ? hiddenModules.filter(m => m !== id) : [...hiddenModules, id];
+    setHiddenModules(newHidden);
+    localStorage.setItem('tot_hidden_modules', JSON.stringify(newHidden));
+  };
+  
+  const ALL_TOOLS = [
+    { id: 'chronos', name: 'Chronos Hub' }, { id: 'burner', name: 'Burner Pad' },
+    { id: 'sop', name: 'SOP Engine' }, { id: 'subscriptions', name: 'Sub Tracker' },
+    { id: 'vault', name: 'Data Vault' }, { id: 'calendar', name: 'Master Calendar' },
+    { id: 'quick', name: 'Quick Tip & Tax' }, { id: 'budget', name: 'Budget Engine' },
+    { id: 'learning', name: 'Learning Center' }, { id: 'calculator', name: 'Omni-Calculator' },
+    { id: 'ledger', name: 'Asset Ledger' }, { id: 'civics', name: 'Civics & Rights' },
+    { id: 'qrscanner', name: 'Universal Lens' }, { id: 'morse', name: 'Optical Comm Link' },
+    { id: 'cipher', name: 'Cipher & Keygen' }
+  ];
+
   const navigate = useNavigate();
   const devMode = localStorage.getItem('fleet_dev_mode') === 'true';
 
@@ -128,6 +146,21 @@ export default function Settings() {
       </header>
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
+
+        {/* DASHBOARD MANAGER */}
+        <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
+          <h3 style={{ margin: '0 0 15px 0', color: '#a855f7', textTransform: 'uppercase' }}>Dashboard Manager</h3>
+          <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '15px' }}>Hide modules you don't need to declutter your primary interface.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            {ALL_TOOLS.map(tool => (
+              <label key={tool.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', color: hiddenModules.includes(tool.id) ? '#666' : '#fff', cursor: 'pointer', fontSize: '0.9rem', padding: '10px', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', border: '1px solid #333' }}>
+                <input type="checkbox" checked={!hiddenModules.includes(tool.id)} onChange={() => toggleModule(tool.id)} style={{ accentColor: '#a855f7', transform: 'scale(1.3)' }} />
+                {tool.name}
+              </label>
+            ))}
+          </div>
+        </div>
+
         <div style={cardStyle}>
             <label style={labelStyle}>Global Text Scale</label>
             <input type="range" min="12" max="22" value={textScale} onChange={e => handleScaleChange(e.target.value)} onMouseUp={e => saveState('fleet_textScale', e.target.value)} onTouchEnd={e => saveState('fleet_textScale', e.target.value)} style={{ width: '100%', marginBottom: '20px', accentColor: accent }} />
