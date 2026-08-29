@@ -170,21 +170,29 @@ export default function Dashboard() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '20px', width: '100%', maxHeight: '85vh', overflowY: 'auto', paddingBottom: '70px' }}>
             
-          <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-            <h2 style={{ color: '#00ffff', textTransform: 'uppercase', margin: '0 0 15px 0', letterSpacing: '2px' }}>The Manifesto</h2>
-            <div style={{ background: 'rgba(0, 255, 255, 0.05)', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #00ffff', textAlign: 'left' }}>
-              <p style={{ color: '#fff', fontSize: '0.95rem', lineHeight: '1.6', fontStyle: 'italic', margin: '0 0 15px 0' }}>
-                "Big tech. Big corp. Big pharma. Big brother. Big everyone can kick rocks."
+          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+            <h2 style={{ color: '#00ffff', textTransform: 'uppercase', margin: '0 0 15px 0', letterSpacing: '2px', textShadow: '0 0 10px rgba(0,255,255,0.3)' }}>The Manifesto</h2>
+            <div style={{ background: 'rgba(0, 255, 255, 0.05)', padding: '25px 20px', borderRadius: '12px', borderLeft: '4px solid #00ffff', textAlign: 'left', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
+              <p style={{ color: '#fff', fontSize: '1.05rem', lineHeight: '1.6', fontWeight: 'bold', margin: '0 0 15px 0' }}>
+                "Big Tech. Big Corp. Big Pharma. Big Brother. They can all kick rocks."
               </p>
-              <p style={{ color: '#ccc', fontSize: '0.9rem', lineHeight: '1.6', margin: '0 0 15px 0' }}>
-                I hate paying for tools that a noob developer can make, so I made this and my other projects to be free of charge and unobtrusive. Tools for the everyday man should be free. So here you go.
+              <p style={{ color: '#ccc', fontSize: '0.95rem', lineHeight: '1.7', margin: '0 0 15px 0' }}>
+                I am sick of corporations turning our lives into data points and charging us monthly subscriptions for the privilege of being surveilled. Tools for the everyday man—for survival, finance, and genuine independence—should be free, entirely offline, and relentlessly unobtrusive.
               </p>
-              <p style={{ color: '#00ffff', fontSize: '1rem', fontWeight: 'bold', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                Digital privacy is Sovereignty.<br/>
-                Sovereignty is Privacy.<br/>
-                Take back your freedom.<br/>
-                Stay sovereign.
+              <p style={{ color: '#ccc', fontSize: '0.95rem', lineHeight: '1.7', margin: '0 0 20px 0' }}>
+                I built this suite so you never have to rely on a server, a corporation, or a tracking pixel again. This is yours.
               </p>
+              <div style={{ borderTop: '1px solid rgba(0,255,255,0.2)', paddingTop: '15px' }}>
+                <p style={{ color: '#00ffff', fontSize: '1.1rem', fontWeight: '900', margin: '0 0 5px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  Digital Privacy is Sovereignty.
+                </p>
+                <p style={{ color: '#00ffff', fontSize: '1.1rem', fontWeight: '900', margin: '0 0 5px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  Take back your freedom.
+                </p>
+                <p style={{ color: '#00ffff', fontSize: '1.1rem', fontWeight: '900', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  Stay Sovereign.
+                </p>
+              </div>
             </div>
           </div>
           <h2 style={{ color: '#ef4444', textTransform: 'uppercase', marginTop: '20px', borderBottom: '1px solid #333', paddingBottom: '10px', fontSize: '1.1rem' }}>Liability & Privacy EULA</h2>
