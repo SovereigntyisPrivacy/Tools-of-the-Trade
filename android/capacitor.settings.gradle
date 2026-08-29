@@ -22,3 +22,6 @@ project(':capacitor-filesystem').projectDir = new File('../node_modules/@capacit
 
 include ':capacitor-preferences'
 project(':capacitor-preferences').projectDir = new File('../node_modules/@capacitor/preferences/android')
+
+include ':capawesome-capacitor-torch'
+project(':capawesome-capacitor-torch').projectDir = new File('../node_modules/@capawesome/capacitor-torch/android')
