@@ -2,6 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Torch } from '@capawesome/capacitor-torch';
 
+// Master Dictionaries
+const NATO_PHONETIC = {
+  'A': 'ALPHA', 'B': 'BRAVO', 'C': 'CHARLIE', 'D': 'DELTA', 'E': 'ECHO', 'F': 'FOXTROT',
+  'G': 'GOLF', 'H': 'HOTEL', 'I': 'INDIA', 'J': 'JULIET', 'K': 'KILO', 'L': 'LIMA',
+  'M': 'MIKE', 'N': 'NOVEMBER', 'O': 'OSCAR', 'P': 'PAPA', 'Q': 'QUEBEC', 'R': 'ROMEO',
+  'S': 'SIERRA', 'T': 'TANGO', 'U': 'UNIFORM', 'V': 'VICTOR', 'W': 'WHISKEY', 'X': 'X-RAY',
+  'Y': 'YANKEE', 'Z': 'ZULU'
+};
+
 const MORSE_DICT = {
   'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.', 'G': '--.', 'H': '....',
   'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---', 'P': '.--.',
@@ -13,14 +22,23 @@ const MORSE_DICT = {
 const PRO_SIGNS = [
   { meaning: 'SOS (Distress)', code: '... --- ...' },
   { meaning: 'Roger (Received)', code: '.-.' },
+  { meaning: 'Wilco (Will Comply)', code: '.--' },
   { meaning: 'Wait (Standby)', code: '.-...' },
+  { meaning: 'Error (Correction)', code: '........' },
   { meaning: 'End of Message', code: '.-.-.' }
+];
+
+const GROUND_TO_AIR = [
+  { symbol: 'V', meaning: 'Require Assistance' },
+  { symbol: 'X', meaning: 'Require Medical Assistance' },
+  { symbol: 'N', meaning: 'No / Negative' },
+  { symbol: 'Y', meaning: 'Yes / Affirmative' },
+  { symbol: '↑', meaning: 'Proceeding in this direction' }
 ];
 
 export default function MorseBeacon() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('beacon');
-  
   const [message, setMessage] = useState('');
   const [isTransmitting, setIsTransmitting] = useState(false);
   const [currentSymbol, setCurrentSymbol] = useState('');
@@ -39,16 +57,13 @@ export default function MorseBeacon() {
 
   const encodeMessage = (text) => text.toUpperCase().split('').map(char => MORSE_DICT[char] || '').join(' ');
 
-  // Upgraded to handle both custom messages and single training letters
   const executeFlashSequence = async (payloadText) => {
     if (!payloadText.trim()) return alert("No payload to transmit.");
-    
-    try { await Torch.disable(); } catch (e) { console.warn("Torch check failed", e); }
+    try { await Torch.disable(); } catch (e) { console.warn("Torch fallback", e); }
 
     setIsTransmitting(true);
     abortController.current = new AbortController();
     
-    // If the payload is already dots/dashes (from the Pro-Signs), use it directly. Otherwise, encode it.
     const isPreEncoded = payloadText.includes('.') || payloadText.includes('-');
     const morseCode = isPreEncoded ? payloadText : encodeMessage(payloadText);
     
@@ -88,9 +103,7 @@ export default function MorseBeacon() {
     setCurrentSymbol('HALTED');
   };
 
-  useEffect(() => {
-    return () => { if (isTransmitting) haltTransmission(); };
-  }, [isTransmitting]);
+  useEffect(() => { return () => { if (isTransmitting) haltTransmission(); }; }, [isTransmitting]);
 
   const glassCard = { background: 'rgba(17, 17, 17, 0.7)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid #222', padding: '20px', marginBottom: '15px' };
   const inputStyle = { background: '#0a0a0a', color: '#fff', border: '1px solid #333', padding: '15px', borderRadius: '8px', width: '100%', marginBottom: '15px', fontSize: '1.1rem', minHeight: '100px', resize: 'vertical' };
@@ -99,7 +112,7 @@ export default function MorseBeacon() {
     <div style={{ marginTop: '20px' }}>
       <div style={{ ...glassCard, borderTop: '4px solid #facc15' }}>
         <h3 style={{ color: '#facc15', marginTop: 0, textTransform: 'uppercase' }}>Signal Beacon</h3>
-        <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '20px', lineHeight: '1.5' }}>Convert text to high-intensity optical flashes using the device's LED array.</p>
+        <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '20px', lineHeight: '1.5' }}>Convert text to high-intensity optical flashes using the device's LED array. For maximum distance, focus the LED through a reflective surface or binoculars.</p>
 
         <textarea placeholder="Enter transmission payload (e.g. SOS / NEED WINCH)" value={message} onChange={(e) => setMessage(e.target.value)} disabled={isTransmitting} style={inputStyle} />
 
@@ -146,7 +159,7 @@ export default function MorseBeacon() {
       </div>
 
       {/* TACTICAL PRO-SIGNS */}
-      <h3 style={{ color: '#facc15', textTransform: 'uppercase', textAlign: 'center', marginTop: '30px' }}>Tactical Pro-Signs</h3>
+      <h3 style={{ color: '#facc15', textTransform: 'uppercase', textAlign: 'center', marginTop: '30px', marginBottom: '15px' }}>Tactical Pro-Signs</h3>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', marginBottom: '20px' }}>
         {PRO_SIGNS.map(sign => (
           <div key={sign.meaning} style={{ ...glassCard, margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px' }}>
@@ -159,15 +172,35 @@ export default function MorseBeacon() {
         ))}
       </div>
 
+      {/* GROUND TO AIR */}
+      <h3 style={{ color: '#ef4444', textTransform: 'uppercase', textAlign: 'center', marginTop: '30px', marginBottom: '15px' }}>Ground-to-Air Visual Codes</h3>
+      <p style={{ color: '#888', textAlign: 'center', fontSize: '0.85rem', marginBottom: '20px' }}>Construct these symbols on the ground using highly contrasting materials (rocks, logs, space blankets) sized at least 10x10 feet.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', marginBottom: '30px' }}>
+        {GROUND_TO_AIR.map(signal => (
+          <div key={signal.symbol} style={{ background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '15px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <span style={{ color: '#ef4444', fontSize: '2rem', fontWeight: 'bold', minWidth: '40px', textAlign: 'center' }}>{signal.symbol}</span>
+            <span style={{ color: '#ccc', fontSize: '1rem', fontWeight: 'bold' }}>{signal.meaning}</span>
+          </div>
+        ))}
+      </div>
+
       {/* INTERACTIVE ALPHABET */}
-      <h3 style={{ color: '#10b981', textTransform: 'uppercase', textAlign: 'center', marginTop: '30px' }}>Interactive Alphabet</h3>
-      <p style={{ color: '#888', textAlign: 'center', fontSize: '0.85rem', marginBottom: '20px' }}>Tap any letter to flash it via the LED hardware for visual recognition training.</p>
+      <h3 style={{ color: '#10b981', textTransform: 'uppercase', textAlign: 'center', marginTop: '30px', marginBottom: '15px' }}>NATO & Morse Alphabet</h3>
+      <p style={{ color: '#888', textAlign: 'center', fontSize: '0.85rem', marginBottom: '20px' }}>Tap any block to flash it via the LED hardware for visual recognition training.</p>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        {Object.entries(MORSE_DICT).filter(([char]) => char !== ' ').map(([char, code]) => (
-          <div key={char} onClick={() => !isTransmitting && executeFlashSequence(code)} style={{ background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: isTransmitting ? 'not-allowed' : 'pointer' }}>
+        {Object.keys(NATO_PHONETIC).map(char => (
+          <div key={char} onClick={() => !isTransmitting && executeFlashSequence(MORSE_DICT[char])} style={{ background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: isTransmitting ? 'not-allowed' : 'pointer' }}>
             <span style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold' }}>{char}</span>
-            <span style={{ color: '#10b981', fontFamily: 'monospace', fontSize: '1.2rem', fontWeight: 'bold' }}>{code}</span>
+            <span style={{ color: '#888', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', margin: '4px 0' }}>{NATO_PHONETIC[char]}</span>
+            <span style={{ color: '#10b981', fontFamily: 'monospace', fontSize: '1.4rem', fontWeight: 'bold' }}>{MORSE_DICT[char]}</span>
+          </div>
+        ))}
+        {/* ADD NUMBERS */}
+        {['1','2','3','4','5','6','7','8','9','0'].map(num => (
+          <div key={num} onClick={() => !isTransmitting && executeFlashSequence(MORSE_DICT[num])} style={{ background: '#111', border: '1px solid #333', borderRadius: '8px', padding: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: isTransmitting ? 'not-allowed' : 'pointer' }}>
+            <span style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold' }}>{num}</span>
+            <span style={{ color: '#10b981', fontFamily: 'monospace', fontSize: '1.4rem', fontWeight: 'bold', marginTop: 'auto' }}>{MORSE_DICT[num]}</span>
           </div>
         ))}
       </div>
