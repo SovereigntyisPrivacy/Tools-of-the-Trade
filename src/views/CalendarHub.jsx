@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 
@@ -27,65 +27,66 @@ export default function CalendarHub() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const blanks = Array.from({ length: firstDay }, (_, i) => i);
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  
-  // Hardcoded short days to prevent localization mapping bugs
   const shortDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const fullDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-  // CACHE ENGINE: Reads from localStorage exactly ONCE per load to prevent UI freezing
-  const db = useMemo(() => {
-    const getJSON = (key) => {
-      try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
-    };
-    
-    let ledgers = [];
-    ['asset_ledger', 'assets', 'fleet_assets', 'LedgerItems', 'Ledger'].forEach(key => {
-      const data = getJSON(key);
-      if (Array.isArray(data)) ledgers = [...ledgers, ...data];
-    });
+  // DIRECT LOCAL-STORAGE ACCESS (Bypassing React Caching)
+  const getJSON = (key) => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : [];
+    } catch (e) {
+      return [];
+    }
+  };
 
-    return {
-      schedules: getJSON('fleet_schedules'),
-      subscriptions: getJSON('fleet_subscriptions'),
-      ledgers: ledgers
-    };
-  }, []);
+  const dbSchedules = getJSON('fleet_schedules');
+  const dbSubs = getJSON('fleet_subscriptions');
+  let dbLedgers = [];
+  ['asset_ledger', 'assets', 'fleet_assets', 'LedgerItems', 'Ledger'].forEach(k => {
+    const data = getJSON(k);
+    if (Array.isArray(data)) dbLedgers = [...dbLedgers, ...data];
+  });
 
-  // SYNTHESIS ENGINE
+  // OMNI-PULL AGGRESSIVE SCRAPER ENGINE
   const getAllEventsForDate = (dateStr) => {
-    // Start with Manual Reminders
     const events = [...reminders.filter(r => r.date === dateStr)];
     const targetDateObj = parseLocalDate(dateStr);
-    const dayName = shortDays[targetDateObj.getDay()];
+    const dayIdx = targetDateObj.getDay();
 
     // 1. Pull Timesheet Shifts
-    db.schedules.forEach(week => {
+    dbSchedules.forEach(week => {
       if (!week.weekDate) return;
       const weekStart = parseLocalDate(week.weekDate);
       const diffDays = Math.round((targetDateObj - weekStart) / (1000 * 60 * 60 * 24));
 
       if (diffDays >= 0 && diffDays <= 6) {
         (week.roster || []).forEach(emp => {
-          const shift = (week.shifts && week.shifts[emp.id]) ? week.shifts[emp.id][dayName] : null;
-          if (shift && shift.in && shift.out) {
-            events.push({
-              id: `shift_${emp.id}_${dateStr}`,
-              text: `[SHIFT] ${emp.name || 'Worker'}: ${shift.in} to ${shift.out}`,
-              module: 'Timesheet',
-              priority: 'Done', // Green
-              isDynamic: true
-            });
+          const shifts = week.shifts && week.shifts[emp.id];
+          if (shifts) {
+            // Check all possible day-key formats just in case
+            const shift = shifts[shortDays[dayIdx]] || shifts[fullDays[dayIdx]] || shifts[shortDays[dayIdx].toLowerCase()] || shifts[dateStr];
+            if (shift && shift.in && shift.out) {
+              events.push({
+                id: `shift_${emp.id}_${dateStr}`,
+                text: `[SHIFT] ${emp.name || 'Worker'}: ${shift.in} to ${shift.out}`,
+                module: 'Timesheet',
+                priority: 'Done', // Green
+                isDynamic: true
+              });
+            }
           }
         });
       }
     });
 
-    // 2. Pull Ledger Assets
-    db.ledgers.forEach(item => {
-      const itemDate = item.date || item.purchaseDate || item.warrantyDate || item.expDate || item.purchase_date;
-      if (itemDate && typeof itemDate === 'string' && itemDate.startsWith(dateStr)) {
+    // 2. Pull Ledger Assets (Brute-Force String Match)
+    dbLedgers.forEach(item => {
+      // If the date exists literally ANYWHERE in the asset object, flag it.
+      if (JSON.stringify(item).includes(dateStr)) {
         events.push({
           id: `asset_${item.id || Math.random()}`,
-          text: `[ASSET] ${item.name || item.assetName || item.tag || 'Asset Log'}: ${item.status || item.condition || 'Checked'}`,
+          text: `[ASSET] ${item.name || item.assetName || item.tag || 'Asset Log'}: ${item.status || item.condition || 'Tracked'}`,
           module: 'Ledger',
           priority: 'High', // Red
           isDynamic: true
@@ -94,24 +95,26 @@ export default function CalendarHub() {
     });
 
     // 3. Pull Recurring Subscriptions
-    db.subscriptions.forEach(sub => {
-      if (!sub.renewal) return;
-      const renewDate = parseLocalDate(sub.renewal);
+    dbSubs.forEach(sub => {
+      const rawDate = sub.renewal || sub.date || sub.nextBilling || sub.startDate;
+      if (!rawDate) return;
+      
+      const renewDate = parseLocalDate(rawDate);
+      const cycle = (sub.cycle || '').toLowerCase();
       let isDue = false;
 
-      // Cycle Logic
-      if (sub.cycle === 'Monthly' && targetDateObj >= renewDate && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
-      if (sub.cycle === 'Yearly' && targetDateObj >= renewDate && targetDateObj.getMonth() === renewDate.getMonth() && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
-      if (sub.cycle === 'Weekly') {
+      if (cycle === 'monthly' && targetDateObj >= renewDate && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
+      if (cycle === 'yearly' && targetDateObj >= renewDate && targetDateObj.getMonth() === renewDate.getMonth() && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
+      if (cycle === 'weekly' && targetDateObj >= renewDate) {
          const daysSince = Math.round((targetDateObj - renewDate) / (1000 * 60 * 60 * 24));
-         if (targetDateObj >= renewDate && daysSince % 7 === 0) isDue = true;
+         if (daysSince % 7 === 0) isDue = true;
       }
 
-      if (isDue || dateStr === sub.renewal.split('T')[0]) {
-        // Strip out accidental string symbols in the cost before parsing
+      // If cycle matches OR the direct date matches perfectly
+      if (isDue || rawDate.includes(dateStr)) {
         const safeCost = parseFloat(String(sub.cost || 0).replace(/[^0-9.]/g, '')).toFixed(2);
         events.push({
-          id: `sub_${sub.id}_${dateStr}`,
+          id: `sub_${sub.id || Math.random()}_${dateStr}`,
           text: `[RENEWAL] ${sub.name || 'Sub'} - $${safeCost}`,
           module: 'Subscriptions',
           priority: 'High', // Red
