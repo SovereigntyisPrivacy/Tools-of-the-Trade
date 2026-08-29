@@ -166,7 +166,8 @@ export default function Settings() {
           </div>
         </details>
 
-        <label style={labelStyle}>Global Text Scale</label>
+        <div style={cardStyle}>
+          <label style={labelStyle}>Global Text Scale</label>
             <input type="range" min="12" max="22" value={textScale} onChange={e => handleScaleChange(e.target.value)} onMouseUp={e => saveState('fleet_textScale', e.target.value)} onTouchEnd={e => saveState('fleet_textScale', e.target.value)} style={{ width: '100%', marginBottom: '20px', accentColor: accent }} />
 
             <label style={labelStyle}>Accent Color</label>
