@@ -18,7 +18,7 @@ export default function Settings() {
     { id: 'learning', name: 'Learning Center' }, { id: 'calculator', name: 'Omni-Calculator' },
     { id: 'ledger', name: 'Asset Ledger' }, { id: 'civics', name: 'Civics & Rights' },
     { id: 'qrscanner', name: 'Universal Lens' }, { id: 'morse', name: 'Optical Comm Link' },
-    { id: 'cipher', name: 'Cipher & Keygen' }
+    { id: 'cipher', name: 'Cipher & Keygen' }, { id: 'firstaid', name: 'Trauma & CPR' }
   ];
 
   const navigate = useNavigate();
