@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
-import { AdMob, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
 
 export default function Dashboard() {
   const [hiddenModules, setHiddenModules] = useState(() => JSON.parse(localStorage.getItem("tot_hidden_modules")) || []);
@@ -89,28 +88,7 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const showBanner = async () => {
-      try {
-        await AdMob.initialize();
-        await AdMob.showBanner({
-          adId: "ca-app-pub-3940256099942544/6300978111", 
-          adSize: BannerAdSize.BANNER,
-          position: BannerAdPosition.BOTTOM_CENTER,
-          margin: 0,
-          isTesting: true
-        });
-      } catch (e) {
-        console.error('AdMob Error:', e);
-      }
-    };
-    showBanner();
-
-    return () => {
-      AdMob.removeBanner().catch(e => console.error('Remove Error:', e));
-    };
-  }, []);
-
+  
   const tools = [
     { id: "chronos", name: "Chronos Hub", path: "/chronos", icon: "⏱️", badge: "", badgeColor: "#222" },
     { id: "burner", name: "Burner Pad", path: "/burner", icon: "🔥", badge: "WIPES", badgeColor: "#ef4444" },
