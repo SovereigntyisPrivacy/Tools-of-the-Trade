@@ -21,6 +21,16 @@ const TCCC_GUIDES = [
 
 const GENERAL_GUIDES = [
   {
+    title: 'Automated External Defibrillator (AED)', icon: '⚡',
+    steps: ['1. Turn the AED on immediately. It will give audible voice prompts.', '2. Bare the patient\'s chest. Wipe it completely dry if wet.', '3. Apply the pads exactly as shown in the pictures on the pads.', '4. Plug in the connector if necessary.', '5. Loudly command "CLEAR" and ensure no one is touching the patient when analyzing or shocking.'],
+    tip: 'PRO-TIP: Resume CPR immediately after a shock is delivered or if no shock is advised. Do not remove the pads.'
+  },
+  {
+    title: 'The Recovery Position', icon: '🔄',
+    steps: ['1. Extend the arm closest to you at a right angle (like a wave).', '2. Bring their other arm across their chest, placing the back of their hand against their opposite cheek.', '3. Bend their furthest knee so their foot is flat on the floor.', '4. Pull the bent knee towards you, smoothly rolling them onto their side.', '5. Tilt their head back slightly to keep the airway open.'],
+    tip: 'PRO-TIP: Gravity keeps the airway clear of the tongue and vomit. Never use this if severe spinal injury is suspected unless their airway is completely blocked.'
+  },
+  {
     title: 'Burns (Thermal)', icon: '🔥',
     steps: ['1. Remove the casualty from the heat source.', '2. Cool the burn immediately with cool (not freezing) running water for 10-20 minutes.', '3. Do NOT pop blisters. Do NOT apply ice or butter to severe burns.', '4. Cover with a sterile, non-fluffy dressing.'],
     tip: 'PRO-TIP: Ice restricts blood flow and deepens tissue damage on a burn. Stick to cool water.'
@@ -66,6 +76,14 @@ const REMEDIES_GUIDES = [
 ];
 
 const WARNINGS_GUIDES = [
+  {
+    title: 'Impaled Objects', icon: '📌',
+    desc: 'NEVER pull a knife, stick, shrapnel, or glass out of a deep wound. The object is acting as a plug preventing them from bleeding out. Pack dressings heavily around the object to stabilize it in place and wrap tightly.'
+  },
+  {
+    title: 'Frostbite & Severe Cold', icon: '❄️',
+    desc: 'NEVER aggressively rub frostbitten skin or throw the casualty into a hot bath. This physically destroys the frozen tissue and the sudden temperature change can shock the heart. Warm them slowly with body heat and blankets.'
+  },
   {
     title: 'Unwashed Poppy Seeds', icon: '⚠️',
     desc: 'Avoid consuming large amounts before medical, military, CDL, or employment drug screenings. They can trigger a false positive for opiates.'
@@ -130,8 +148,8 @@ export default function FirstAidHub() {
         <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: '20px' }}>
           <strong>HANDS-ONLY CPR:</strong> Push hard and fast in the center of the chest at 100 beats per minute. Do not stop until help arrives.
         </p>
-        
-        <div style={{ 
+
+        <div style={{
           width: '240px', height: '240px', borderRadius: '50%', margin: '0 auto 25px auto',
           display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
           background: phase === 'compressions' ? (pulseToggle ? '#ef4444' : '#7f1d1d') : (phase === 'breaths' ? '#1e3a8a' : '#111'),
@@ -162,6 +180,22 @@ export default function FirstAidHub() {
       <div style={{ ...glassCard, width: '100%', borderLeft: '4px solid #facc15' }}>
         <h4 style={{ color: '#facc15', margin: '0 0 10px 0', textTransform: 'uppercase' }}>Hands-Only vs. Standard</h4>
         <p style={{ color: '#888', fontSize: '0.8rem', margin: '0 0 10px 0' }}>If you are untrained or fear disease transmission, skip the breaths entirely and provide continuous compressions. The blood already contains enough oxygen to keep the brain alive for several minutes.</p>
+      </div>
+
+      <div style={{ ...glassCard, width: '100%', borderLeft: '4px solid #ef4444', padding: '0', overflow: 'hidden' }}>
+        <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '15px', borderBottom: '1px solid #333' }}>
+          <h4 style={{ color: '#ef4444', margin: '0', textTransform: 'uppercase' }}>Depth & Technique Scaling</h4>
+        </div>
+        <div style={{ padding: '15px' }}>
+          <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 5px 0' }}><strong>🧑 Adult (Puberty & Older):</strong></p>
+          <p style={{ color: '#ccc', fontSize: '0.8rem', margin: '0 0 15px 0' }}>Use two hands interlocked. Compress center of chest <strong>at least 2 inches deep</strong>.</p>
+          
+          <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 5px 0' }}><strong>🧒 Child (1 Yr to Puberty):</strong></p>
+          <p style={{ color: '#ccc', fontSize: '0.8rem', margin: '0 0 15px 0' }}>Use one or two hands. Compress center of chest <strong>about 2 inches deep</strong>.</p>
+          
+          <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 5px 0' }}><strong>👶 Infant (Under 1 Yr):</strong></p>
+          <p style={{ color: '#ccc', fontSize: '0.8rem', margin: '0' }}>Use two fingers in the center of the chest, just below the nipple line. Compress <strong>about 1.5 inches deep</strong>. If doing breaths, only use gentle puffs, not full lung capacities.</p>
+        </div>
       </div>
     </div>
   );
