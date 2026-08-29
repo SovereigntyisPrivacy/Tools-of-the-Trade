@@ -1,33 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function MyShiftTracker() {
   const navigate = useNavigate();
 
   // --- STATE ---
-  const [activeTab, setActiveTab] = useState('tracker'); // tracker, guides, archives
-  const [hourlyRate, setHourlyRate] = useState(16.00);
-  
-  // Tax & Deductions State
-  const [taxProfile, setTaxProfile] = useState('W2 Employee');
-  const [stateTax, setStateTax] = useState(2.5); // Default AZ 2.5%
-  const [fedTax, setFedTax] = useState(10.0);
-  
+  const [activeTab, setActiveTab] = useState('tracker');
   const [showReport, setShowReport] = useState(false);
-  const [archives, setArchives] = useState([]); // Holds saved weeks
-
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-  // Shift State - Now supports arrays for multiple shifts per day
-  const [shifts, setShifts] = useState({
-    SUN: [{ start: '', end: '' }],
-    MON: [{ start: '16:00', end: '22:00' }], // Defaulted to your standard shift
-    TUE: [{ start: '', end: '' }],
-    WED: [{ start: '', end: '' }],
-    THU: [{ start: '', end: '' }],
-    FRI: [{ start: '', end: '' }],
-    SAT: [{ start: '', end: '' }]
+  // Persistent Hardware State (Loads from drive on boot)
+  const [hourlyRate, setHourlyRate] = useState(() => { const v = localStorage.getItem('tot_shift_rate'); return v ? parseFloat(v) : 16.00; });
+  const [taxProfile, setTaxProfile] = useState(() => localStorage.getItem('tot_shift_tax_prof') || 'W2 Employee');
+  const [stateTax, setStateTax] = useState(() => { const v = localStorage.getItem('tot_shift_state_tax'); return v ? parseFloat(v) : 2.5; });
+  const [fedTax, setFedTax] = useState(() => { const v = localStorage.getItem('tot_shift_fed_tax'); return v ? parseFloat(v) : 10.0; });
+  const [archives, setArchives] = useState(() => JSON.parse(localStorage.getItem('tot_shift_archives')) || []);
+  const [shifts, setShifts] = useState(() => {
+    const saved = localStorage.getItem('tot_shift_shifts');
+    return saved ? JSON.parse(saved) : {
+      SUN: [{ start: '', end: '' }], MON: [{ start: '16:00', end: '22:00' }], TUE: [{ start: '', end: '' }], WED: [{ start: '', end: '' }], THU: [{ start: '', end: '' }], FRI: [{ start: '', end: '' }], SAT: [{ start: '', end: '' }]
+    };
   });
+
+  // Background Sync Engine (Writes to drive instantly on change)
+  useEffect(() => {
+    localStorage.setItem('tot_shift_rate', hourlyRate);
+    localStorage.setItem('tot_shift_tax_prof', taxProfile);
+    localStorage.setItem('tot_shift_state_tax', stateTax);
+    localStorage.setItem('tot_shift_fed_tax', fedTax);
+    localStorage.setItem('tot_shift_archives', JSON.stringify(archives));
+    localStorage.setItem('tot_shift_shifts', JSON.stringify(shifts));
+  }, [hourlyRate, taxProfile, stateTax, fedTax, archives, shifts]);
 
   const stateTaxOptions = [
     { label: 'Arizona (2.5%)', value: 2.5 },
