@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
 
@@ -22,8 +22,19 @@ export default function Settings() {
   ];
 
   const navigate = useNavigate();
-  const devMode = localStorage.getItem('fleet_dev_mode') === 'true';
+  
+  // Reactive Dev Mode State
+  const [devMode, setDevMode] = useState(() => localStorage.getItem('fleet_dev_mode') === 'true');
   const isArmed = !!localStorage.getItem('fleet_access_pin');
+
+  useEffect(() => {
+    const checkDevMode = () => {
+      const isDev = localStorage.getItem('fleet_dev_mode') === 'true';
+      if (isDev !== devMode) setDevMode(isDev);
+    };
+    const interval = setInterval(checkDevMode, 500); // Forces re-render if unlocked remotely
+    return () => clearInterval(interval);
+  }, [devMode]);
 
   const [shield, setShield] = useState(() => localStorage.getItem('fleet_shield') !== 'false');
   const [textScale, setTextScale] = useState(() => { const s = localStorage.getItem('fleet_textScale'); return s ? parseInt(s) : 16; });
@@ -234,6 +245,11 @@ export default function Settings() {
             </button>
           </div>
         )}
+
+        {/* CRYPTIC HINT */}
+        <div style={{ textAlign: 'center', color: '#444', fontSize: '0.65em', letterSpacing: '4px', marginTop: '30px', fontWeight: 'bold', userSelect: 'none' }}>
+          [ PROTOCOL: 5-TAP HUB ]
+        </div>
       </div>
     </div>
   );
