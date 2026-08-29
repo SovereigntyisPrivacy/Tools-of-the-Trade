@@ -143,7 +143,7 @@ export default function Dashboard() {
         <h1 onClick={handleTitleTap} className="friendly-title" style={{ marginTop: '20px', cursor: 'pointer', lineHeight: '1.2' }}>T⚙️⚙️ls of the Trade</h1>
         
         <div style={{ textAlign: 'center', marginTop: '10px', position: 'relative', zIndex: 20 }}>
-          <button onClick={(e) => { e.stopPropagation(); setShowLegal(true); }} style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold' }}>⚖️ Legal & Privacy Info</button>
+          <button onClick={(e) => { e.stopPropagation(); setShowLegal(true); }} style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold' }}>📜 Manifesto & Legal</button>
         </div>
       </header>
 
@@ -169,7 +169,25 @@ export default function Dashboard() {
       {showLegal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '20px', width: '100%', maxHeight: '85vh', overflowY: 'auto', paddingBottom: '70px' }}>
-            <h2 style={{ color: '#ef4444', textTransform: 'uppercase', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>Liability & Privacy EULA</h2>
+            
+          <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+            <h2 style={{ color: '#00ffff', textTransform: 'uppercase', margin: '0 0 15px 0', letterSpacing: '2px' }}>The Manifesto</h2>
+            <div style={{ background: 'rgba(0, 255, 255, 0.05)', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #00ffff', textAlign: 'left' }}>
+              <p style={{ color: '#fff', fontSize: '0.95rem', lineHeight: '1.6', fontStyle: 'italic', margin: '0 0 15px 0' }}>
+                "Big tech. Big corp. Big pharma. Big brother. Big everyone can kick rocks."
+              </p>
+              <p style={{ color: '#ccc', fontSize: '0.9rem', lineHeight: '1.6', margin: '0 0 15px 0' }}>
+                I hate paying for tools that a noob developer can make, so I made this and my other projects to be free of charge and unobtrusive. Tools for the everyday man should be free. So here you go.
+              </p>
+              <p style={{ color: '#00ffff', fontSize: '1rem', fontWeight: 'bold', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                Digital privacy is Sovereignty.<br/>
+                Sovereignty is Privacy.<br/>
+                Take back your freedom.<br/>
+                Stay sovereign.
+              </p>
+            </div>
+          </div>
+          <h2 style={{ color: '#ef4444', textTransform: 'uppercase', marginTop: '20px', borderBottom: '1px solid #333', paddingBottom: '10px', fontSize: '1.1rem' }}>Liability & Privacy EULA</h2>
             <p style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.6', textAlign: 'left' }}>
               <strong>1. As-Is Software:</strong> Tools of the Trade (ToT) is provided "as is" and "as available" without warranty of any kind. The developer assumes no liability for data loss, hardware failure, or service interruptions.<br/><br/>
               
