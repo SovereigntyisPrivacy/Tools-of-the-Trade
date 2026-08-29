@@ -23,16 +23,16 @@ export default function Settings() {
 
   const navigate = useNavigate();
   
-  // Reactive Dev Mode State
   const [devMode, setDevMode] = useState(() => localStorage.getItem('fleet_dev_mode') === 'true');
-  const isArmed = !!localStorage.getItem('fleet_access_pin');
+  const [isArmed, setIsArmed] = useState(() => !!localStorage.getItem('fleet_access_pin'));
+  const [secretTap, setSecretTap] = useState(0);
 
+  // Poll for external dashboard unlocks
   useEffect(() => {
-    const checkDevMode = () => {
+    const interval = setInterval(() => {
       const isDev = localStorage.getItem('fleet_dev_mode') === 'true';
       if (isDev !== devMode) setDevMode(isDev);
-    };
-    const interval = setInterval(checkDevMode, 500); // Forces re-render if unlocked remotely
+    }, 500);
     return () => clearInterval(interval);
   }, [devMode]);
 
@@ -43,7 +43,6 @@ export default function Settings() {
   const [bgBlur, setBgBlur] = useState(() => localStorage.getItem('fleet_bg_blur') || '0');
   const [bgBright, setBgBright] = useState(() => localStorage.getItem('fleet_bg_bright') || '1');
 
-  // Security Modal State
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [accessPin, setAccessPin] = useState('');
   const [duressPin, setDuressPin] = useState('');
@@ -108,7 +107,18 @@ export default function Settings() {
     if (accessPin === duressPin) return alert('Access and Duress PINs cannot be the same');
     saveState('fleet_access_pin', accessPin);
     saveState('fleet_duress_pin', duressPin);
-    window.location.reload(); // Forces the lock screen to trigger
+    setIsArmed(true);
+    window.location.reload(); 
+  };
+
+  const handleSecretOverride = () => {
+    const newCount = secretTap + 1;
+    setSecretTap(newCount);
+    if (newCount >= 5) {
+      localStorage.setItem('fleet_dev_mode', 'true');
+      setDevMode(true);
+      setSecretTap(0);
+    }
   };
 
   const onTouchStart = (e) => {
@@ -155,7 +165,6 @@ export default function Settings() {
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* SECURITY SETUP MODAL */}
       {showPinSetup && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#111', padding: '20px', borderRadius: '12px', width: '100%', border: '1px solid #ef4444' }}>
@@ -246,9 +255,12 @@ export default function Settings() {
           </div>
         )}
 
-        {/* CRYPTIC HINT */}
-        <div style={{ textAlign: 'center', color: '#444', fontSize: '0.65em', letterSpacing: '4px', marginTop: '30px', fontWeight: 'bold', userSelect: 'none' }}>
-          [ PROTOCOL: 5-TAP HUB ]
+        {/* CRYPTIC FALLBACK TRIGGER */}
+        <div 
+          onClick={handleSecretOverride}
+          style={{ textAlign: 'center', color: '#222', fontSize: '1.2em', marginTop: '30px', userSelect: 'none', cursor: 'pointer' }}
+        >
+          ⚙️🔧<sup style={{ fontSize: '0.6em' }}>5</sup>
         </div>
       </div>
     </div>
