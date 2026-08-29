@@ -148,21 +148,25 @@ export default function Settings() {
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
 
         {/* DASHBOARD MANAGER */}
-        <div style={{ ...cardStyle, borderLeft: '4px solid #a855f7' }}>
-          <h3 style={{ margin: '0 0 15px 0', color: '#a855f7', textTransform: 'uppercase' }}>Dashboard Manager</h3>
-          <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '15px' }}>Hide modules you don't need to declutter your primary interface.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            {ALL_TOOLS.map(tool => (
-              <label key={tool.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', color: hiddenModules.includes(tool.id) ? '#666' : '#fff', cursor: 'pointer', fontSize: '0.9rem', padding: '10px', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', border: '1px solid #333' }}>
-                <input type="checkbox" checked={!hiddenModules.includes(tool.id)} onChange={() => toggleModule(tool.id)} style={{ accentColor: '#a855f7', transform: 'scale(1.3)' }} />
-                {tool.name}
-              </label>
-            ))}
+        <details style={{ background: 'rgba(17, 17, 17, 0.7)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid #333', borderLeft: '4px solid #a855f7', padding: '15px', marginBottom: '25px' }}>
+          <summary style={{ color: '#a855f7', fontWeight: 'bold', textTransform: 'uppercase', outline: 'none', userSelect: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            ⚙️ Manage Dashboard Modules
+          </summary>
+          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: '15px', marginBottom: '15px' }}>Tap a pill to hide or reveal modules on your main Hub.</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {ALL_TOOLS.map(tool => {
+              const isHidden = hiddenModules.includes(tool.id);
+              return (
+                <label key={tool.id} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: isHidden ? '#222' : '#a855f7', color: isHidden ? '#666' : '#fff', padding: '8px 14px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', border: isHidden ? '1px solid #333' : '1px solid #a855f7' }}>
+                  <input type="checkbox" checked={!isHidden} onChange={() => toggleModule(tool.id)} style={{ display: 'none' }} />
+                  {isHidden ? '✕' : '✓'} {tool.name}
+                </label>
+              );
+            })}
           </div>
-        </div>
+        </details>
 
-        <div style={cardStyle}>
-            <label style={labelStyle}>Global Text Scale</label>
+        <label style={labelStyle}>Global Text Scale</label>
             <input type="range" min="12" max="22" value={textScale} onChange={e => handleScaleChange(e.target.value)} onMouseUp={e => saveState('fleet_textScale', e.target.value)} onTouchEnd={e => saveState('fleet_textScale', e.target.value)} style={{ width: '100%', marginBottom: '20px', accentColor: accent }} />
 
             <label style={labelStyle}>Accent Color</label>

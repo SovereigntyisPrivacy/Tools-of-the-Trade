@@ -64,6 +64,10 @@ function GlobalNav() {
   );
 }
 
+const MorseBeacon = lazy(() => import('./views/MorseBeacon'));
+const CipherKeygen = lazy(() => import('./views/CipherKeygen'));
+const FirstAidHub = lazy(() => import('./views/FirstAidHub'));
+
 function App() {
   return (
     <ThemeProvider>
@@ -126,7 +130,10 @@ function App() {
           <Route path="/budget" element={<BudgetEngine />} />
           <Route path="/support" element={<SupportCreator />} />
         <Route path="/qr-scanner" element={<QRScanner />} />
-        </Routes>
+                <Route path="/morse" element={<MorseBeacon />} />
+        <Route path="/cipher" element={<CipherKeygen />} />
+        <Route path="/firstaid" element={<FirstAidHub />} />
+      </Routes>
           </Suspense>
         </Router>
       </CalendarProvider>
