@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 
@@ -6,11 +6,13 @@ export default function CalendarHub() {
   const navigate = useNavigate();
   const { globalDate, setGlobalDate, reminders, addReminder, removeReminder } = useCalendar();
 
-  // Bulletproof Local Date Parsing
+  // BULLETPROOF DATE PARSER: Strips time signatures and forces Local Time
   const parseLocalDate = (dateStr) => {
     if (!dateStr) return new Date();
-    const [y, m, d] = dateStr.split('-').map(Number);
-    return new Date(y, m - 1, d);
+    const cleanStr = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+    const [y, m, d] = cleanStr.split('-').map(Number);
+    // JS Months are 0-indexed. This exact format prevents the UTC rollback bug.
+    return new Date(y, m - 1, d); 
   };
 
   const [viewDate, setViewDate] = useState(parseLocalDate(globalDate));
@@ -25,86 +27,98 @@ export default function CalendarHub() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const blanks = Array.from({ length: firstDay }, (_, i) => i);
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  
+  // Hardcoded short days to prevent localization mapping bugs
+  const shortDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // --- UPGRADED OMNI-PULL SCRAPER ENGINE ---
+  // CACHE ENGINE: Reads from localStorage exactly ONCE per load to prevent UI freezing
+  const db = useMemo(() => {
+    const getJSON = (key) => {
+      try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+    };
+    
+    let ledgers = [];
+    ['asset_ledger', 'assets', 'fleet_assets', 'LedgerItems', 'Ledger'].forEach(key => {
+      const data = getJSON(key);
+      if (Array.isArray(data)) ledgers = [...ledgers, ...data];
+    });
+
+    return {
+      schedules: getJSON('fleet_schedules'),
+      subscriptions: getJSON('fleet_subscriptions'),
+      ledgers: ledgers
+    };
+  }, []);
+
+  // SYNTHESIS ENGINE
   const getAllEventsForDate = (dateStr) => {
+    // Start with Manual Reminders
     const events = [...reminders.filter(r => r.date === dateStr)];
     const targetDateObj = parseLocalDate(dateStr);
-    const dayName = targetDateObj.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayName = shortDays[targetDateObj.getDay()];
 
     // 1. Pull Timesheet Shifts
-    try {
-      const fleetSchedules = JSON.parse(localStorage.getItem('fleet_schedules') || '[]');
-      fleetSchedules.forEach(week => {
-        if (!week.weekDate) return;
-        const weekStart = parseLocalDate(week.weekDate);
-        const diffDays = Math.round((targetDateObj - weekStart) / (1000 * 60 * 60 * 24));
+    db.schedules.forEach(week => {
+      if (!week.weekDate) return;
+      const weekStart = parseLocalDate(week.weekDate);
+      const diffDays = Math.round((targetDateObj - weekStart) / (1000 * 60 * 60 * 24));
 
-        if (diffDays >= 0 && diffDays <= 6) {
-          (week.roster || []).forEach(emp => {
-            const shift = (week.shifts && week.shifts[emp.id]) ? week.shifts[emp.id][dayName] : null;
-            if (shift && shift.in && shift.out) {
-              events.push({
-                id: `shift_${emp.id}_${dateStr}`,
-                text: `[SHIFT] ${emp.name || 'Worker'}: ${shift.in} to ${shift.out}`,
-                module: 'Timesheet',
-                priority: 'Done', // Shows as a Green Dot
-                isDynamic: true
-              });
-            }
-          });
-        }
-      });
-    } catch(e) {}
+      if (diffDays >= 0 && diffDays <= 6) {
+        (week.roster || []).forEach(emp => {
+          const shift = (week.shifts && week.shifts[emp.id]) ? week.shifts[emp.id][dayName] : null;
+          if (shift && shift.in && shift.out) {
+            events.push({
+              id: `shift_${emp.id}_${dateStr}`,
+              text: `[SHIFT] ${emp.name || 'Worker'}: ${shift.in} to ${shift.out}`,
+              module: 'Timesheet',
+              priority: 'Done', // Green
+              isDynamic: true
+            });
+          }
+        });
+      }
+    });
 
-    // 2. Pull Ledger Assets (Purchase/Warranty Dates)
-    try {
-      let LedgerItems = [];
-      ['asset_ledger', 'assets', 'fleet_assets', 'LedgerItems', 'Ledger'].forEach(key => {
-        const data = JSON.parse(localStorage.getItem(key) || '[]');
-        if (Array.isArray(data)) LedgerItems = [...LedgerItems, ...data];
-      });
-
-      LedgerItems.forEach(item => {
-        const itemDate = item.date || item.purchaseDate || item.warrantyDate || item.expDate || item.purchase_date;
-        if (itemDate && itemDate.startsWith(dateStr)) {
-          events.push({
-            id: `asset_${item.id || Math.random()}`,
-            text: `[ASSET] ${item.name || item.assetName || item.tag || 'Asset Log'}: ${item.status || item.condition || 'Checked'}`,
-            module: 'Ledger',
-            priority: 'High', // Shows as a Red Dot
-            isDynamic: true
-          });
-        }
-      });
-    } catch(e) {}
+    // 2. Pull Ledger Assets
+    db.ledgers.forEach(item => {
+      const itemDate = item.date || item.purchaseDate || item.warrantyDate || item.expDate || item.purchase_date;
+      if (itemDate && typeof itemDate === 'string' && itemDate.startsWith(dateStr)) {
+        events.push({
+          id: `asset_${item.id || Math.random()}`,
+          text: `[ASSET] ${item.name || item.assetName || item.tag || 'Asset Log'}: ${item.status || item.condition || 'Checked'}`,
+          module: 'Ledger',
+          priority: 'High', // Red
+          isDynamic: true
+        });
+      }
+    });
 
     // 3. Pull Recurring Subscriptions
-    try {
-      const subs = JSON.parse(localStorage.getItem('fleet_subscriptions') || '[]');
-      subs.forEach(sub => {
-        if (!sub.renewal) return;
-        const renewDate = parseLocalDate(sub.renewal);
-        
-        let isDue = false;
-        if (sub.cycle === 'Monthly' && targetDateObj >= renewDate && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
-        if (sub.cycle === 'Yearly' && targetDateObj >= renewDate && targetDateObj.getMonth() === renewDate.getMonth() && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
-        if (sub.cycle === 'Weekly') {
-           const daysSince = Math.round((targetDateObj - renewDate) / (1000 * 60 * 60 * 24));
-           if (targetDateObj >= renewDate && daysSince % 7 === 0) isDue = true;
-        }
+    db.subscriptions.forEach(sub => {
+      if (!sub.renewal) return;
+      const renewDate = parseLocalDate(sub.renewal);
+      let isDue = false;
 
-        if (isDue || dateStr === sub.renewal) {
-          events.push({
-            id: `sub_${sub.id}_${dateStr}`,
-            text: `[RENEWAL] ${sub.name} - $${parseFloat(sub.cost || 0).toFixed(2)}`,
-            module: 'Subscriptions',
-            priority: 'High', // Shows as a Red Dot
-            isDynamic: true
-          });
-        }
-      });
-    } catch(e) {}
+      // Cycle Logic
+      if (sub.cycle === 'Monthly' && targetDateObj >= renewDate && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
+      if (sub.cycle === 'Yearly' && targetDateObj >= renewDate && targetDateObj.getMonth() === renewDate.getMonth() && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
+      if (sub.cycle === 'Weekly') {
+         const daysSince = Math.round((targetDateObj - renewDate) / (1000 * 60 * 60 * 24));
+         if (targetDateObj >= renewDate && daysSince % 7 === 0) isDue = true;
+      }
+
+      if (isDue || dateStr === sub.renewal.split('T')[0]) {
+        // Strip out accidental string symbols in the cost before parsing
+        const safeCost = parseFloat(String(sub.cost || 0).replace(/[^0-9.]/g, '')).toFixed(2);
+        events.push({
+          id: `sub_${sub.id}_${dateStr}`,
+          text: `[RENEWAL] ${sub.name || 'Sub'} - $${safeCost}`,
+          module: 'Subscriptions',
+          priority: 'High', // Red
+          isDynamic: true
+        });
+      }
+    });
 
     return events;
   };
@@ -148,7 +162,6 @@ export default function CalendarHub() {
 
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
         
-        {/* Visual Calendar Grid */}
         <div style={{ ...cardStyle, padding: '20px 15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <button onClick={() => setViewDate(new Date(year, month - 1, 1))} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold' }}>&lt;</button>
@@ -187,7 +200,6 @@ export default function CalendarHub() {
           </div>
         </div>
 
-        {/* Selected Day Agenda */}
         <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
           <h3 style={{ margin: '0 0 15px 0', color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
             <span>Agenda:</span>
@@ -218,7 +230,6 @@ export default function CalendarHub() {
           </div>
           <button onClick={handleAdd} style={{ width: '100%', padding: '12px', background: '#222', color: '#00ffff', border: '1px dashed #00ffff', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold' }}>+ Log to Agenda</button>
         </div>
-
       </div>
     </div>
   );
