@@ -124,7 +124,9 @@ export default function Dashboard() {
     { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮", badge: "", badgeColor: "#222" },
     { id: "ledger", name: "Asset Ledger", path: "/ledger", icon: "📋", badge: "", badgeColor: "#222" },
     { id: "civics", name: "Civics & Rights", path: "/civics", icon: "⚖️", badge: "", badgeColor: "#222" },
-    { id: "qrscanner", name: "Universal Lens", path: "/qr-scanner", icon: "📷", badge: "NEW", badgeColor: "#06b6d4" }
+    { id: "qrscanner", name: "Universal Lens", path: "/qr-scanner", icon: "📷", badge: "NEW", badgeColor: "#06b6d4" },
+    { id: "morse", name: "Optical Comm Link", path: "/morse", icon: "🔦", badge: "NEW", badgeColor: "#facc15" },
+    { id: "cipher", name: "Cipher & Keygen", path: "/cipher", icon: "🔐", badge: "NEW", badgeColor: "#ec4899" }
   ];
 
   return (
