@@ -3,105 +3,86 @@ import { useNavigate } from 'react-router-dom';
 
 const TCCC_GUIDES = [
   {
-    title: 'Massive Hemorrhage (Bleeding)',
-    icon: '🩸',
-    steps: [
-      '1. Identify life-threatening arterial bleeding (bright red, spurting, or pooling rapidly).',
-      '2. Apply a TQ (Tourniquet) 2-3 inches above the wound, not over a joint.',
-      '3. If bleeding continues, apply a second TQ side-by-side above the first.',
-      '4. Tighten the windlass until bleeding completely stops. Secure it.',
-      '5. Note the exact time of TQ application on the patient.'
-    ],
+    title: 'Massive Hemorrhage (Bleeding)', icon: '🩸',
+    steps: ['1. Identify life-threatening arterial bleeding (bright red, spurting, or pooling rapidly).', '2. Apply a TQ (Tourniquet) 2-3 inches above the wound, not over a joint.', '3. If bleeding continues, apply a second TQ side-by-side above the first.', '4. Tighten the windlass until bleeding completely stops. Secure it.', '5. Note the exact time of TQ application on the patient.'],
     tip: 'PRO-TIP: A tourniquet will hurt the patient immensely. Ignore their screaming. It means they are alive.'
   },
   {
-    title: 'Airway & Chest Wounds',
-    icon: '🫁',
-    steps: [
-      '1. Assess for penetrating trauma to the chest, back, or armpits.',
-      '2. Wipe the area dry of blood and sweat.',
-      '3. Apply a vented chest seal over the hole during EXHALATION.',
-      '4. Check for an exit wound on the back and seal it as well.',
-      '5. Place the casualty in the recovery position (injured side down).'
-    ],
+    title: 'Airway & Chest Wounds', icon: '🫁',
+    steps: ['1. Assess for penetrating trauma to the chest, back, or armpits.', '2. Wipe the area dry of blood and sweat.', '3. Apply a vented chest seal over the hole during EXHALATION.', '4. Check for an exit wound on the back and seal it as well.', '5. Place the casualty in the recovery position (injured side down).'],
     tip: 'PRO-TIP: If you don\'t have a chest seal, duct tape and a plastic wrapper taped on 3 sides creates a makeshift flutter valve.'
   },
   {
-    title: 'Hypovolemic Shock',
-    icon: '🥶',
-    steps: [
-      '1. Assess for shock: pale, cold, clammy skin, rapid breathing, confusion.',
-      '2. Stop all massive bleeding first.',
-      '3. Keep the casualty extremely warm (space blanket, body heat).',
-      '4. Elevate the legs slightly if no spinal injury is suspected.',
-      '5. Do NOT give them food or water, even if they beg for it.'
-    ],
+    title: 'Hypovolemic Shock', icon: '🥶',
+    steps: ['1. Assess for shock: pale, cold, clammy skin, rapid breathing, confusion.', '2. Stop all massive bleeding first.', '3. Keep the casualty extremely warm (space blanket, body heat).', '4. Elevate the legs slightly if no spinal injury is suspected.', '5. Do NOT give them food or water, even if they beg for it.'],
     tip: 'PRO-TIP: Shock kills after the bleeding stops. Heat retention is your primary fight once the holes are plugged.'
   }
 ];
 
 const GENERAL_GUIDES = [
   {
-    title: 'Burns (Thermal)',
-    icon: '🔥',
-    steps: [
-      '1. Remove the casualty from the heat source.',
-      '2. Cool the burn immediately with cool (not freezing) running water for 10-20 minutes.',
-      '3. Do NOT pop blisters. Do NOT apply ice or butter to severe burns.',
-      '4. Cover with a sterile, non-fluffy dressing or cling film.'
-    ],
+    title: 'Burns (Thermal)', icon: '🔥',
+    steps: ['1. Remove the casualty from the heat source.', '2. Cool the burn immediately with cool (not freezing) running water for 10-20 minutes.', '3. Do NOT pop blisters. Do NOT apply ice or butter to severe burns.', '4. Cover with a sterile, non-fluffy dressing.'],
     tip: 'PRO-TIP: Ice restricts blood flow and deepens tissue damage on a burn. Stick to cool water.'
   },
   {
-    title: 'Choking (Heimlich)',
-    icon: '🗣️',
-    steps: [
-      '1. Ask "Are you choking?" If they cannot cough or speak, act immediately.',
-      '2. Stand behind them, wrap your arms around their waist.',
-      '3. Make a fist with one hand, place it just above their belly button.',
-      '4. Grab your fist with the other hand and perform quick, upward thrusts.'
-    ],
+    title: 'Choking (Heimlich)', icon: '🗣️',
+    steps: ['1. Ask "Are you choking?" If they cannot speak, act immediately.', '2. Stand behind them, wrap your arms around their waist.', '3. Make a fist with one hand, place it just above their belly button.', '4. Grab your fist with the other hand and perform quick, upward thrusts.'],
     tip: 'PRO-TIP: If you are alone and choking, throw your upper abdomen over the hard edge of a chair or table.'
   }
 ];
 
 const REMEDIES_GUIDES = [
   {
-    title: 'Tooth & Gum Pain (Clove & Cinnamon)',
-    icon: '🦷',
-    steps: [
-      '1. Brew a strong tea using whole cloves and cinnamon sticks.',
-      '2. Let it cool until warm, then swish vigorously in the mouth.',
-      '3. Alternatively, dab diluted essential clove oil directly onto the affected tooth/gum.'
-    ],
+    title: 'Tooth & Gum Pain (Clove)', icon: '🦷',
+    steps: ['1. Brew a strong tea using whole cloves and cinnamon sticks.', '2. Let it cool until warm, then swish vigorously in the mouth.', '3. Alternatively, dab diluted essential clove oil directly onto the affected tooth.'],
     tip: 'PRO-TIP: Clove contains Eugenol, a scientifically proven natural anesthetic and antibacterial agent used in professional dentistry.'
   },
   {
-    title: 'Deep Muscle & Nerve Pain (Capsaicin)',
-    icon: '🌶️',
-    steps: [
-      '1. Create a topical salve using cayenne pepper powder and a carrier oil (like coconut oil).',
-      '2. Rub directly into the skin over the aching joint, muscle, or nerve.',
-      '3. Wash hands thoroughly. Do NOT touch your eyes.'
-    ],
+    title: 'Congestion & Sinus (Cayenne & Honey)', icon: '🍯',
+    steps: ['1. Mix a pinch of cayenne pepper into a spoonful of raw honey (or hot water with lemon).', '2. Consume slowly to coat the throat.', '3. Expect your nose to run immediately—keep tissues handy.'],
+    tip: 'PRO-TIP: Capsaicin in cayenne rapidly thins mucus and stimulates drainage, while honey acts as a natural antimicrobial throat coat.'
+  },
+  {
+    title: 'Cough & Sickness Syrup (Onion & Honey)', icon: '🧅',
+    steps: ['1. Chop a raw onion and place it in a jar.', '2. Cover the chopped onion entirely in raw honey and seal the jar.', '3. Let it sit on the counter for 8-12 hours until the honey draws out the onion juice.', '4. Take a spoonful of the resulting liquid syrup for coughs.'],
+    tip: 'PRO-TIP: Onions are packed with Quercetin (an antihistamine) and sulfur compounds that reduce inflammation. The honey preserves it and suppresses coughing.'
+  },
+  {
+    title: 'Deep Muscle & Nerve Pain (Capsaicin)', icon: '🌶️',
+    steps: ['1. Create a topical salve using cayenne pepper powder and a carrier oil (like coconut oil).', '2. Rub directly into the skin over the aching joint, muscle, or nerve.', '3. Wash hands thoroughly. Do NOT touch your eyes.'],
     tip: 'PRO-TIP: The intense burning sensation safely depletes "Substance P", a chemical that carries pain signals to your brain.'
   },
   {
-    title: 'Burns, Cuts & Skin Trauma (Aloe Vera)',
-    icon: '🪴',
-    steps: [
-      '1. Break or tear off a piece of a raw Aloe Vera plant.',
-      '2. Squeeze the inner gel directly onto the wound, rash, or burn.',
-      '3. Reapply as it dries out to maintain a protective, cooling barrier.'
-    ],
+    title: 'Burns, Cuts & Skin Trauma (Aloe Vera)', icon: '🪴',
+    steps: ['1. Break or tear off a piece of a raw Aloe Vera plant.', '2. Squeeze the inner gel directly onto the wound, rash, or burn.', '3. Reapply as it dries out to maintain a protective, cooling barrier.'],
     tip: 'PRO-TIP: Raw aloe is naturally antimicrobial and accelerates cellular regeneration for surface-level trauma.'
+  },
+  {
+    title: 'Nausea & Digestion (Ginger)', icon: '🫚',
+    steps: ['1. Chew on a small piece of raw, peeled ginger root.', '2. Alternatively, steep sliced ginger in hot water for 10 minutes to make a potent tea.'],
+    tip: 'PRO-TIP: Gingerol, the active compound in ginger, is a scientifically proven antiemetic that blocks nausea signals in the gut.'
+  }
+];
+
+const WARNINGS_GUIDES = [
+  {
+    title: 'Unwashed Poppy Seeds', icon: '⚠️',
+    desc: 'Avoid consuming large amounts before medical, military, CDL, or employment drug screenings. They can trigger a false positive for opiates.'
+  },
+  {
+    title: 'Activated Charcoal & Medications', icon: '⚠️',
+    desc: 'Charcoal is great for food poisoning because it absorbs toxins in the stomach. However, it will also absorb and neutralize any prescription medications you took recently.'
+  },
+  {
+    title: 'Undiluted Essential Oils', icon: '⚠️',
+    desc: 'Never put "hot" oils (like Oregano, Clove, or Peppermint) directly on the skin without mixing them into a carrier oil (like coconut or olive oil) first. They can cause severe chemical burns.'
   }
 ];
 
 export default function FirstAidHub() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('cpr');
-
   const [cprActive, setCprActive] = useState(false);
   const [compressionCount, setCompressionCount] = useState(0);
   const [phase, setPhase] = useState('standby');
@@ -201,12 +182,31 @@ export default function FirstAidHub() {
             ))}
             {item.tip && (
               <div style={{ marginTop: '15px', padding: '10px', background: '#111', borderRadius: '6px', border: `1px solid ${accentColor}` }}>
-                <p style={{ margin: 0, color: accentColor, fontSize: '0.8rem', fontWeight: 'bold' }}>{item.tip}</p>
+                <p style={{ margin: 0, color: accentColor, fontSize: '0.85rem', fontWeight: 'bold' }}>{item.tip}</p>
               </div>
             )}
           </div>
         </div>
       ))}
+    </div>
+  );
+
+  const renderRemedies = () => (
+    <div>
+      {renderDatabase(REMEDIES_GUIDES, '#10b981')}
+      
+      <h3 style={{ color: '#ef4444', textTransform: 'uppercase', textAlign: 'center', marginTop: '30px', marginBottom: '15px', letterSpacing: '2px' }}>Red Flags & Avoidance</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        {WARNINGS_GUIDES.map((warn, idx) => (
+          <div key={idx} style={{ ...glassCard, borderTop: '3px solid #ef4444', margin: 0, padding: '15px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+              <span style={{ fontSize: '1.2rem' }}>{warn.icon}</span>
+              <h4 style={{ margin: 0, color: '#ef4444', fontSize: '1rem', textTransform: 'uppercase' }}>{warn.title}</h4>
+            </div>
+            <p style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.5', margin: 0 }}>{warn.desc}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
@@ -232,7 +232,7 @@ export default function FirstAidHub() {
         {activeTab === 'cpr' && renderCPR()}
         {activeTab === 'tccc' && renderDatabase(TCCC_GUIDES, '#f97316')}
         {activeTab === 'general' && renderDatabase(GENERAL_GUIDES, '#3b82f6')}
-        {activeTab === 'remedies' && renderDatabase(REMEDIES_GUIDES, '#10b981')}
+        {activeTab === 'remedies' && renderRemedies()}
       </div>
     </div>
   );
