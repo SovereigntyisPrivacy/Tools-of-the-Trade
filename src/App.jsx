@@ -39,6 +39,7 @@ const VehicleCalc = lazy(() => import('./views/VehicleCalc'));
 const AgronomyCalc = lazy(() => import('./views/AgronomyCalc'));
 const AssetLedger = lazy(() => import('./views/AssetLedger'));
 const CivicsRights = lazy(() => import('./views/CivicsRights'));
+const MindsetTracker = lazy(() => import('./views/MindsetTracker'));
 
 // Schematics & Database Hubs
 const SchematicsHub = lazy(() => import('./views/SchematicsHub'));
@@ -71,14 +72,14 @@ function GlobalNav() {
 function App() {
   const accessPin = localStorage.getItem('fleet_access_pin');
   const duressPin = localStorage.getItem('fleet_duress_pin');
-  
+
   const [isLocked, setIsLocked] = useState(!!accessPin);
   const [pinInput, setPinInput] = useState('');
 
   const handlePinInput = (val) => {
     const newPin = pinInput + val;
     setPinInput(newPin);
-    
+
     if (newPin === accessPin) {
       setIsLocked(false);
     } else if (newPin === duressPin) {
@@ -102,7 +103,7 @@ function App() {
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
             <button key={n} onClick={() => handlePinInput(n.toString())} style={{ width: '75px', height: '75px', fontSize: '1.8em', background: '#111', color: '#fff', border: '1px solid #333', borderRadius: '50%' }}>{n}</button>
           ))}
-          <button onClick={() => setPinInput('')} style={{ width: '75px', height: '75px', fontSize: '1.2em', background: '#111', color: '#ef4444', border: '1px solid #333', borderRadius: '50%', fontWeight: 'bold' }}>CLR</button>
+          <button onClick={() => setPinInput('')} style={{ width: '75px', height: '75px', fontSize: '1.2em', background: '#111', color: '#ef4444', border: '1px solid #333', borderRadius: '50%' }}>CLR</button>
           <button onClick={() => handlePinInput('0')} style={{ width: '75px', height: '75px', fontSize: '1.8em', background: '#111', color: '#fff', border: '1px solid #333', borderRadius: '50%' }}>0</button>
           <div />
         </div>
@@ -116,7 +117,7 @@ function App() {
         <CalendarProvider>
           <Router>
             <GlobalNav />
-            <Suspense fallback={<div className="loading-screen" style={{ color: '#fff', textAlign: 'center', paddingTop: '50px' }}>Loading Module...</div>}>
+            <Suspense fallback={<div style={{ padding: '20px', color: '#fff', textAlign: 'center' }}>Loading Module...</div>}>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/settings" element={<Settings />} />
@@ -172,6 +173,7 @@ function App() {
                 <Route path="/morse" element={<MorseBeacon />} />
                 <Route path="/cipher" element={<CipherKeygen />} />
                 <Route path="/firstaid" element={<FirstAidHub />} />
+                <Route path="/mindset" element={<MindsetTracker />} />
               </Routes>
             </Suspense>
           </Router>

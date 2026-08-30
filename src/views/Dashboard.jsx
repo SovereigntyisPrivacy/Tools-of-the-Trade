@@ -70,7 +70,8 @@ export default function Dashboard() {
     { id: "morse", name: "Optical Comm Link", path: "/morse", icon: "🔦", badge: "NEW", badgeColor: "#facc15" },
     { id: "cipher", name: "Cipher & Keygen", path: "/cipher", icon: "🔐", badge: "NEW", badgeColor: "#ec4899" },
     { id: "firstaid", name: "Trauma & CPR", path: "/firstaid", icon: "🚑", badge: "SAFE", badgeColor: "#ef4444" },
-    { id: "library", name: "Survival Library", path: "/schematics/library", icon: "🏕️", badge: "CORE", badgeColor: "#10b981" }
+    { id: "library", name: "Survival Library", path: "/schematics/library", icon: "🏕️", badge: "CORE", badgeColor: "#10b981" },
+    { id: "mindset", name: "Mindset Tracker", path: "/mindset", icon: "🧠", badge: "NEW", badgeColor: "#a855f7" }
   ];
 
   return (
