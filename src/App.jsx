@@ -1,3 +1,4 @@
+import LiveWallpaper from './core/LiveWallpaper';
 import React, { Suspense, lazy, useState } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './core/ThemeContext';
@@ -114,6 +115,7 @@ function App() {
   return (
     <ThemeProvider>
       <div className="app-container">
+        <LiveWallpaper />
         <CalendarProvider>
           <Router>
             <GlobalNav />

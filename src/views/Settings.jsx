@@ -1,3 +1,4 @@
+import { saveVideoWallpaper } from '../core/LiveWallpaper';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
@@ -68,6 +69,16 @@ export default function Settings() {
 
   const handleWallpaperChange = (bg) => {
     setWallpaper(bg); saveState('fleet_wallpaper', bg); window.location.reload();
+  };
+
+  
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 75 * 1024 * 1024) return alert('Keep video under 75MB for optimal performance.');
+    await saveVideoWallpaper(file);
+    setWallpaper('Custom Video');
+    window.location.reload();
   };
 
   const handleImageUpload = (e) => {
@@ -225,6 +236,10 @@ export default function Settings() {
             <label style={{ flex: 1, minWidth: '80px', padding: '10px 5px', background: wallpaper === 'Custom' ? accent : 'rgba(34,34,34,0.8)', color: wallpaper === 'Custom' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.75em', textAlign: 'center', cursor: 'pointer' }}>
               Gallery + <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
             </label>
+            <label style={{ flex: 1, minWidth: '80px', padding: '10px 5px', background: wallpaper === 'Custom Video' ? accent : 'rgba(34,34,34,0.8)', color: wallpaper === 'Custom Video' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.75em', textAlign: 'center', cursor: 'pointer' }}>
+              Video + <input type="file" accept="video/mp4,video/webm" onChange={handleVideoUpload} style={{ display: 'none' }} />
+            </label>
+
           </div>
           {wallpaper === 'Custom' && (
             <div style={{ background: 'rgba(0,0,0,0.6)', padding: '15px', borderRadius: '8px', border: '1px dashed #444', marginBottom: '10px' }}>
