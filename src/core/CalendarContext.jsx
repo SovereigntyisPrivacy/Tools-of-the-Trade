@@ -87,6 +87,23 @@ export function CalendarProvider({ children }) {
       }
     });
 
+    // TASKLIST LIVE PROGRESS SCRAPER
+    try {
+      const tasklists = getJSON('fleet_sops);
+      if (Array.isArray(tasklists)) {
+        tasklists.forEach(list => {
+          if (list.scheduledDate === todayStr) {
+            const total = list.tasks.length;
+            const done = list.tasks.filter(t => t.done).length;
+            const progress = total === 0 ? 0 : Math.round((done / total) * 100);
+            count++;
+            if (progress === 100) hasDone = true;
+            else if (progress > 0) hasNormal = true;
+            else hasHigh = true;
+          }
+        });
+      }
+    } catch(e) {}
     // 2. Personal Shifts
     try {
       const shiftData = getObj('tot_shift_shifts');
