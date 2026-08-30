@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 
@@ -6,11 +6,16 @@ export default function CalendarHub() {
   const navigate = useNavigate();
   const { globalDate, setGlobalDate, reminders, addReminder, removeReminder } = useCalendar();
 
+  // Strip timezones forcefully to prevent UTC rollback bugs
   const parseLocalDate = (dateStr) => {
     if (!dateStr) return new Date();
-    const cleanStr = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
-    const [y, m, d] = cleanStr.split('-').map(Number);
-    return new Date(y, m - 1, d); 
+    try {
+      const cleanStr = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+      const [y, m, d] = cleanStr.split('-').map(Number);
+      return new Date(y, m - 1, d); 
+    } catch (e) {
+      return new Date();
+    }
   };
 
   const [viewDate, setViewDate] = useState(parseLocalDate(globalDate));
@@ -25,94 +30,104 @@ export default function CalendarHub() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const blanks = Array.from({ length: firstDay }, (_, i) => i);
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  
   const shortDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-  // CACHE ENGINE: Uses the EXACT keys from your Tracker and Ledger files
-  const db = useMemo(() => {
-    const getJSON = (key) => {
-      try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : []; } 
-      catch { return []; }
-    };
-    return {
-      shifts: getJSON('tot_shift_shifts') || {},
-      subscriptions: getJSON('fleet_subscriptions'),
-      assets: getJSON('tot_assets')
-    };
-  }, []);
-
-  // CURRENT WEEK CALCULATION (For mapping your shift templates)
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay());
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-  // SYNTHESIS ENGINE
+  // ZERO-CACHE AGGRESSIVE SCRAPER
   const getAllEventsForDate = (dateStr) => {
-    // 1. Manual Reminders (Deduplicating the auto-generated Subscription reminders)
-    const events = reminders
-      .filter(r => r.date === dateStr && !r.text.includes('[SUB RENEWAL]'))
-      .map(r => ({ ...r, isDynamic: false }));
-      
-    const targetDateObj = parseLocalDate(dateStr);
-    const dayName = shortDays[targetDateObj.getDay()];
+    let events = [];
 
-    // 2. Pull MySchedule Shifts (Only maps to the current calendar week)
-    if (targetDateObj >= startOfWeek && targetDateObj <= endOfWeek) {
-      const dayShifts = db.shifts[dayName] || [];
-      dayShifts.forEach((shift, idx) => {
-        if (shift.start && shift.end) {
-          events.push({
-            id: `shift_${dayName}_${idx}`,
-            text: `[SHIFT] ${shift.start} to ${shift.end}`,
-            module: 'My Schedule',
-            priority: 'Done', // Green Dot
-            isDynamic: true
-          });
+    // 1. Manual Reminders (Safely filtering out auto-generated dupes)
+    if (Array.isArray(reminders)) {
+      reminders.forEach(r => {
+        if (r && r.date === dateStr && r.text && !r.text.includes('[SUB RENEWAL]')) {
+          events.push({ ...r, isDynamic: false });
         }
       });
     }
 
+    const targetDateObj = parseLocalDate(dateStr);
+    const dayName = shortDays[targetDateObj.getDay()];
+
+    // 2. Pull Shifts (Directly from drive)
+    try {
+      const shiftData = JSON.parse(localStorage.getItem('tot_shift_shifts') || '{}');
+      
+      // Calculate boundaries for the current week to map the template
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+      if (targetDateObj >= startOfWeek && targetDateObj <= endOfWeek) {
+        const dayShifts = shiftData[dayName];
+        if (Array.isArray(dayShifts)) {
+          dayShifts.forEach((shift, idx) => {
+            // Ignore empty default strings
+            if (shift && shift.start && shift.end && shift.start.trim() !== '' && shift.end.trim() !== '') {
+              events.push({
+                id: `shift_${dayName}_${idx}`,
+                text: `[SHIFT] ${shift.start} to ${shift.end}`,
+                module: 'My Schedule',
+                priority: 'Done', // Green Dot
+                isDynamic: true
+              });
+            }
+          });
+        }
+      }
+    } catch (e) { /* Fail silently to prevent UI crash */ }
+
     // 3. Pull Ledger Assets
-    db.assets.forEach(asset => {
-      if (asset.date === dateStr || JSON.stringify(asset).includes(dateStr)) {
-        events.push({
-          id: `asset_${asset.id || Math.random()}`,
-          text: `[ASSET] ${asset.name || 'Logged Item'}`,
-          module: 'Asset Ledger',
-          priority: 'High', // Red Dot
-          isDynamic: true
+    try {
+      const assets = JSON.parse(localStorage.getItem('tot_assets') || '[]');
+      if (Array.isArray(assets)) {
+        assets.forEach(asset => {
+          // If the date exists literally ANYWHERE in the asset object, flag it.
+          if (asset && (asset.date === dateStr || JSON.stringify(asset).includes(dateStr))) {
+            events.push({
+              id: `asset_${asset.id || Math.random()}`,
+              text: `[ASSET] ${asset.name || 'Logged Item'}`,
+              module: 'Asset Ledger',
+              priority: 'High', // Red Dot
+              isDynamic: true
+            });
+          }
         });
       }
-    });
+    } catch (e) {}
 
-    // 4. Pull Recurring Subscriptions
-    db.subscriptions.forEach(sub => {
-      if (!sub.renewal) return;
-      const renewDate = parseLocalDate(sub.renewal);
-      const cycle = (sub.cycle || '').toLowerCase();
-      let isDue = false;
+    // 4. Pull Subscriptions
+    try {
+      const subs = JSON.parse(localStorage.getItem('fleet_subscriptions') || '[]');
+      if (Array.isArray(subs)) {
+        subs.forEach(sub => {
+          if (!sub || !sub.renewal) return;
+          const renewDate = parseLocalDate(sub.renewal);
+          const cycle = String(sub.cycle || '').toLowerCase();
+          let isDue = false;
 
-      if (cycle === 'monthly' && targetDateObj >= renewDate && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
-      if (cycle === 'yearly' && targetDateObj >= renewDate && targetDateObj.getMonth() === renewDate.getMonth() && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
-      if (cycle === 'weekly' && targetDateObj >= renewDate) {
-         const daysSince = Math.round((targetDateObj - renewDate) / (1000 * 60 * 60 * 24));
-         if (daysSince % 7 === 0) isDue = true;
-      }
+          if (cycle === 'monthly' && targetDateObj >= renewDate && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
+          else if (cycle === 'yearly' && targetDateObj >= renewDate && targetDateObj.getMonth() === renewDate.getMonth() && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
+          else if (cycle === 'weekly' && targetDateObj >= renewDate) {
+             const daysSince = Math.round((targetDateObj - renewDate) / (1000 * 60 * 60 * 24));
+             if (daysSince % 7 === 0) isDue = true;
+          }
 
-      if (isDue || sub.renewal.includes(dateStr)) {
-        const safeCost = parseFloat(String(sub.cost || 0).replace(/[^0-9.]/g, '')).toFixed(2);
-        events.push({
-          id: `sub_${sub.id || Math.random()}_${dateStr}`,
-          text: `[RENEWAL] ${sub.name || 'Sub'} - $${safeCost}`,
-          module: 'Subscriptions',
-          priority: 'High', // Red Dot
-          isDynamic: true
+          if (isDue || sub.renewal.includes(dateStr)) {
+            const safeCost = parseFloat(String(sub.cost || 0).replace(/[^0-9.]/g, '')).toFixed(2);
+            events.push({
+              id: `sub_${sub.id || Math.random()}_${dateStr}`,
+              text: `[RENEWAL] ${sub.name || 'Sub'} - $${safeCost}`,
+              module: 'Subscriptions',
+              priority: 'High', // Red Dot
+              isDynamic: true
+            });
+          }
         });
       }
-    });
+    } catch (e) {}
 
     return events;
   };
@@ -127,7 +142,7 @@ export default function CalendarHub() {
   const activeEvents = getAllEventsForDate(globalDate);
 
   const renderDots = (dayEvts) => {
-    if (dayEvts.length === 0) return null;
+    if (!dayEvts || dayEvts.length === 0) return null;
     return (
       <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', marginTop: '4px' }}>
         {dayEvts.slice(0, 3).map((r, i) => (
