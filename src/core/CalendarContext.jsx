@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 const CalendarContext = createContext();
 
@@ -27,7 +28,28 @@ export function CalendarProvider({ children }) {
     setReminders(reminders.filter(r => r.id !== id));
   };
 
-  // --- OMNI-PULL BACKGROUND SCANNER (Checks specifically for TODAY) ---
+  // --- NATIVE ANDROID PUSH LOGIC ---
+  const triggerNativeNotification = async (count) => {
+    try {
+      const permStatus = await LocalNotifications.requestPermissions();
+      if (permStatus.display === 'granted') {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: "Tools of the Trade",
+              body: `You have ${count} pending item(s) on your agenda today.`,
+              id: 1,
+              schedule: { at: new Date(Date.now() + 1000) } // Fire immediately
+            }
+          ]
+        });
+      }
+    } catch (e) {
+      // Fails silently if testing in a standard web browser without native bridge
+    }
+  };
+
+  // --- OMNI-PULL BACKGROUND SCANNER ---
   const scanForAlerts = () => {
     let count = 0;
     let hasHigh = false;
@@ -151,11 +173,19 @@ export function CalendarProvider({ children }) {
     } catch(e){}
 
     setAlertCount(count);
-    // Hierarchical color selection: Red > Purple > Green
     if (hasHigh) setAlertColor('#ef4444');
     else if (hasNormal) setAlertColor('#a855f7');
     else if (hasDone) setAlertColor('#00cc66');
     else setAlertColor('#a855f7');
+
+    // ONLY PUSH NOTIFICATION ONCE PER DAY IF COUNT > 0
+    if (count > 0) {
+      const lastNotified = localStorage.getItem('tot_last_notification');
+      if (lastNotified !== todayStr) {
+        triggerNativeNotification(count);
+        localStorage.setItem('tot_last_notification', todayStr);
+      }
+    }
   };
 
   useEffect(() => {
