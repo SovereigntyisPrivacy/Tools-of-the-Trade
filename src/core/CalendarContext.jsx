@@ -45,7 +45,7 @@ export function CalendarProvider({ children }) {
         });
       }
     } catch (e) {
-      // Fails silently if testing in a standard web browser without native bridge
+      // Fails silently if testing in a standard web browser
     }
   };
 
@@ -91,25 +91,50 @@ export function CalendarProvider({ children }) {
     // 2. Shifts
     try {
       const shiftData = getObj('tot_shift_shifts');
-      const dayShifts = shiftData[dayName];
-      if (Array.isArray(dayShifts)) {
-        dayShifts.forEach(shift => {
-          if (shift && shift.start && shift.end && shift.start.trim() !== '' && shift.end.trim() !== '') {
-            count++;
-            hasDone = true; // Shifts are 'Done' / Green
-          }
-        });
+      
+      const startOfWeek = new Date(targetDateObj);
+      startOfWeek.setDate(targetDateObj.getDate() - targetDateObj.getDay());
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+      if (targetDateObj >= startOfWeek && targetDateObj <= endOfWeek) {
+        const dayShifts = shiftData[dayName];
+        if (Array.isArray(dayShifts)) {
+          dayShifts.forEach(shift => {
+            if (shift && shift.start && shift.end && shift.start.trim() !== '' && shift.end.trim() !== '') {
+              count++;
+              hasDone = true; // Green
+            }
+          });
+        }
       }
     } catch(e){}
 
-    // 3. Assets
+    // 3. Assets (With Warranty Math)
     try {
       const assets = getJSON('tot_assets');
       if (Array.isArray(assets)) {
         assets.forEach(asset => {
-          if (asset && (asset.date === todayStr || JSON.stringify(asset).includes(todayStr))) {
-            count++;
-            hasHigh = true; // Red
+          if (!asset) return;
+          
+          if (asset.date === todayStr) {
+            count++; hasDone = true;
+          }
+
+          if (asset.date && asset.warranty && asset.warranty !== 'None' && asset.warranty !== 'Lifetime') {
+            const expDate = parseLocalDate(asset.date);
+            if (asset.warranty === '30 Days') expDate.setDate(expDate.getDate() + 30);
+            else if (asset.warranty === '90 Days') expDate.setDate(expDate.getDate() + 90);
+            else if (asset.warranty === '1 Year') expDate.setFullYear(expDate.getFullYear() + 1);
+            else if (asset.warranty === '2 Years') expDate.setFullYear(expDate.getFullYear() + 2);
+            else if (asset.warranty === '5 Years') expDate.setFullYear(expDate.getFullYear() + 5);
+
+            const expDateStr = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}-${String(expDate.getDate()).padStart(2, '0')}`;
+            
+            if (expDateStr === todayStr) {
+              count++;
+              hasHigh = true; // Red
+            }
           }
         });
       }
@@ -173,10 +198,13 @@ export function CalendarProvider({ children }) {
     } catch(e){}
 
     setAlertCount(count);
-    if (hasHigh) setAlertColor('#ef4444');
-    else if (hasNormal) setAlertColor('#a855f7');
-    else if (hasDone) setAlertColor('#00cc66');
-    else setAlertColor('#a855f7');
+    
+    let newColor = '#a855f7';
+    if (hasHigh) newColor = '#ef4444';
+    else if (hasNormal) newColor = '#a855f7';
+    else if (hasDone) newColor = '#00cc66';
+    
+    setAlertColor(newColor);
 
     // ONLY PUSH NOTIFICATION ONCE PER DAY IF COUNT > 0
     if (count > 0) {
