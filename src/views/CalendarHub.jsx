@@ -6,30 +6,25 @@ export default function CalendarHub() {
   const navigate = useNavigate();
   const { globalDate, setGlobalDate, reminders, addReminder, removeReminder } = useCalendar();
 
-  // Strip timezones forcefully to prevent UTC rollback bugs
   const parseLocalDate = (dateStr) => {
     if (!dateStr) return new Date();
     try {
       const cleanStr = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
       const [y, m, d] = cleanStr.split('-').map(Number);
       return new Date(y, m - 1, d); 
-    } catch (e) {
-      return new Date();
-    }
+    } catch (e) { return new Date(); }
   };
 
   const [viewDate, setViewDate] = useState(parseLocalDate(globalDate));
   const [newText, setNewText] = useState('');
   const [newPriority, setNewPriority] = useState('Normal');
 
-  // --- AUTO-SNAP TO TODAY ON LOAD ---
   useEffect(() => {
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
     const d = String(now.getDate()).padStart(2, '0');
     const todayStr = `${y}-${m}-${d}`;
-    
     setGlobalDate(todayStr);
     setViewDate(new Date(y, now.getMonth(), now.getDate()));
   }, [setGlobalDate]);
@@ -42,19 +37,18 @@ export default function CalendarHub() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const blanks = Array.from({ length: firstDay }, (_, i) => i);
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  
   const shortDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const fleetDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // ZERO-CACHE AGGRESSIVE SCRAPER
   const getAllEventsForDate = (dateStr) => {
     let events = [];
+    const getJSON = (k) => { try { return JSON.parse(localStorage.getItem(k)||'[]') || []; } catch { return []; } };
+    const getObj = (k) => { try { return JSON.parse(localStorage.getItem(k)||'{}') || {}; } catch { return {}; } };
 
-    // 1. Manual Reminders (Safely filtering out auto-generated dupes from other tools)
     if (Array.isArray(reminders)) {
       reminders.forEach(r => {
-        if (r && r.date === dateStr && r.text && 
-           !r.text.includes('[SUB RENEWAL]') && 
-           !r.text.includes('[BILL]') && 
-           !r.text.includes('[INCOME]')) {
+        if (r && r.date === dateStr && r.text && !r.text.includes('[SUB RENEWAL]') && !r.text.includes('[BILL]') && !r.text.includes('[INCOME]')) {
           events.push({ ...r, isDynamic: false });
         }
       });
@@ -62,11 +56,10 @@ export default function CalendarHub() {
 
     const targetDateObj = parseLocalDate(dateStr);
     const dayName = shortDays[targetDateObj.getDay()];
+    const fleetDayName = fleetDays[targetDateObj.getDay()];
 
-    // 2. Pull Shifts (Directly from drive)
     try {
-      const shiftData = JSON.parse(localStorage.getItem('tot_shift_shifts') || '{}');
-      
+      const shiftData = getObj('tot_shift_shifts');
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const startOfWeek = new Date(today);
@@ -79,36 +72,48 @@ export default function CalendarHub() {
         if (Array.isArray(dayShifts)) {
           dayShifts.forEach((shift, idx) => {
             if (shift && shift.start && shift.end && shift.start.trim() !== '' && shift.end.trim() !== '') {
-              events.push({
-                id: `shift_${dayName}_${idx}`,
-                text: `[SHIFT] ${shift.start} to ${shift.end}`,
-                module: 'My Schedule',
-                priority: 'Done', // Green Dot
-                isDynamic: true
-              });
+              events.push({ id: `shift_${dayName}_${idx}`, text: `[SHIFT] ${shift.start} to ${shift.end}`, module: 'My Schedule', priority: 'Done', isDynamic: true });
             }
           });
         }
       }
     } catch (e) {}
 
-    // 3. Pull Ledger Assets
+    // NEW: Fleet Schedules (Crew)
     try {
-      const assets = JSON.parse(localStorage.getItem('tot_assets') || '[]');
+      const fleetSchedules = getJSON('fleet_schedules');
+      if (Array.isArray(fleetSchedules)) {
+        fleetSchedules.forEach(week => {
+          if (!week || !week.weekDate) return;
+          const weekStart = parseLocalDate(week.weekDate);
+          const diffDays = Math.round((targetDateObj - weekStart) / (1000 * 60 * 60 * 24));
+          
+          if (diffDays >= 0 && diffDays <= 6) {
+            (week.roster || []).forEach(emp => {
+              const shift = (week.shifts && week.shifts[emp.id]) ? week.shifts[emp.id][fleetDayName] : null;
+              if (shift && shift.in && shift.out && shift.in.trim() !== '') {
+                events.push({
+                  id: `fleet_${emp.id}_${dateStr}`,
+                  text: `[CREW] ${emp.name || 'Worker'}: ${shift.in} to ${shift.out}`,
+                  module: 'Fleet Payroll',
+                  priority: 'Done', // Green
+                  isDynamic: true
+                });
+              }
+            });
+          }
+        });
+      }
+    } catch(e) {}
+
+    try {
+      const assets = getJSON('tot_assets');
       if (Array.isArray(assets)) {
         assets.forEach(asset => {
           if (!asset) return;
-          
           if (asset.date === dateStr) {
-            events.push({
-              id: `asset_purch_${asset.id || Math.random()}`,
-              text: `[PURCHASED] ${asset.name || 'Logged Item'}`,
-              module: 'Asset Ledger',
-              priority: 'Done', // Green Dot
-              isDynamic: true
-            });
+            events.push({ id: `asset_purch_${asset.id || Math.random()}`, text: `[PURCHASED] ${asset.name || 'Logged Item'}`, module: 'Asset Ledger', priority: 'Done', isDynamic: true });
           }
-
           if (asset.date && asset.warranty && asset.warranty !== 'None' && asset.warranty !== 'Lifetime') {
             const expDate = parseLocalDate(asset.date);
             if (asset.warranty === '30 Days') expDate.setDate(expDate.getDate() + 30);
@@ -118,24 +123,16 @@ export default function CalendarHub() {
             else if (asset.warranty === '5 Years') expDate.setFullYear(expDate.getFullYear() + 5);
 
             const expDateStr = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}-${String(expDate.getDate()).padStart(2, '0')}`;
-            
             if (expDateStr === dateStr) {
-              events.push({
-                id: `asset_exp_${asset.id || Math.random()}`,
-                text: `[WARRANTY EXPIRING] ${asset.name || 'Logged Item'}`,
-                module: 'Asset Ledger',
-                priority: 'High', // Red Dot
-                isDynamic: true
-              });
+              events.push({ id: `asset_exp_${asset.id || Math.random()}`, text: `[WARRANTY EXPIRING] ${asset.name || 'Logged Item'}`, module: 'Asset Ledger', priority: 'High', isDynamic: true });
             }
           }
         });
       }
     } catch (e) {}
 
-    // 4. Pull Subscriptions
     try {
-      const subs = JSON.parse(localStorage.getItem('fleet_subscriptions') || '[]');
+      const subs = getJSON('fleet_subscriptions');
       if (Array.isArray(subs)) {
         subs.forEach(sub => {
           if (!sub || !sub.renewal) return;
@@ -152,21 +149,14 @@ export default function CalendarHub() {
 
           if (isDue || sub.renewal.includes(dateStr)) {
             const safeCost = parseFloat(String(sub.cost || 0).replace(/[^0-9.]/g, '')).toFixed(2);
-            events.push({
-              id: `sub_${sub.id || Math.random()}_${dateStr}`,
-              text: `[RENEWAL] ${sub.name || 'Sub'} - $${safeCost}`,
-              module: 'Subscriptions',
-              priority: 'High', // Red Dot
-              isDynamic: true
-            });
+            events.push({ id: `sub_${sub.id || Math.random()}_${dateStr}`, text: `[RENEWAL] ${sub.name || 'Sub'} - $${safeCost}`, module: 'Subscriptions', priority: 'High', isDynamic: true });
           }
         });
       }
     } catch (e) {}
 
-    // 5. Pull Budget Engine Liabilities
     try {
-      const bills = JSON.parse(localStorage.getItem('tot_bills') || '[]');
+      const bills = getJSON('tot_bills');
       if (Array.isArray(bills)) {
         bills.forEach(bill => {
           if (!bill || !bill.due) return;
@@ -189,13 +179,7 @@ export default function CalendarHub() {
 
           if (isDue || bill.due.includes(dateStr)) {
             const safeCost = parseFloat(String(bill.cost || 0).replace(/[^0-9.]/g, '')).toFixed(2);
-            events.push({
-              id: `bill_${bill.id || Math.random()}_${dateStr}`,
-              text: `[BILL] ${bill.name || 'Liability'} - $${safeCost}`,
-              module: 'Budget Engine',
-              priority: bill.isPaid ? 'Done' : 'High', // Green if paid, Red if unpaid
-              isDynamic: true
-            });
+            events.push({ id: `bill_${bill.id || Math.random()}_${dateStr}`, text: `[BILL] ${bill.name || 'Liability'} - $${safeCost}`, module: 'Budget Engine', priority: bill.isPaid ? 'Done' : 'High', isDynamic: true });
           }
         });
       }
@@ -217,9 +201,7 @@ export default function CalendarHub() {
     if (!dayEvts || dayEvts.length === 0) return null;
     return (
       <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', marginTop: '4px' }}>
-        {dayEvts.slice(0, 3).map((r, i) => (
-          <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: r.priority === 'High' ? '#ef4444' : r.priority === 'Done' ? '#00cc66' : '#a855f7' }} />
-        ))}
+        {dayEvts.slice(0, 3).map((r, i) => <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: r.priority === 'High' ? '#ef4444' : r.priority === 'Done' ? '#00cc66' : '#a855f7' }} />)}
         {dayEvts.length > 3 && <span style={{ color: '#888', fontSize: '8px', fontWeight: 'bold' }}>+</span>}
       </div>
     );
@@ -240,39 +222,24 @@ export default function CalendarHub() {
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
         <h2 style={{ margin: 0, color: '#00ffff', fontSize: '1.2em' }}>Master Calendar</h2>
       </header>
-
       <div style={{ padding: '15px', flex: 1, overflowY: 'auto', paddingBottom: '95px' }}>
-        
         <div style={{ ...cardStyle, padding: '20px 15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <button onClick={() => setViewDate(new Date(year, month - 1, 1))} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold' }}>&lt;</button>
             <h3 style={{ margin: 0, color: '#00ffff', textTransform: 'uppercase', letterSpacing: '1px' }}>{monthNames[month]} {year}</h3>
             <button onClick={() => setViewDate(new Date(year, month + 1, 1))} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold' }}>&gt;</button>
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', textAlign: 'center', color: '#888', fontSize: '0.8em', fontWeight: 'bold', marginBottom: '10px' }}>
             <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
             {blanks.map(b => <div key={`blank-${b}`} style={{ padding: '15px 0' }} />)}
-            
             {days.map(day => {
               const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               const isSelected = dateStr === globalDate;
               const dayEvts = getAllEventsForDate(dateStr);
-              
               return (
-                <div 
-                  key={day} 
-                  onClick={() => handleDayClick(day)}
-                  style={{
-                    padding: '12px 0', textAlign: 'center', borderRadius: '8px', cursor: 'pointer',
-                    background: isSelected ? 'rgba(0, 255, 255, 0.15)' : '#000',
-                    border: isSelected ? '1px solid #00ffff' : '1px solid #222',
-                    color: isSelected ? '#00ffff' : '#fff'
-                  }}
-                >
+                <div key={day} onClick={() => handleDayClick(day)} style={{ padding: '12px 0', textAlign: 'center', borderRadius: '8px', cursor: 'pointer', background: isSelected ? 'rgba(0, 255, 255, 0.15)' : '#000', border: isSelected ? '1px solid #00ffff' : '1px solid #222', color: isSelected ? '#00ffff' : '#fff' }}>
                   <div style={{ fontWeight: isSelected ? 'bold' : 'normal' }}>{day}</div>
                   {renderDots(dayEvts)}
                 </div>
@@ -280,13 +247,10 @@ export default function CalendarHub() {
             })}
           </div>
         </div>
-
         <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
           <h3 style={{ margin: '0 0 15px 0', color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
-            <span>Agenda:</span>
-            <span style={{ color: '#a855f7' }}>{parseLocalDate(globalDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+            <span>Agenda:</span><span style={{ color: '#a855f7' }}>{parseLocalDate(globalDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
           </h3>
-
           {activeEvents.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#555', padding: '10px 0', fontStyle: 'italic' }}>No events or data found for this day.</div>
           ) : (
@@ -300,13 +264,10 @@ export default function CalendarHub() {
               </div>
             ))
           )}
-
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px', paddingTop: '15px', borderTop: '1px dashed #333' }}>
             <input type="text" placeholder="Add custom event..." value={newText} onChange={e => setNewText(e.target.value)} style={{ ...inputStyle, flex: 2, marginBottom: 0 }} />
             <select value={newPriority} onChange={e => setNewPriority(e.target.value)} style={{ ...inputStyle, flex: 1, marginBottom: 0 }}>
-              <option value="Normal">Normal</option>
-              <option value="High">High ⚠️</option>
-              <option value="Done">Done ✓</option>
+              <option value="Normal">Normal</option><option value="High">High ⚠️</option><option value="Done">Done ✓</option>
             </select>
           </div>
           <button onClick={handleAdd} style={{ width: '100%', padding: '12px', background: '#222', color: '#00ffff', border: '1px dashed #00ffff', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold' }}>+ Log to Agenda</button>

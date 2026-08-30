@@ -28,7 +28,6 @@ export function CalendarProvider({ children }) {
     setReminders(reminders.filter(r => r.id !== id));
   };
 
-  // --- NATIVE ANDROID PUSH LOGIC ---
   const triggerNativeNotification = async (count) => {
     try {
       const permStatus = await LocalNotifications.requestPermissions();
@@ -39,17 +38,14 @@ export function CalendarProvider({ children }) {
               title: "Tools of the Trade",
               body: `You have ${count} pending item(s) on your agenda today.`,
               id: 1,
-              schedule: { at: new Date(Date.now() + 1000) } // Fire immediately
+              schedule: { at: new Date(Date.now() + 1000) } 
             }
           ]
         });
       }
-    } catch (e) {
-      // Fails silently if testing in a standard web browser
-    }
+    } catch (e) {}
   };
 
-  // --- OMNI-PULL BACKGROUND SCANNER ---
   const scanForAlerts = () => {
     let count = 0;
     let hasHigh = false;
@@ -73,7 +69,10 @@ export function CalendarProvider({ children }) {
     };
 
     const shortDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    const fleetDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    
     const dayName = shortDays[targetDateObj.getDay()];
+    const fleetDayName = fleetDays[targetDateObj.getDay()];
 
     const getJSON = (k) => { try { return JSON.parse(localStorage.getItem(k)||'[]') || []; } catch { return []; } };
     const getObj = (k) => { try { return JSON.parse(localStorage.getItem(k)||'{}') || {}; } catch { return {}; } };
@@ -88,10 +87,9 @@ export function CalendarProvider({ children }) {
       }
     });
 
-    // 2. Shifts
+    // 2. Personal Shifts
     try {
       const shiftData = getObj('tot_shift_shifts');
-      
       const startOfWeek = new Date(targetDateObj);
       startOfWeek.setDate(targetDateObj.getDate() - targetDateObj.getDay());
       const endOfWeek = new Date(startOfWeek);
@@ -102,25 +100,41 @@ export function CalendarProvider({ children }) {
         if (Array.isArray(dayShifts)) {
           dayShifts.forEach(shift => {
             if (shift && shift.start && shift.end && shift.start.trim() !== '' && shift.end.trim() !== '') {
-              count++;
-              hasDone = true; // Green
+              count++; hasDone = true; 
             }
           });
         }
       }
     } catch(e){}
 
-    // 3. Assets (With Warranty Math)
+    // 3. Fleet Schedules (Crew)
+    try {
+      const fleetSchedules = getJSON('fleet_schedules');
+      if (Array.isArray(fleetSchedules)) {
+        fleetSchedules.forEach(week => {
+          if (!week || !week.weekDate) return;
+          const weekStart = parseLocalDate(week.weekDate);
+          const diffDays = Math.round((targetDateObj - weekStart) / (1000 * 60 * 60 * 24));
+          
+          if (diffDays >= 0 && diffDays <= 6) {
+            (week.roster || []).forEach(emp => {
+              const shift = (week.shifts && week.shifts[emp.id]) ? week.shifts[emp.id][fleetDayName] : null;
+              if (shift && shift.in && shift.out && shift.in.trim() !== '') {
+                count++; hasDone = true;
+              }
+            });
+          }
+        });
+      }
+    } catch(e){}
+
+    // 4. Assets
     try {
       const assets = getJSON('tot_assets');
       if (Array.isArray(assets)) {
         assets.forEach(asset => {
           if (!asset) return;
-          
-          if (asset.date === todayStr) {
-            count++; hasDone = true;
-          }
-
+          if (asset.date === todayStr) { count++; hasDone = true; }
           if (asset.date && asset.warranty && asset.warranty !== 'None' && asset.warranty !== 'Lifetime') {
             const expDate = parseLocalDate(asset.date);
             if (asset.warranty === '30 Days') expDate.setDate(expDate.getDate() + 30);
@@ -130,17 +144,13 @@ export function CalendarProvider({ children }) {
             else if (asset.warranty === '5 Years') expDate.setFullYear(expDate.getFullYear() + 5);
 
             const expDateStr = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}-${String(expDate.getDate()).padStart(2, '0')}`;
-            
-            if (expDateStr === todayStr) {
-              count++;
-              hasHigh = true; // Red
-            }
+            if (expDateStr === todayStr) { count++; hasHigh = true; }
           }
         });
       }
     } catch(e){}
 
-    // 4. Subscriptions
+    // 5. Subscriptions
     try {
       const subs = getJSON('fleet_subscriptions');
       if (Array.isArray(subs)) {
@@ -157,15 +167,12 @@ export function CalendarProvider({ children }) {
              if (daysSince % 7 === 0) isDue = true;
           }
 
-          if (isDue || sub.renewal.includes(todayStr)) {
-            count++;
-            hasHigh = true; // Red
-          }
+          if (isDue || sub.renewal.includes(todayStr)) { count++; hasHigh = true; }
         });
       }
     } catch(e){}
 
-    // 5. Bills
+    // 6. Bills
     try {
       const bills = getJSON('tot_bills');
       if (Array.isArray(bills)) {
@@ -206,7 +213,6 @@ export function CalendarProvider({ children }) {
     
     setAlertColor(newColor);
 
-    // ONLY PUSH NOTIFICATION ONCE PER DAY IF COUNT > 0
     if (count > 0) {
       const lastNotified = localStorage.getItem('tot_last_notification');
       if (lastNotified !== todayStr) {
