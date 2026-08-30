@@ -4,7 +4,8 @@ const CalendarContext = createContext();
 
 export function CalendarProvider({ children }) {
   const [globalDate, setGlobalDate] = useState(() => {
-    return localStorage.getItem('global_date') || new Date().toISOString().split('T')[0];
+    const d = new Date();
+    return localStorage.getItem('global_date') || `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   });
 
   const [reminders, setReminders] = useState(() => {
@@ -12,8 +13,8 @@ export function CalendarProvider({ children }) {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // The new global tally state
   const [alertCount, setAlertCount] = useState(0);
+  const [alertColor, setAlertColor] = useState('#a855f7');
 
   useEffect(() => { localStorage.setItem('global_date', globalDate); }, [globalDate]);
   useEffect(() => { localStorage.setItem('global_reminders', JSON.stringify(reminders)); }, [reminders]);
@@ -21,71 +22,150 @@ export function CalendarProvider({ children }) {
   const addReminder = (date, text, module, priority = 'Normal') => {
     setReminders([...reminders, { id: Date.now().toString(), date, text, module, priority }]);
   };
-  
+
   const removeReminder = (id) => {
     setReminders(reminders.filter(r => r.id !== id));
   };
 
-  // --- OMNI-PULL BACKGROUND SCANNER ---
+  // --- OMNI-PULL BACKGROUND SCANNER (Checks specifically for TODAY) ---
   const scanForAlerts = () => {
     let count = 0;
-    const todayStr = new Date().toISOString().split('T')[0];
+    let hasHigh = false;
+    let hasNormal = false;
+    let hasDone = false;
 
-    // 1. Hunt for Overtime (40+ hours)
-    try {
-      const schedules = JSON.parse(localStorage.getItem('fleet_schedules') || '[]');
-      schedules.forEach(week => {
-        week.roster.forEach(emp => {
-          let totalHrs = 0;
-          const shifts = week.shifts[emp.id] || {};
-          Object.values(shifts).forEach(s => {
-            if (s && s.in && s.out) {
-              const [h1, m1] = s.in.split(':').map(Number);
-              const [h2, m2] = s.out.split(':').map(Number);
-              let m1Total = h1 * 60 + m1;
-              let m2Total = h2 * 60 + m2;
-              if (m2Total < m1Total) m2Total += 24 * 60; // Handle night shifts
-              totalHrs += (m2Total - m1Total) / 60;
-            }
-          });
-          if (totalHrs >= 40) count++;
-        });
-      });
-    } catch(e) {}
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${y}-${m}-${d}`;
+    const targetDateObj = new Date(y, now.getMonth(), now.getDate());
 
-    // 2. Hunt for Expired Warranties
-    try {
-      let ledgerItems = [];
-      ['asset_ledger', 'assets', 'fleet_assets', 'ledgerItems', 'ledger'].forEach(key => {
-        const data = JSON.parse(localStorage.getItem(key) || '[]');
-        if (Array.isArray(data)) ledgerItems = [...ledgerItems, ...data];
-      });
-      ledgerItems.forEach(item => {
-        const wStatus = (item.warranty || item.warrantyStatus || '').toString().toLowerCase();
-        const wDate = item.expDate || item.warrantyExp || item.warrantyDate;
-        if (wStatus.includes('expire') || (wDate && wDate <= todayStr)) {
-          count++;
-        }
-      });
-    } catch(e) {}
+    const parseLocalDate = (dateStr) => {
+      if (!dateStr) return new Date();
+      try {
+        const cleanStr = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+        const [py, pm, pd] = cleanStr.split('-').map(Number);
+        return new Date(py, pm - 1, pd);
+      } catch(e) { return new Date(); }
+    };
 
-    // 3. Hunt for High-Priority Manual Reminders due today or past due
+    const shortDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    const dayName = shortDays[targetDateObj.getDay()];
+
+    const getJSON = (k) => { try { return JSON.parse(localStorage.getItem(k)||'[]') || []; } catch { return []; } };
+    const getObj = (k) => { try { return JSON.parse(localStorage.getItem(k)||'{}') || {}; } catch { return {}; } };
+
+    // 1. Reminders
     reminders.forEach(r => {
-       if (r.priority === 'High' && r.date <= todayStr) count++;
+      if (r.date === todayStr && !r.text.includes('[SUB RENEWAL]') && !r.text.includes('[BILL]') && !r.text.includes('[INCOME]')) {
+        count++;
+        if (r.priority === 'High') hasHigh = true;
+        else if (r.priority === 'Done') hasDone = true;
+        else hasNormal = true;
+      }
     });
 
+    // 2. Shifts
+    try {
+      const shiftData = getObj('tot_shift_shifts');
+      const dayShifts = shiftData[dayName];
+      if (Array.isArray(dayShifts)) {
+        dayShifts.forEach(shift => {
+          if (shift && shift.start && shift.end && shift.start.trim() !== '' && shift.end.trim() !== '') {
+            count++;
+            hasDone = true; // Shifts are 'Done' / Green
+          }
+        });
+      }
+    } catch(e){}
+
+    // 3. Assets
+    try {
+      const assets = getJSON('tot_assets');
+      if (Array.isArray(assets)) {
+        assets.forEach(asset => {
+          if (asset && (asset.date === todayStr || JSON.stringify(asset).includes(todayStr))) {
+            count++;
+            hasHigh = true; // Red
+          }
+        });
+      }
+    } catch(e){}
+
+    // 4. Subscriptions
+    try {
+      const subs = getJSON('fleet_subscriptions');
+      if (Array.isArray(subs)) {
+        subs.forEach(sub => {
+          if (!sub || !sub.renewal) return;
+          const renewDate = parseLocalDate(sub.renewal);
+          const cycle = String(sub.cycle || '').toLowerCase();
+          let isDue = false;
+
+          if (cycle === 'monthly' && targetDateObj >= renewDate && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
+          else if (cycle === 'yearly' && targetDateObj >= renewDate && targetDateObj.getMonth() === renewDate.getMonth() && targetDateObj.getDate() === renewDate.getDate()) isDue = true;
+          else if (cycle === 'weekly' && targetDateObj >= renewDate) {
+             const daysSince = Math.round((targetDateObj - renewDate) / (1000 * 60 * 60 * 24));
+             if (daysSince % 7 === 0) isDue = true;
+          }
+
+          if (isDue || sub.renewal.includes(todayStr)) {
+            count++;
+            hasHigh = true; // Red
+          }
+        });
+      }
+    } catch(e){}
+
+    // 5. Bills
+    try {
+      const bills = getJSON('tot_bills');
+      if (Array.isArray(bills)) {
+        bills.forEach(bill => {
+          if (!bill || !bill.due) return;
+          const dueDate = parseLocalDate(bill.due);
+          const freq = String(bill.frequency || '').toLowerCase();
+          let isDue = false;
+
+          if (targetDateObj >= dueDate) {
+            const daysSince = Math.round((targetDateObj - dueDate) / (1000 * 60 * 60 * 24));
+            const monthDiff = (targetDateObj.getFullYear() - dueDate.getFullYear()) * 12 + (targetDateObj.getMonth() - dueDate.getMonth());
+
+            if (freq === 'weekly' && daysSince % 7 === 0) isDue = true;
+            else if (freq === 'bi-weekly' && daysSince % 14 === 0) isDue = true;
+            else if (freq === 'monthly' && targetDateObj.getDate() === dueDate.getDate()) isDue = true;
+            else if (freq === 'bi-monthly' && monthDiff % 2 === 0 && targetDateObj.getDate() === dueDate.getDate()) isDue = true;
+            else if (freq === 'quarterly' && monthDiff % 3 === 0 && targetDateObj.getDate() === dueDate.getDate()) isDue = true;
+            else if (freq === 'bi-yearly' && monthDiff % 6 === 0 && targetDateObj.getDate() === dueDate.getDate()) isDue = true;
+            else if (freq === 'yearly' && targetDateObj.getMonth() === dueDate.getMonth() && targetDateObj.getDate() === dueDate.getDate()) isDue = true;
+          }
+
+          if (isDue || bill.due.includes(todayStr)) {
+            count++;
+            if (bill.isPaid) hasDone = true;
+            else hasHigh = true;
+          }
+        });
+      }
+    } catch(e){}
+
     setAlertCount(count);
+    // Hierarchical color selection: Red > Purple > Green
+    if (hasHigh) setAlertColor('#ef4444');
+    else if (hasNormal) setAlertColor('#a855f7');
+    else if (hasDone) setAlertColor('#00cc66');
+    else setAlertColor('#a855f7');
   };
 
-  // Poll the device memory every 2 seconds to keep the badge live
   useEffect(() => {
     scanForAlerts();
-    const interval = setInterval(scanForAlerts, 2000); 
+    const interval = setInterval(scanForAlerts, 2000);
     return () => clearInterval(interval);
-  }, [reminders, globalDate]);
+  }, [reminders]);
 
   return (
-    <CalendarContext.Provider value={{ globalDate, setGlobalDate, reminders, addReminder, removeReminder, alertCount }}>
+    <CalendarContext.Provider value={{ globalDate, setGlobalDate, reminders, addReminder, removeReminder, alertCount, alertColor }}>
       {children}
     </CalendarContext.Provider>
   );

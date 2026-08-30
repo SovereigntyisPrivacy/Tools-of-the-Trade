@@ -6,7 +6,7 @@ export default function Dashboard() {
   const [hiddenModules, setHiddenModules] = useState(() => JSON.parse(localStorage.getItem('tot_hidden_modules')) || []);
   const [devTaps, setDevTaps] = useState(0);
 
-  // FIRST-LAUNCH EULA LOGIC: Checks if they've accepted it previously
+  // FIRST-LAUNCH EULA LOGIC
   const [showLegal, setShowLegal] = useState(() => {
     return localStorage.getItem('tot_eula_accepted') !== 'true';
   });
@@ -30,7 +30,7 @@ export default function Dashboard() {
   };
 
   const navigate = useNavigate();
-  const { alertCount } = useCalendar();
+  const { alertCount, alertColor } = useCalendar(); // PULLING DYNAMIC COLOR
 
   const [time, setTime] = useState(new Date());
   const [clockConfig, setClockConfig] = useState({
@@ -49,41 +49,6 @@ export default function Dashboard() {
       });
     };
     loadConfig();
-
-    // --- EXECUTIVE OMNI-TELEMETRY HUD ---
-    let totalAssetValue = 0;
-    let monthlyBurn = 0;
-    let activePayroll = 0;
-
-    try {
-      const assets = JSON.parse(localStorage.getItem('asset_ledger') || '[]');
-      totalAssetValue = assets.reduce((sum, a) => sum + parseFloat(a.price || 0), 0);
-
-      const subs = JSON.parse(localStorage.getItem('fleet_subscriptions') || '[]');
-      monthlyBurn = subs.reduce((sum, s) => sum + (s.cycle === 'Monthly' ? parseFloat(s.cost || 0) : parseFloat(s.cost || 0)/12), 0);
-
-      const schedules = JSON.parse(localStorage.getItem('fleet_schedules') || '[]');
-      if (schedules.length > 0) {
-        const activeWk = schedules[schedules.length - 1];
-        activeWk.roster.forEach(emp => {
-          let hrs = 0;
-          Object.values(activeWk.shifts[emp.id] || {}).forEach(s => {
-            if (s && s.in && s.out) {
-              const [h1, m1] = s.in.split(':').map(Number);
-              const [h2, m2] = s.out.split(':').map(Number);
-              let m1Total = h1 * 60 + m1;
-              let m2Total = h2 * 60 + m2;
-              if (m2Total < m1Total) m2Total += 24 * 60;
-              hrs += (m2Total - m1Total) / 60;
-            }
-          });
-          const rate = parseFloat(emp.rate) || 0;
-          const reg = Math.min(hrs, 40);
-          const ot = Math.max(0, hrs - 40);
-          activePayroll += (reg * rate) + (ot * rate * 1.5);
-        });
-      }
-    } catch (e) {}
 
     return () => clearInterval(timer);
   }, []);
@@ -131,9 +96,11 @@ export default function Dashboard() {
           <button key={tool.id} className="tool-card" style={{ position: 'relative' }} onClick={() => navigate(tool.path)}>
             {tool.badge && (
               <div style={{
-                position: 'absolute', top: '-10px', right: '-10px', background: tool.badgeColor, color: '#fff', fontSize: '0.75rem',
+                position: 'absolute', top: '-10px', right: '-10px', 
+                background: tool.id === 'calendar' && alertCount > 0 ? alertColor : tool.badgeColor, 
+                color: '#fff', fontSize: '0.75rem',
                 fontWeight: '900', padding: '6px 10px', borderRadius: '8px', border: '2px solid #111', transform: 'rotate(5deg)',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.6)', zIndex: 10, whiteSpace: 'nowrap'
+                boxShadow: '0 4px 6px rgba(0,0,0,0.6)', zIndex: 10, whiteSpace: 'nowrap', transition: 'background 0.3s'
               }}>
                 {tool.id === 'calendar' && alertCount > 0 ? alertCount : tool.badge}
               </div>
@@ -144,37 +111,22 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* UPGRADED FIRST-LAUNCH LEGAL MODAL */}
       {showLegal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '20px', width: '100%', maxHeight: '85vh', overflowY: 'auto', paddingBottom: '70px' }}>
-            
             <div style={{ textAlign: 'center', marginBottom: '30px' }}>
               <h2 style={{ color: '#00ffff', textTransform: 'uppercase', margin: '0 0 15px 0', letterSpacing: '2px', textShadow: '0 0 10px rgba(0,255,255,0.3)' }}>The Manifesto</h2>
               <div style={{ background: 'rgba(0, 255, 255, 0.05)', padding: '25px 20px', borderRadius: '12px', borderLeft: '4px solid #00ffff', textAlign: 'left', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
-                <p style={{ color: '#fff', fontSize: '1.05rem', lineHeight: '1.6', fontWeight: 'bold', margin: '0 0 15px 0' }}>
-                  Big Tech. Big Corp. Big Pharma. Big Brother. They can all kick rocks.
-                </p>
-                <p style={{ color: '#ccc', fontSize: '0.95rem', lineHeight: '1.7', margin: '0 0 15px 0' }}>
-                  I am sick of corporations turning our lives into data points and charging us monthly subscriptions for the privilege of being surveilled. Tools for the everyday man—for survival, finance, and genuine independence—should be free, entirely offline, and relentlessly unobtrusive.
-                </p>
-                <p style={{ color: '#ccc', fontSize: '0.95rem', lineHeight: '1.7', margin: '0 0 20px 0' }}>
-                  I built this suite so you never have to rely on a server, a corporation, or a tracking pixel again. This is yours.
-                </p>
+                <p style={{ color: '#fff', fontSize: '1.05rem', lineHeight: '1.6', fontWeight: 'bold', margin: '0 0 15px 0' }}>Big Tech. Big Corp. Big Pharma. Big Brother. They can all kick rocks.</p>
+                <p style={{ color: '#ccc', fontSize: '0.95rem', lineHeight: '1.7', margin: '0 0 15px 0' }}>I am sick of corporations turning our lives into data points and charging us monthly subscriptions for the privilege of being surveilled. Tools for the everyday man—for survival, finance, and genuine independence—should be free, entirely offline, and relentlessly unobtrusive.</p>
+                <p style={{ color: '#ccc', fontSize: '0.95rem', lineHeight: '1.7', margin: '0 0 20px 0' }}>I built this suite so you never have to rely on a server, a corporation, or a tracking pixel again. This is yours.</p>
                 <div style={{ borderTop: '1px solid rgba(0,255,255,0.2)', paddingTop: '15px' }}>
-                  <p style={{ color: '#00ffff', fontSize: '1.1rem', fontWeight: '900', margin: '0 0 5px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    Digital Privacy is Sovereignty.
-                  </p>
-                  <p style={{ color: '#00ffff', fontSize: '1.1rem', fontWeight: '900', margin: '0 0 5px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    Take back your freedom.
-                  </p>
-                  <p style={{ color: '#00ffff', fontSize: '1.1rem', fontWeight: '900', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    Stay Sovereign.
-                  </p>
+                  <p style={{ color: '#00ffff', fontSize: '1.1rem', fontWeight: '900', margin: '0 0 5px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>Digital Privacy is Sovereignty.</p>
+                  <p style={{ color: '#00ffff', fontSize: '1.1rem', fontWeight: '900', margin: '0 0 5px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>Take back your freedom.</p>
+                  <p style={{ color: '#00ffff', fontSize: '1.1rem', fontWeight: '900', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>Stay Sovereign.</p>
                 </div>
               </div>
             </div>
-
             <h2 style={{ color: '#ef4444', textTransform: 'uppercase', marginTop: '20px', borderBottom: '1px solid #333', paddingBottom: '10px', fontSize: '1.1rem' }}>Liability & Privacy EULA</h2>
             <p style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.6', textAlign: 'left' }}>
               <strong>1. As-Is Software:</strong> Tools of the Trade (ToT) is provided "as is" and "as available" without warranty of any kind. The developer assumes no liability for data loss, hardware failure, or service interruptions.<br/><br/>
