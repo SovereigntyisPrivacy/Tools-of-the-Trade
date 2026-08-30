@@ -26,7 +26,7 @@ const QRScanner = lazy(() => import('./views/QRScanner'));
 const BudgetEngine = lazy(() => import('./views/BudgetEngine'));
 const ChronosHub = lazy(() => import('./views/ChronosHub'));
 const BurnerPad = lazy(() => import('./views/BurnerPad'));
-const SOPEngine = lazy(() => import('./views/SOPEngine'));
+const TasklistCreator = lazy(() => import('./views/TasklistCreator'));
 const AccessKeyring = lazy(() => import('./views/AccessKeyring'));
 const MyShiftTracker = lazy(() => import('./views/MyShiftTracker'));
 const LearningHub = lazy(() => import('./views/LearningHub'));
@@ -165,7 +165,7 @@ function App() {
                 <Route path="/myschedule" element={<MyShiftTracker />} />
                 <Route path="/keyring" element={<AccessKeyring />} />
                 <Route path="/burner" element={<BurnerPad />} />
-                <Route path="/sop" element={<SOPEngine />} />
+                <Route path="/sop" element={<TasklistCreator />} />
                 <Route path="/chronos" element={<ChronosHub />} />
                 <Route path="/budget" element={<BudgetEngine />} />
                 <Route path="/support" element={<SupportCreator />} />
