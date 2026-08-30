@@ -205,6 +205,9 @@ export default function CalendarHub() {
   
 
   
+  
+
+  
   try {
     const incomes = getJSON('tot_incomes');
     if (Array.isArray(incomes)) {
