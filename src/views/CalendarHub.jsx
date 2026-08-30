@@ -202,26 +202,30 @@ export default function CalendarHub() {
     } catch (e) {}
 
     
+  
+
+  
   try {
     const incomes = getJSON('tot_incomes');
     if (Array.isArray(incomes)) {
       incomes.forEach(inc => {
         if (!inc || !inc.date) return;
-        const incDate = parseLocalDate(inc.date);
+        const incDateObj = parseLocalDate(inc.date);
         const freq = String(inc.frequency || '').toLowerCase();
         let isDue = false;
 
-        if (targetDateObj >= incDate) {
-          const daysSince = Math.round((targetDateObj - incDate) / (1000 * 60 * 60 * 24));
-          const monthDiff = (targetDateObj.getFullYear() - incDate.getFullYear()) * 12 + (targetDateObj.getMonth() - incDate.getMonth());
+        if (targetDateObj >= incDateObj) {
+          const diffTime = Math.abs(targetDateObj - incDateObj);
+          const daysSince = Math.round(diffTime / (1000 * 60 * 60 * 24));
+          const monthDiff = (targetDateObj.getFullYear() - incDateObj.getFullYear()) * 12 + (targetDateObj.getMonth() - incDateObj.getMonth());
 
           if (freq === 'weekly' && daysSince % 7 === 0) isDue = true;
           else if (freq === 'bi-weekly' && daysSince % 14 === 0) isDue = true;
-          else if (freq === 'monthly' && targetDateObj.getDate() === incDate.getDate()) isDue = true;
-          else if (freq === 'bi-monthly' && monthDiff % 2 === 0 && targetDateObj.getDate() === incDate.getDate()) isDue = true;
-          else if (freq === 'quarterly' && monthDiff % 3 === 0 && targetDateObj.getDate() === incDate.getDate()) isDue = true;
-          else if (freq === 'bi-yearly' && monthDiff % 6 === 0 && targetDateObj.getDate() === incDate.getDate()) isDue = true;
-          else if (freq === 'yearly' && targetDateObj.getMonth() === incDate.getMonth() && targetDateObj.getDate() === incDate.getDate()) isDue = true;
+          else if (freq === 'monthly' && targetDateObj.getDate() === incDateObj.getDate()) isDue = true;
+          else if (freq === 'bi-monthly' && monthDiff % 2 === 0 && targetDateObj.getDate() === incDateObj.getDate()) isDue = true;
+          else if (freq === 'quarterly' && monthDiff % 3 === 0 && targetDateObj.getDate() === incDateObj.getDate()) isDue = true;
+          else if (freq === 'bi-yearly' && monthDiff % 6 === 0 && targetDateObj.getDate() === incDateObj.getDate()) isDue = true;
+          else if (freq === 'yearly' && targetDateObj.getMonth() === incDateObj.getMonth() && targetDateObj.getDate() === incDateObj.getDate()) isDue = true;
         }
 
         if (isDue || inc.date.includes(dateStr)) {
@@ -230,7 +234,7 @@ export default function CalendarHub() {
             id: 'inc_' + (inc.id || Math.random()) + '_' + dateStr,
             text: '[INCOME] ' + (inc.name || 'Deposit') + ' (+$' + safeAmount + ')',
             module: 'Cashflow Engine',
-            priority: 'Done', 
+            priority: 'Done',
             isDynamic: true
           });
         }

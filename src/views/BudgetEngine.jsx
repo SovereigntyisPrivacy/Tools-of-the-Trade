@@ -32,8 +32,8 @@ export default function BudgetEngine() {
 
   // --- PERFECTED MATH ---
   const totalCashPool = incomes.reduce((acc, inc) => acc + inc.amount, 0);
-  const totalLiability = bills.filter(b => !b.routeTo).reduce((acc, b) => acc + b.cost, 0);
-  const usedCash = bills.filter(b => b.routeTo).reduce((acc, b) => acc + b.cost, 0);
+  const totalLiability = bills.filter(b => !b.routeTo && !b.isPaid).reduce((acc, b) => acc + b.cost, 0);
+  const usedCash = bills.filter(b => b.routeTo || b.isPaid).reduce((acc, b) => acc + b.cost, 0);
   const availableCash = totalCashPool - usedCash - totalLiability;
 
   // --- ACTIONS ---
@@ -71,8 +71,9 @@ export default function BudgetEngine() {
   const handleAdvanceIncome = (id) => {
     if(window.confirm("Advance this deposit to the next pay cycle?")) setIncomes(incomes.map(i => i.id === id ? { ...i, date: advanceCycle(i.date, i.frequency) } : i));
   };
+  const togglePaidStatus = (id) => setBills(bills.map(b => b.id === id ? { ...b, isPaid: !b.isPaid } : b));
   const handleAdvanceBill = (id) => {
-    if(window.confirm("Pay bill and advance to next billing cycle?")) setBills(bills.map(b => b.id === id ? { ...b, due: advanceCycle(b.due, b.frequency) } : b));
+    if(window.confirm("Pay bill and advance to next billing cycle?")) setBills(bills.map(b => b.id === id ? { ...b, due: advanceCycle(b.due, b.frequency), isPaid: false } : b));
   };
 
   const generateReport = () => {
@@ -214,8 +215,8 @@ export default function BudgetEngine() {
       {sortedBills.map(bill => (
         <div key={bill.id} style={{ ...glassCard, borderLeft: '4px solid #ef4444', padding: '15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h3 style={{ color: '#ef4444', margin: 0, fontSize: '1.1rem' }}>{bill.name} <span style={{fontSize:'0.8rem', color:'#888'}}>({bill.due})</span></h3>
-            <h3 style={{ margin: 0, color: '#fff' }}>${bill.cost.toFixed(2)}</h3>
+            <h3 style={{ color: '#ef4444', margin: 0, fontSize: '1.1rem', textDecoration: bill.isPaid ? 'line-through' : 'none' }}>{bill.name} <span style={{fontSize:'0.8rem', color:'#888'}}>({bill.due})</span></h3>
+            <h3 style={{ margin: 0, color: '#fff', textDecoration: bill.isPaid ? 'line-through' : 'none' }}>${bill.cost.toFixed(2)}</h3>
           </div>
           <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '0 0 5px 0' }}>Cycle: {bill.frequency}</p>
           {bill.note && <p style={{ color: '#888', fontSize: '0.85rem', margin: '0 0 10px 0', fontStyle: 'italic' }}>"{bill.note}"</p>}
@@ -228,6 +229,7 @@ export default function BudgetEngine() {
             </select>
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '15px' }}>
+            <button onClick={() => togglePaidStatus(bill.id)} style={{ background: bill.isPaid ? '#222' : '#3b82f6', color: '#fff', border: '1px solid #444', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem' }}>{bill.isPaid ? 'Unmark' : 'Mark Paid ✅'}</button>
             <button onClick={() => handleAdvanceBill(bill.id)} style={{ background: '#10b981', color: '#000', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem' }}>Pay & Advance 📅</button>
             <button onClick={() => deleteBill(bill.id)} style={{ background: '#222', color: '#ef4444', border: '1px solid #333', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold' }}>🗑️</button>
           </div>
