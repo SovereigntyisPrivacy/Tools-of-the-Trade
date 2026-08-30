@@ -56,7 +56,7 @@ export default function Dashboard() {
   const tools = [
     { id: "chronos", name: "Chronos Hub", path: "/chronos", icon: "⌚", badge: "", badgeColor: "#222" },
     { id: "burner", name: "Burner Pad", path: "/burner", icon: "🔥", badge: "WIPES", badgeColor: "#ef4444" },
-    { id: "sop", name: "SOP Engine", path: "/sop", icon: "📋", badge: "CORE", badgeColor: "#3b82f6" },
+    { id: "sop", name: "Tasklist Creator", path: "/sop", icon: "📋", badge: "CORE", badgeColor: "#3b82f6" },
     { id: "subscriptions", name: "Sub Tracker", path: "/subscriptions", icon: "🔄", badge: "NEW", badgeColor: "#a855f7" },
     { id: "vault", name: "Data Vault", path: "/datavault", icon: "💾", badge: "SAFE", badgeColor: "#00ffff" },
     { id: "calendar", name: "Master Calendar", path: "/calendar", icon: "📅", badge: "CORE", badgeColor: "#a855f7" },

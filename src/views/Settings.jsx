@@ -13,7 +13,7 @@ export default function Settings() {
 
   const ALL_TOOLS = [
     { id: 'chronos', name: 'Chronos Hub' }, { id: 'burner', name: 'Burner Pad' },
-    { id: 'sop', name: 'SOP Engine' }, { id: 'subscriptions', name: 'Sub Tracker' },
+    { id: 'sop', name: 'Tasklist Creator' }, { id: 'subscriptions', name: 'Sub Tracker' },
     { id: 'vault', name: 'Data Vault' }, { id: 'calendar', name: 'Master Calendar' },
     { id: 'quick', name: 'Quick Tip & Tax' }, { id: 'budget', name: 'Budget Engine' },
     { id: 'learning', name: 'Learning Center' }, { id: 'calculator', name: 'Omni-Calculator' },
