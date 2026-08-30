@@ -51,9 +51,24 @@ const GENERAL_GUIDES = [
     tip: 'PRO-TIP: Always check circulation after splinting. Pinch a fingernail on the injured limb; if pink color does not return in 2 seconds, it is too tight.'
   },
   {
+    title: 'Wrapping a Sprain (ACE Wrap)', icon: '🩹',
+    steps: ['1. Start wrapping the elastic bandage BELOW the injury (furthest from the heart) to push swelling upward.', '2. Wrap in a figure-eight pattern around joints (like ankles or wrists) for stability.', '3. Overlap each layer by roughly half the width of the bandage.', '4. Secure the end with clips, tape, or by tucking it under a fold.'],
+    tip: 'PRO-TIP: Remove the wrap at night while sleeping to ensure unrestricted blood flow.'
+  },
+  {
     title: 'The Recovery Position', icon: '🛌',
     steps: ['1. Extend the arm closest to you at a right angle.', '2. Bring their other arm across their chest, placing the back of their hand against their opposite cheek.', '3. Bend their furthest knee so their foot is flat on the floor.', '4. Pull the bent knee towards you, smoothly rolling them onto their side.', '5. Tilt their head back slightly to keep the airway open.'],
     tip: 'PRO-TIP: Gravity keeps the airway clear of the tongue and vomit. Never use this if severe spinal injury is suspected.'
+  },
+  {
+    title: 'Burns (Thermal)', icon: '🔥',
+    steps: ['1. Remove the casualty from the heat source.', '2. Cool the burn immediately with cool (not freezing) running water for 10-20 minutes.', '3. DO NOT pop blisters. DO NOT apply ice or butter to severe burns.', '4. Cover with a sterile, non-fluffy dressing.'],
+    tip: 'PRO-TIP: Ice restricts blood flow and deepens tissue damage on a burn. Stick to cool water.'
+  },
+  {
+    title: 'Choking (Heimlich)', icon: '🗣️',
+    steps: ['1. Ask "Are you choking?" If they cannot speak, act immediately.', '2. Stand behind them, wrap your arms around their waist.', '3. Make a fist with one hand, place it just above their belly button.', '4. Grab your fist with the other hand and perform quick, upward thrusts.'],
+    tip: 'PRO-TIP: If you are alone and choking, throw your upper abdomen over the hard edge of a chair or table.'
   }
 ];
 
@@ -62,13 +77,72 @@ const REMEDIES_GUIDES = [
     title: 'Homemade Slush Ice Pack', icon: '🧊',
     steps: ['1. Pour 1 part rubbing alcohol (isopropyl) and 2 parts water into a sealable plastic bag.', '2. Add a handful of cotton swabs or cotton balls to absorb the liquid.', '3. Squeeze out as much air as possible and seal tightly.', '4. Double-bag it to prevent leaks and place in the freezer.'],
     tip: 'PRO-TIP: The alcohol lowers the freezing point of the water, creating a flexible, slushy gel pack instead of a rock-hard block.'
+  },
+  {
+    title: 'Tooth & Gum Pain (Clove)', icon: '🦷',
+    steps: ['1. Brew a strong tea using whole cloves and cinnamon sticks.', '2. Let it cool until warm, then swish vigorously in the mouth.', '3. Alternatively, dab diluted essential clove oil directly onto the affected tooth.'],
+    tip: 'PRO-TIP: Clove contains Eugenol, a scientifically proven natural anesthetic and antibacterial agent used in professional dentistry.'
+  },
+  {
+    title: 'Congestion & Sinus (Cayenne & Honey)', icon: '🌶️',
+    steps: ['1. Mix a pinch of cayenne pepper into a spoonful of raw honey (or hot water with lemon).', '2. Consume slowly to coat the throat.', '3. Expect your nose to run immediately—keep tissues handy.'],
+    tip: 'PRO-TIP: Capsaicin in cayenne rapidly thins mucus and stimulates drainage, while honey acts as a natural antimicrobial throat coat.'
+  },
+  {
+    title: 'Cough & Sickness Syrup (Onion & Honey)', icon: '🧅',
+    steps: ['1. Chop a raw onion and place it in a jar.', '2. Cover the chopped onion entirely in raw honey and seal the jar.', '3. Let it sit on the counter for 8-12 hours until the honey draws out the onion juice.', '4. Take a spoonful of the resulting liquid syrup for coughs.'],
+    tip: 'PRO-TIP: Onions are packed with Quercetin (an antihistamine) and sulfur compounds that reduce inflammation. The honey preserves it and suppresses coughing.'
+  },
+  {
+    title: 'Deep Muscle & Nerve Pain (Capsaicin)', icon: '🦵',
+    steps: ['1. Create a topical salve using cayenne pepper powder and a carrier oil (like coconut oil).', '2. Rub directly into the skin over the aching joint, muscle, or nerve.', '3. Wash hands thoroughly. DO NOT touch your eyes.'],
+    tip: 'PRO-TIP: The intense burning sensation safely depletes "Substance P", a chemical that carries pain signals to your brain.'
+  },
+  {
+    title: 'Burns, Cuts & Skin Trauma (Aloe Vera)', icon: '🪴',
+    steps: ['1. Break or tear off a piece of a raw Aloe Vera plant.', '2. Squeeze the inner gel directly onto the wound, rash, or burn.', '3. Reapply as it dries out to maintain a protective, cooling barrier.'],
+    tip: 'PRO-TIP: Raw aloe is naturally antimicrobial and accelerates cellular regeneration for surface-level trauma.'
+  },
+  {
+    title: 'Nausea & Digestion (Ginger)', icon: '🤢',
+    steps: ['1. Chew on a small piece of raw, peeled ginger root.', '2. Alternatively, steep sliced ginger in hot water for 10 minutes to make a potent tea.'],
+    tip: 'PRO-TIP: Gingerol, the active compound in ginger, is a scientifically proven antiemetic that blocks nausea signals in the gut.'
+  },
+  {
+    title: 'Bug Bites & Stings (Baking Soda)', icon: '🐝',
+    steps: ['1. Remove the stinger if still present (scrape it off with a credit card, do not pinch it).', '2. Mix baking soda with a few drops of water to create a thick paste.', '3. Apply directly to the bite/sting and leave it on for 15-20 minutes.', '4. Wash off with cool water.'],
+    tip: 'PRO-TIP: Baking soda is highly alkaline and naturally neutralizes the acidic venom of bee stings and insect bites.'
   }
 ];
 
 const WARNINGS_GUIDES = [
   {
     title: 'Impaled Objects', icon: '📌',
-    desc: 'NEVER pull a knife, stick, shrapnel, or glass out of a deep wound. The object is acting as a plug preventing them from bleeding out. Pack dressings heavily around the object to stabilize it.'
+    desc: 'NEVER pull a knife, stick, shrapnel, or glass out of a deep wound. The object is acting as a plug preventing them from bleeding out. Pack dressings heavily around the object to stabilize it in place and wrap tightly.'
+  },
+  {
+    title: 'Frostbite & Severe Cold', icon: '🥶',
+    desc: 'NEVER aggressively rub frostbitten skin or throw the casualty into a hot bath. This physically destroys the frozen tissue and the sudden temperature change can shock the heart. Warm them slowly with body heat and blankets.'
+  },
+  {
+    title: 'Unwashed Poppy Seeds', icon: '⚠️',
+    desc: 'Avoid consuming large amounts before medical, military, CDL, or employment drug screenings. They can trigger a false positive for opiates.'
+  },
+  {
+    title: 'Activated Charcoal & Medications', icon: '⚠️',
+    desc: 'Charcoal is great for food poisoning because it absorbs toxins in the stomach. However, it will also absorb and neutralize any prescription medications you took recently.'
+  },
+  {
+    title: 'Undiluted Essential Oils', icon: '⚠️',
+    desc: 'Never put "hot" oils (like Oregano, Clove, or Peppermint) directly on the skin without mixing them into a carrier oil (like coconut or olive oil) first. They can cause severe chemical burns.'
+  },
+  {
+    title: 'Acetaminophen (Tylenol) Overdose', icon: '💊',
+    desc: 'Tylenol is processed entirely by the liver. Exceeding 4,000mg in a 24-hour period can cause irreversible, fatal liver failure. Pay close attention to cold/flu medicines (like NyQuil), as they often contain hidden Acetaminophen.'
+  },
+  {
+    title: 'Toxic Fumes (Bleach & Ammonia)', icon: '☠️',
+    desc: 'Never mix bleach with ammonia, vinegar, or rubbing alcohol. It instantly creates toxic chloramine or chloroform gas which causes severe respiratory damage and death.'
   }
 ];
 
@@ -80,17 +154,22 @@ export default function FirstAidHub() {
   const [phase, setPhase] = useState('standby');
   const [pulseToggle, setPulseToggle] = useState(false);
 
+  // Keep the audio channel open so Android doesn't kill it
+  const audioCtxRef = useRef(null);
+
   const playBeep = () => {
     try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime);
-      gain.gain.setValueAtTime(1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.1);
+      if (!audioCtxRef.current) return;
+      const osc = audioCtxRef.current.createOscillator();
+      const gain = audioCtxRef.current.createGain();
+      osc.connect(gain); 
+      gain.connect(audioCtxRef.current.destination);
+      osc.type = 'sine'; 
+      osc.frequency.setValueAtTime(800, audioCtxRef.current.currentTime);
+      gain.gain.setValueAtTime(1, audioCtxRef.current.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.1);
+      osc.start(audioCtxRef.current.currentTime); 
+      osc.stop(audioCtxRef.current.currentTime + 0.1);
     } catch(e) {}
   };
 
@@ -116,8 +195,19 @@ export default function FirstAidHub() {
   }, [cprActive, phase]);
 
   const toggleCPR = () => {
-    if (cprActive) { setCprActive(false); setPhase('standby'); setCompressionCount(0); setPulseToggle(false); } 
-    else { setCprActive(true); setPhase('compressions'); setCompressionCount(0); }
+    if (cprActive) { 
+      setCprActive(false); setPhase('standby'); setCompressionCount(0); setPulseToggle(false); 
+    } else { 
+      // Force the audio context to open EXACTLY on the user tap to bypass mobile OS muting
+      if (!audioCtxRef.current) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtxRef.current = new AudioContext();
+      }
+      if (audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume();
+      }
+      setCprActive(true); setPhase('compressions'); setCompressionCount(0); 
+    }
   };
 
   const glassCard = { background: 'rgba(17, 17, 17, 0.7)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid #333', padding: '20px', marginBottom: '15px' };
@@ -126,8 +216,11 @@ export default function FirstAidHub() {
     <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ ...glassCard, borderTop: '4px solid #ef4444', width: '100%', textAlign: 'center' }}>
         <h3 style={{ color: '#ef4444', marginTop: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>CPR Assistant</h3>
-        <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: '20px' }}>
+        <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: '10px' }}>
           <strong>HANDS-ONLY CPR:</strong> Push hard and fast in the center of the chest at 100 beats per minute. Do not stop until help arrives.
+        </p>
+        <p style={{ color: '#facc15', fontSize: '0.85rem', marginBottom: '20px', fontWeight: 'bold' }}>
+          PRO-TIP: Do not be afraid to break a rib or two, because you will. If ribs are breaking, it means you are compressing deep enough to actually pump the heart.
         </p>
 
         <div style={{ 
@@ -162,6 +255,17 @@ export default function FirstAidHub() {
         <h4 style={{ color: '#facc15', margin: '0 0 10px 0', textTransform: 'uppercase' }}>Hands-Only vs. Standard</h4>
         <p style={{ color: '#ccc', fontSize: '0.8rem', margin: '0 0 10px 0' }}>If you are untrained or fear disease transmission, skip breaths and provide continuous compressions. The blood already contains enough oxygen to keep the brain alive for several minutes.</p>
       </div>
+      
+      <div style={{ ...glassCard, width: '100%', borderLeft: '4px solid #ef4444', padding: '0', overflow: 'hidden' }}>
+        <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '15px', borderBottom: '1px solid #333' }}>
+          <h4 style={{ color: '#ef4444', margin: '0', textTransform: 'uppercase', textAlign: 'center', letterSpacing: '1px' }}>Depth & Technique Scaling</h4>
+        </div>
+        <div style={{ padding: '15px' }}>
+          <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 15px 0' }}>🧑 <strong>Adult (Puberty & Older):</strong><br/><span style={{ color: '#ccc', fontSize: '0.8rem' }}>Use two hands interlocked. Compress center of chest <strong>at least 2 inches deep</strong>.</span></p>
+          <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 15px 0' }}>👦 <strong>Child (1 Yr to Puberty):</strong><br/><span style={{ color: '#ccc', fontSize: '0.8rem' }}>Use one or two hands. Compress center of chest <strong>about 2 inches deep</strong>.</span></p>
+          <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0' }}>👶 <strong>Infant (Under 1 Yr):</strong><br/><span style={{ color: '#ccc', fontSize: '0.8rem' }}>Use two fingers in the center of the chest, just below the nipple line. Compress <strong>about 1.5 inches deep</strong>. If doing breaths, only use gentle puffs, not full lung capacities.</span></p>
+        </div>
+      </div>
     </div>
   );
 
@@ -176,6 +280,23 @@ export default function FirstAidHub() {
             {item.steps.map((step, sIdx) => <p key={sIdx} style={{ color: '#ccc', fontSize: '0.9rem', lineHeight: '1.5', margin: '0 0 10px 0', paddingLeft: '10px', textIndent: '-10px' }}>{step}</p>)}
             {item.tip && <div style={{ marginTop: '15px', padding: '10px', background: '#111', borderRadius: '6px', border: `1px solid ${accentColor}` }}><p style={{ margin: 0, color: accentColor, fontSize: '0.85rem', fontWeight: 'bold' }}>{item.tip}</p></div>}
           </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderRemedies = () => (
+    <div>
+      {renderDatabase(REMEDIES_GUIDES, '#10b981')}
+      
+      <h3 style={{ color: '#ef4444', textTransform: 'uppercase', textAlign: 'center', marginTop: '30px', marginBottom: '15px', letterSpacing: '2px' }}>Red Flags & Avoidance</h3>
+      {WARNINGS_GUIDES.map((warn, idx) => (
+        <div key={idx} style={{ ...glassCard, borderTop: '3px solid #ef4444', margin: '0 0 15px 0', padding: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            <span style={{ fontSize: '1.2rem' }}>{warn.icon}</span>
+            <h4 style={{ margin: 0, color: '#ef4444', fontSize: '1rem', textTransform: 'uppercase' }}>{warn.title}</h4>
+          </div>
+          <p style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.5', margin: 0 }}>{warn.desc}</p>
         </div>
       ))}
     </div>
@@ -203,7 +324,7 @@ export default function FirstAidHub() {
         {activeTab === 'cpr' && renderCPR()}
         {activeTab === 'tccc' && renderDatabase(TCCC_GUIDES, '#f97316')}
         {activeTab === 'general' && renderDatabase(GENERAL_GUIDES, '#3b82f6')}
-        {activeTab === 'remedies' && renderDatabase(REMEDIES_GUIDES, '#10b981')}
+        {activeTab === 'remedies' && renderRemedies()}
       </div>
     </div>
   );
