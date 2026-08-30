@@ -17,6 +17,24 @@ export function CalendarProvider({ children }) {
   const [alertCount, setAlertCount] = useState(0);
   const [alertColor, setAlertColor] = useState('#a855f7');
 
+  // --- 1. BOOTSTRAP HIGH-PRIORITY ANDROID NOTIFICATION CHANNEL ---
+  useEffect(() => {
+    const initChannel = async () => {
+      try {
+        await LocalNotifications.createChannel({
+          id: 'tot_alerts',
+          name: 'Tools of the Trade Alerts',
+          description: 'High-priority task and schedule notifications',
+          importance: 5, // 5 = Max Importance (Heads-up banner & tray icon)
+          visibility: 1,
+          vibration: true,
+          sound: 'default'
+        });
+      } catch (e) {}
+    };
+    initChannel();
+  }, []);
+
   useEffect(() => { localStorage.setItem('global_date', globalDate); }, [globalDate]);
   useEffect(() => { localStorage.setItem('global_reminders', JSON.stringify(reminders)); }, [reminders]);
 
@@ -28,28 +46,34 @@ export function CalendarProvider({ children }) {
     setReminders(reminders.filter(r => r.id !== id));
   };
 
+  // --- 2. IMMEDIATE NOTIFICATION TRIGGER ---
   const triggerImmediateNotification = async (count) => {
     try {
-      const permStatus = await LocalNotifications.requestPermissions();
-      if (permStatus.display === 'granted') {
-        await LocalNotifications.schedule({
-          notifications: [
-            {
-              title: "Tools of the Trade",
-              body: `You have ${count} pending item(s) on your agenda today.`,
-              id: 9999, // Static ID so it overwrites itself instead of spamming
-              schedule: { at: new Date(Date.now() + 1000) }
-            }
-          ]
-        });
+      const perm = await LocalNotifications.checkPermissions();
+      if (perm.display !== 'granted') {
+        const req = await LocalNotifications.requestPermissions();
+        if (req.display !== 'granted') return;
       }
+
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title: "Tools of the Trade",
+            body: `You have ${count} pending item(s) on your agenda today.`,
+            id: 9999,
+            channelId: 'tot_alerts',
+            schedule: { at: new Date(Date.now() + 1000) }
+          }
+        ]
+      });
     } catch (e) {}
   };
 
+  // --- 3. NATIVE OS PRE-SCHEDULER FOR FUTURE DATES ---
   const syncOSNotifications = async () => {
     try {
-      const permStatus = await LocalNotifications.requestPermissions();
-      if (permStatus.display !== 'granted') return;
+      const perm = await LocalNotifications.checkPermissions();
+      if (perm.display !== 'granted') return;
 
       const pending = await LocalNotifications.getPending();
       if (pending && pending.notifications.length > 0) {
@@ -61,22 +85,36 @@ export function CalendarProvider({ children }) {
       const getJSON = (k) => { try { return JSON.parse(localStorage.getItem(k)||'[]') || []; } catch { return []; } };
       const now = new Date();
 
+      // Tasklists
       getJSON('fleet_sops').forEach(list => {
         if (list.scheduledDate && (!list.tasks || list.tasks.some(t => !t.done))) {
           const [y, m, d] = list.scheduledDate.split('-').map(Number);
           const targetDate = new Date(y, m - 1, d, 9, 0, 0); 
           if (targetDate > now) {
-            futureNotifs.push({ title: "Tasklist Due", body: list.title, id: idCounter++, schedule: { at: targetDate } });
+            futureNotifs.push({
+              title: "Tasklist Due",
+              body: list.title,
+              id: idCounter++,
+              channelId: 'tot_alerts',
+              schedule: { at: targetDate }
+            });
           }
         }
       });
 
+      // Reminders
       reminders.forEach(r => {
         if (r.date && !r.text.includes('[SUB RENEWAL]') && !r.text.includes('[BILL]')) {
           const [y, m, d] = r.date.split('-').map(Number);
           const targetDate = new Date(y, m - 1, d, 9, 0, 0);
           if (targetDate > now) {
-            futureNotifs.push({ title: "Agenda Reminder", body: r.text, id: idCounter++, schedule: { at: targetDate } });
+            futureNotifs.push({
+              title: "Agenda Reminder",
+              body: r.text,
+              id: idCounter++,
+              channelId: 'tot_alerts',
+              schedule: { at: targetDate }
+            });
           }
         }
       });
@@ -87,6 +125,7 @@ export function CalendarProvider({ children }) {
     } catch (e) {}
   };
 
+  // --- 4. SCANNER & DISPATCHER ---
   const scanForAlerts = () => {
     let count = 0; let hasHigh = false; let hasNormal = false; let hasDone = false;
     const now = new Date();
@@ -125,20 +164,16 @@ export function CalendarProvider({ children }) {
     else if (hasDone) newColor = '#00cc66';
     setAlertColor(newColor);
 
-    // If there are pending items today, fire the immediate notification (once per day)
+    // Trigger notification when items are pending for today
     if (count > 0) {
-      const lastNotified = localStorage.getItem('tot_last_notification');
-      if (lastNotified !== todayStr) {
-        triggerImmediateNotification(count);
-        localStorage.setItem('tot_last_notification', todayStr);
-      }
+      triggerImmediateNotification(count);
     }
   };
 
   useEffect(() => {
     scanForAlerts();
-    syncOSNotifications(); 
-    const interval = setInterval(scanForAlerts, 2000);
+    syncOSNotifications();
+    const interval = setInterval(scanForAlerts, 4000);
     return () => clearInterval(interval);
   }, [reminders]);
 
