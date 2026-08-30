@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 
@@ -21,6 +21,18 @@ export default function CalendarHub() {
   const [viewDate, setViewDate] = useState(parseLocalDate(globalDate));
   const [newText, setNewText] = useState('');
   const [newPriority, setNewPriority] = useState('Normal');
+
+  // --- AUTO-SNAP TO TODAY ON LOAD ---
+  useEffect(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${y}-${m}-${d}`;
+    
+    setGlobalDate(todayStr);
+    setViewDate(new Date(y, now.getMonth(), now.getDate()));
+  }, [setGlobalDate]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -80,14 +92,13 @@ export default function CalendarHub() {
       }
     } catch (e) {}
 
-    // 3. Pull Ledger Assets (Purchase Date & Warranty Expiration Math)
+    // 3. Pull Ledger Assets
     try {
       const assets = JSON.parse(localStorage.getItem('tot_assets') || '[]');
       if (Array.isArray(assets)) {
         assets.forEach(asset => {
           if (!asset) return;
           
-          // Log the Purchase Date
           if (asset.date === dateStr) {
             events.push({
               id: `asset_purch_${asset.id || Math.random()}`,
@@ -98,7 +109,6 @@ export default function CalendarHub() {
             });
           }
 
-          // Calculate and Log the Warranty Expiration
           if (asset.date && asset.warranty && asset.warranty !== 'None' && asset.warranty !== 'Lifetime') {
             const expDate = parseLocalDate(asset.date);
             if (asset.warranty === '30 Days') expDate.setDate(expDate.getDate() + 30);
