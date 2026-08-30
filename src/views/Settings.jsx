@@ -256,7 +256,7 @@ export default function Settings() {
 
         <button onClick={() => navigate('/support')} style={{ width: '100%', padding: '15px', background: 'rgba(34, 34, 34, 0.85)', color: '#fff', border: '1px solid var(--accent)', borderRadius: '8px', fontWeight: 'bold', marginBottom: '20px' }}>☕ Support Creator</button>
 
-        <button onClick={() => window.open('https://github.com/xNoOnex/SovereignTools/releases', '_blank', 'noopener,noreferrer')} style={{ width: '100%', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', background: 'rgba(34, 34, 34, 0.85)', backdropFilter: 'blur(10px)', color: '#fff', border: '1px solid #00ff00', borderRadius: '8px', marginBottom: '20px', cursor: 'pointer' }}>
+        <button onClick={() => window.open('https://github.com/xNoOnex/SovereignTools1/releases', '_blank', 'noopener,noreferrer')} style={{ width: '100%', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', background: 'rgba(34, 34, 34, 0.85)', backdropFilter: 'blur(10px)', color: '#fff', border: '1px solid #00ff00', borderRadius: '8px', marginBottom: '20px', cursor: 'pointer' }}>
           <span style={{ fontSize: '24px' }}>🛡️</span>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '16px', fontWeight: 'bold' }}>Get SovereignTools</span>
