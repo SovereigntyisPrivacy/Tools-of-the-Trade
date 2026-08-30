@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Preferences } from '@capacitor/preferences';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 const DEFAULT_FOLDERS = ['IDs & Badges', 'Legal & Tax', 'Crypto Seeds'];
 
@@ -8,29 +9,20 @@ export default function DataVault() {
   const navigate = useNavigate();
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Data States
   const [activeFolder, setActiveFolder] = useState('ALL');
   const [folders, setFolders] = useState([]);
   const [documents, setDocuments] = useState([]);
 
-  // Camera & Image States
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const [isCameraActive, setIsCameraActive] = useState(false);
   const [tempImage, setTempImage] = useState(null);
-
-  // Modal States
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
-  // Form States
   const [docTitle, setDocTitle] = useState('');
   const [docCategory, setDocCategory] = useState(DEFAULT_FOLDERS[0]);
   const [docNotes, setDocNotes] = useState('');
   const [selectedDoc, setSelectedDoc] = useState(null);
 
-  // --- NATIVE HARDWARE BOOT ---
   useEffect(() => {
     const loadVault = async () => {
       const { value: docs } = await Preferences.get({ key: 'tot_paperless_safe' });
@@ -47,7 +39,6 @@ export default function DataVault() {
     loadVault();
   }, []);
 
-  // --- SYNC ENGINE ---
   useEffect(() => {
     if (isLoaded) {
       Preferences.set({ key: 'tot_paperless_safe', value: JSON.stringify(documents) });
@@ -55,82 +46,42 @@ export default function DataVault() {
     }
   }, [documents, folders, isLoaded]);
 
-  // --- COMPRESSION ENGINE ---
-  const compressImage = (dataUrl, callback) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX_WIDTH = 1200;
-      let width = img.width; let height = img.height;
-      if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
-      const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      callback(canvas.toDataURL('image/jpeg', 0.7));
-    };
-    img.src = dataUrl;
-  };
-
-  // --- SANDBOXED IN-APP CAMERA ---
+  // --- THE OPSEC CAMERA ENGINE ---
   const startInAppCamera = async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      return alert("Camera API blocked by OS. Ensure camera permissions are granted.");
-    }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      setIsCameraActive(true);
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
-        }
-      }, 100);
-    } catch (err) {
-      alert("Camera access denied. Check device permissions.");
-    }
-  };
-
-  const stopInAppCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(t => t.stop());
-    }
-    setIsCameraActive(false);
-  };
-
-  const captureInAppPhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const rawBase64 = canvas.toDataURL('image/jpeg');
-      stopInAppCamera();
-
-      // Compress before saving to RAM
-      compressImage(rawBase64, (compressed) => {
-        setTempImage(compressed);
-        setShowAddModal(true);
+      const photo = await Camera.getPhoto({
+        quality: 60,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+        saveToGallery: false // MAGIC BULLET: Intercepts photo before hitting the device gallery
       });
+      
+      if (photo.dataUrl) {
+        setTempImage(photo.dataUrl);
+        setShowAddModal(true);
+      }
+    } catch (e) {
+      // Fails silently if user cancels the camera or denies native permission
     }
   };
 
-  const importGallery = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      compressImage(reader.result, (compressed) => {
-        setTempImage(compressed);
-        setShowAddModal(true);
+  const importGallery = async () => {
+    try {
+      const photo = await Camera.getPhoto({
+        quality: 60,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Photos
       });
-    };
-    reader.readAsDataURL(file);
-    e.target.value = null;
+      
+      if (photo.dataUrl) {
+        setTempImage(photo.dataUrl);
+        setShowAddModal(true);
+      }
+    } catch (e) {}
   };
 
-  // --- DATA HANDLERS ---
   const handleAddFolder = () => {
     const name = newFolderName.trim();
     if (!name) return;
@@ -176,18 +127,6 @@ export default function DataVault() {
   return (
     <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'transparent', color: '#fff' }}>
       
-      {/* CAMERA VIEWFINDER OVERLAY */}
-      {isCameraActive && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
-          <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '85%', objectFit: 'cover' }} />
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'space-around', alignItems: 'center', background: '#111', padding: '20px' }}>
-            <button onClick={stopInAppCamera} style={{ background: '#222', color: '#fff', border: 'none', padding: '15px 30px', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
-            <button onClick={captureInAppPhoto} style={{ background: '#00ffff', color: '#000', border: 'none', padding: '15px 40px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}>📸 Snap</button>
-          </div>
-        </div>
-      )}
-
       <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.8)' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', marginRight: '15px' }}>← Hub</button>
         <h2 style={{ margin: 0, color: '#00ffff', fontSize: '1.2rem' }}>Paperless Safe</h2>
@@ -197,10 +136,9 @@ export default function DataVault() {
         <button onClick={startInAppCamera} style={{ background: '#00ffff', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.95rem' }}>
           📸 Snap Doc
         </button>
-        <label style={{ background: 'transparent', color: '#a855f7', border: '1px dashed #a855f7', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.95rem', textAlign: 'center', cursor: 'pointer', display: 'block' }}>
+        <button onClick={importGallery} style={{ background: 'transparent', color: '#a855f7', border: '1px dashed #a855f7', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.95rem' }}>
           🖼️ Import Doc
-          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={importGallery} />
-        </label>
+        </button>
       </div>
 
       <div style={{ display: 'flex', gap: '8px', padding: '15px', overflowX: 'auto', alignItems: 'center' }}>
