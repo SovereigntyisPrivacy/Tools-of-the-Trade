@@ -47,15 +47,10 @@ export function CalendarProvider({ children }) {
   };
 
   const scanForAlerts = () => {
-    let count = 0;
-    let hasHigh = false;
-    let hasNormal = false;
-    let hasDone = false;
+    let count = 0; let hasHigh = false; let hasNormal = false; let hasDone = false;
 
     const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
+    const y = now.getFullYear(); const m = String(now.getMonth() + 1).padStart(2, '0'); const d = String(now.getDate()).padStart(2, '0');
     const todayStr = `${y}-${m}-${d}`;
     const targetDateObj = new Date(y, now.getMonth(), now.getDate());
 
@@ -87,14 +82,14 @@ export function CalendarProvider({ children }) {
       }
     });
 
-    // TASKLIST LIVE PROGRESS SCRAPER
+    // 2. Tasklist Live Progress Scraper
     try {
-      const tasklists = getJSON('fleet_sops);
+      const tasklists = getJSON('fleet_sops');
       if (Array.isArray(tasklists)) {
         tasklists.forEach(list => {
           if (list.scheduledDate === todayStr) {
-            const total = list.tasks.length;
-            const done = list.tasks.filter(t => t.done).length;
+            const total = list.tasks ? list.tasks.length : 0;
+            const done = list.tasks ? list.tasks.filter(t => t.done).length : 0;
             const progress = total === 0 ? 0 : Math.round((done / total) * 100);
             count++;
             if (progress === 100) hasDone = true;
@@ -104,7 +99,8 @@ export function CalendarProvider({ children }) {
         });
       }
     } catch(e) {}
-    // 2. Personal Shifts
+
+    // 3. Personal Shifts
     try {
       const shiftData = getObj('tot_shift_shifts');
       const startOfWeek = new Date(targetDateObj);
@@ -124,7 +120,7 @@ export function CalendarProvider({ children }) {
       }
     } catch(e){}
 
-    // 3. Fleet Schedules (Crew)
+    // 4. Fleet Schedules
     try {
       const fleetSchedules = getJSON('fleet_schedules');
       if (Array.isArray(fleetSchedules)) {
@@ -132,7 +128,6 @@ export function CalendarProvider({ children }) {
           if (!week || !week.weekDate) return;
           const weekStart = parseLocalDate(week.weekDate);
           const diffDays = Math.round((targetDateObj - weekStart) / (1000 * 60 * 60 * 24));
-          
           if (diffDays >= 0 && diffDays <= 6) {
             (week.roster || []).forEach(emp => {
               const shift = (week.shifts && week.shifts[emp.id]) ? week.shifts[emp.id][fleetDayName] : null;
@@ -145,7 +140,7 @@ export function CalendarProvider({ children }) {
       }
     } catch(e){}
 
-    // 4. Assets
+    // 5. Assets
     try {
       const assets = getJSON('tot_assets');
       if (Array.isArray(assets)) {
@@ -167,7 +162,7 @@ export function CalendarProvider({ children }) {
       }
     } catch(e){}
 
-    // 5. Subscriptions
+    // 6. Subscriptions
     try {
       const subs = getJSON('fleet_subscriptions');
       if (Array.isArray(subs)) {
@@ -189,7 +184,7 @@ export function CalendarProvider({ children }) {
       }
     } catch(e){}
 
-    // 6. Bills
+    // 7. Bills
     try {
       const bills = getJSON('tot_bills');
       if (Array.isArray(bills)) {

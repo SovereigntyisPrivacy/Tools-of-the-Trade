@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 
@@ -58,6 +58,30 @@ export default function CalendarHub() {
     const dayName = shortDays[targetDateObj.getDay()];
     const fleetDayName = fleetDays[targetDateObj.getDay()];
 
+    // LIVE TASKLIST PULLER
+    try {
+      const tasklists = getJSON('fleet_sops');
+      if (Array.isArray(tasklists)) {
+        tasklists.forEach(list => {
+          if (list.scheduledDate === dateStr) {
+            const total = list.tasks ? list.tasks.length : 0;
+            const done = list.tasks ? list.tasks.filter(t => t.done).length : 0;
+            const progress = total === 0 ? 0 : Math.round((done / total) * 100);
+            let prio = 'High';
+            if (progress === 100) prio = 'Done';
+            else if (progress > 0) prio = 'Normal';
+            events.push({
+              id: `live_sop_${list.id}`,
+              text: `[TASKLIST] ${list.title} (${progress}%)`,
+              module: 'Tasklist Creator',
+              priority: prio,
+              isDynamic: true
+            });
+          }
+        });
+      }
+    } catch (e) {}
+
     try {
       const shiftData = getObj('tot_shift_shifts');
       const now = new Date();
@@ -79,7 +103,6 @@ export default function CalendarHub() {
       }
     } catch (e) {}
 
-    // NEW: Fleet Schedules (Crew)
     try {
       const fleetSchedules = getJSON('fleet_schedules');
       if (Array.isArray(fleetSchedules)) {
@@ -87,18 +110,11 @@ export default function CalendarHub() {
           if (!week || !week.weekDate) return;
           const weekStart = parseLocalDate(week.weekDate);
           const diffDays = Math.round((targetDateObj - weekStart) / (1000 * 60 * 60 * 24));
-          
           if (diffDays >= 0 && diffDays <= 6) {
             (week.roster || []).forEach(emp => {
               const shift = (week.shifts && week.shifts[emp.id]) ? week.shifts[emp.id][fleetDayName] : null;
               if (shift && shift.in && shift.out && shift.in.trim() !== '') {
-                events.push({
-                  id: `fleet_${emp.id}_${dateStr}`,
-                  text: `[CREW] ${emp.name || 'Worker'}: ${shift.in} to ${shift.out}`,
-                  module: 'Fleet Payroll',
-                  priority: 'Done', // Green
-                  isDynamic: true
-                });
+                events.push({ id: `fleet_${emp.id}_${dateStr}`, text: `[CREW] ${emp.name || 'Worker'}: ${shift.in} to ${shift.out}`, module: 'Fleet Payroll', priority: 'Done', isDynamic: true });
               }
             });
           }
