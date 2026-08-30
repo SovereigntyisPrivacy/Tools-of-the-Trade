@@ -36,10 +36,13 @@ export default function CalendarHub() {
   const getAllEventsForDate = (dateStr) => {
     let events = [];
 
-    // 1. Manual Reminders (Safely filtering out auto-generated dupes)
+    // 1. Manual Reminders (Safely filtering out auto-generated dupes from other tools)
     if (Array.isArray(reminders)) {
       reminders.forEach(r => {
-        if (r && r.date === dateStr && r.text && !r.text.includes('[SUB RENEWAL]')) {
+        if (r && r.date === dateStr && r.text && 
+           !r.text.includes('[SUB RENEWAL]') && 
+           !r.text.includes('[BILL]') && 
+           !r.text.includes('[INCOME]')) {
           events.push({ ...r, isDynamic: false });
         }
       });
@@ -52,7 +55,6 @@ export default function CalendarHub() {
     try {
       const shiftData = JSON.parse(localStorage.getItem('tot_shift_shifts') || '{}');
       
-      // Calculate boundaries for the current week to map the template
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const startOfWeek = new Date(today);
@@ -64,7 +66,6 @@ export default function CalendarHub() {
         const dayShifts = shiftData[dayName];
         if (Array.isArray(dayShifts)) {
           dayShifts.forEach((shift, idx) => {
-            // Ignore empty default strings
             if (shift && shift.start && shift.end && shift.start.trim() !== '' && shift.end.trim() !== '') {
               events.push({
                 id: `shift_${dayName}_${idx}`,
@@ -77,22 +78,46 @@ export default function CalendarHub() {
           });
         }
       }
-    } catch (e) { /* Fail silently to prevent UI crash */ }
+    } catch (e) {}
 
-    // 3. Pull Ledger Assets
+    // 3. Pull Ledger Assets (Purchase Date & Warranty Expiration Math)
     try {
       const assets = JSON.parse(localStorage.getItem('tot_assets') || '[]');
       if (Array.isArray(assets)) {
         assets.forEach(asset => {
-          // If the date exists literally ANYWHERE in the asset object, flag it.
-          if (asset && (asset.date === dateStr || JSON.stringify(asset).includes(dateStr))) {
+          if (!asset) return;
+          
+          // Log the Purchase Date
+          if (asset.date === dateStr) {
             events.push({
-              id: `asset_${asset.id || Math.random()}`,
-              text: `[ASSET] ${asset.name || 'Logged Item'}`,
+              id: `asset_purch_${asset.id || Math.random()}`,
+              text: `[PURCHASED] ${asset.name || 'Logged Item'}`,
               module: 'Asset Ledger',
-              priority: 'High', // Red Dot
+              priority: 'Done', // Green Dot
               isDynamic: true
             });
+          }
+
+          // Calculate and Log the Warranty Expiration
+          if (asset.date && asset.warranty && asset.warranty !== 'None' && asset.warranty !== 'Lifetime') {
+            const expDate = parseLocalDate(asset.date);
+            if (asset.warranty === '30 Days') expDate.setDate(expDate.getDate() + 30);
+            else if (asset.warranty === '90 Days') expDate.setDate(expDate.getDate() + 90);
+            else if (asset.warranty === '1 Year') expDate.setFullYear(expDate.getFullYear() + 1);
+            else if (asset.warranty === '2 Years') expDate.setFullYear(expDate.getFullYear() + 2);
+            else if (asset.warranty === '5 Years') expDate.setFullYear(expDate.getFullYear() + 5);
+
+            const expDateStr = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}-${String(expDate.getDate()).padStart(2, '0')}`;
+            
+            if (expDateStr === dateStr) {
+              events.push({
+                id: `asset_exp_${asset.id || Math.random()}`,
+                text: `[WARRANTY EXPIRING] ${asset.name || 'Logged Item'}`,
+                module: 'Asset Ledger',
+                priority: 'High', // Red Dot
+                isDynamic: true
+              });
+            }
           }
         });
       }
@@ -122,6 +147,43 @@ export default function CalendarHub() {
               text: `[RENEWAL] ${sub.name || 'Sub'} - $${safeCost}`,
               module: 'Subscriptions',
               priority: 'High', // Red Dot
+              isDynamic: true
+            });
+          }
+        });
+      }
+    } catch (e) {}
+
+    // 5. Pull Budget Engine Liabilities
+    try {
+      const bills = JSON.parse(localStorage.getItem('tot_bills') || '[]');
+      if (Array.isArray(bills)) {
+        bills.forEach(bill => {
+          if (!bill || !bill.due) return;
+          const dueDate = parseLocalDate(bill.due);
+          const freq = String(bill.frequency || '').toLowerCase();
+          let isDue = false;
+
+          if (targetDateObj >= dueDate) {
+            const daysSince = Math.round((targetDateObj - dueDate) / (1000 * 60 * 60 * 24));
+            const monthDiff = (targetDateObj.getFullYear() - dueDate.getFullYear()) * 12 + (targetDateObj.getMonth() - dueDate.getMonth());
+
+            if (freq === 'weekly' && daysSince % 7 === 0) isDue = true;
+            else if (freq === 'bi-weekly' && daysSince % 14 === 0) isDue = true;
+            else if (freq === 'monthly' && targetDateObj.getDate() === dueDate.getDate()) isDue = true;
+            else if (freq === 'bi-monthly' && monthDiff % 2 === 0 && targetDateObj.getDate() === dueDate.getDate()) isDue = true;
+            else if (freq === 'quarterly' && monthDiff % 3 === 0 && targetDateObj.getDate() === dueDate.getDate()) isDue = true;
+            else if (freq === 'bi-yearly' && monthDiff % 6 === 0 && targetDateObj.getDate() === dueDate.getDate()) isDue = true;
+            else if (freq === 'yearly' && targetDateObj.getMonth() === dueDate.getMonth() && targetDateObj.getDate() === dueDate.getDate()) isDue = true;
+          }
+
+          if (isDue || bill.due.includes(dateStr)) {
+            const safeCost = parseFloat(String(bill.cost || 0).replace(/[^0-9.]/g, '')).toFixed(2);
+            events.push({
+              id: `bill_${bill.id || Math.random()}_${dateStr}`,
+              text: `[BILL] ${bill.name || 'Liability'} - $${safeCost}`,
+              module: 'Budget Engine',
+              priority: bill.isPaid ? 'Done' : 'High', // Green if paid, Red if unpaid
               isDynamic: true
             });
           }
