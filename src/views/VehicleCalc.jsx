@@ -2,7 +2,7 @@ import React, { useState, Component } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 
-class ErrorBoundary extends Component {
+class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
   render() {

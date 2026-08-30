@@ -16,8 +16,8 @@ export default function CalculatorHub() {
     { id: 'lifestyle', icon: '🏋️', title: 'Lifestyle & Health', desc: 'Culinary yield scaling and 1RM kinetic strength.', path: '/calculator/lifestyle' },
     { id: 'builder', icon: '🔨', title: 'DIY & Builder', desc: 'Construction material estimators and tool logic.', path: '/calculator/builder' },
     { id: 'tech', icon: '💻', title: 'Tech & Network', desc: 'Bandwidth transfer times and IP subnet calculation.', path: '/calculator/tech' },
-    { id: 'agronomy', icon: '🌱', title: 'Agronomy & Extract', desc: 'Botanical lighting, extraction yields, and volumetric dosing.', path: '/calculator/agronomy' },
-    { id: 'vehicle', icon: '🚛', title: 'Vehicle & Fleet', desc: 'Towing limits, tongue weight, trip cost, and winch recovery.', path: '/vehicle' },
+    { id: 'agronomy', icon: '🌱', title: 'Agronomy & Extract', desc: 'Botanical lighting, extraction yields, and volumetric dosing.', path: '/agronomy' },
+    { id: 'vehicle', icon: '🚛', title: 'Vehicle & Fleet', desc: 'Towing limits, tongue weight, trip cost, and winch recovery.', path: '/calculator/vehicle' },
     { id: 'math', icon: '🧮', title: 'Basic Math', desc: 'Standard mathematical operations and calculator functions.', path: '/calculator/math' },
     { id: 'equations', icon: '📚', title: 'Equation Library', desc: 'Reference formulas for manual computations across multiple disciplines.', path: '/calculator/equations' }
   ];
