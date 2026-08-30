@@ -28,14 +28,29 @@ export function CalendarProvider({ children }) {
     setReminders(reminders.filter(r => r.id !== id));
   };
 
-  // --- THE MAGIC: NATIVE OS PRE-SCHEDULER ---
-  // This hands the schedule directly to Android so it survives reboots and background kills.
+  const triggerImmediateNotification = async (count) => {
+    try {
+      const permStatus = await LocalNotifications.requestPermissions();
+      if (permStatus.display === 'granted') {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: "Tools of the Trade",
+              body: `You have ${count} pending item(s) on your agenda today.`,
+              id: 9999, // Static ID so it overwrites itself instead of spamming
+              schedule: { at: new Date(Date.now() + 1000) }
+            }
+          ]
+        });
+      }
+    } catch (e) {}
+  };
+
   const syncOSNotifications = async () => {
     try {
       const permStatus = await LocalNotifications.requestPermissions();
       if (permStatus.display !== 'granted') return;
 
-      // Wipe old pending notifications so the OS doesn't spam the user with duplicates
       const pending = await LocalNotifications.getPending();
       if (pending && pending.notifications.length > 0) {
         await LocalNotifications.cancel(pending);
@@ -44,38 +59,34 @@ export function CalendarProvider({ children }) {
       let futureNotifs = [];
       let idCounter = 1;
       const getJSON = (k) => { try { return JSON.parse(localStorage.getItem(k)||'[]') || []; } catch { return []; } };
+      const now = new Date();
 
-      // 1. Schedule Tasklists
       getJSON('fleet_sops').forEach(list => {
         if (list.scheduledDate && (!list.tasks || list.tasks.some(t => !t.done))) {
           const [y, m, d] = list.scheduledDate.split('-').map(Number);
-          const targetDate = new Date(y, m - 1, d, 9, 0, 0); // Alerts at 9:00 AM on the due date
-          if (targetDate > new Date()) {
+          const targetDate = new Date(y, m - 1, d, 9, 0, 0); 
+          if (targetDate > now) {
             futureNotifs.push({ title: "Tasklist Due", body: list.title, id: idCounter++, schedule: { at: targetDate } });
           }
         }
       });
 
-      // 2. Schedule Manual Reminders
       reminders.forEach(r => {
         if (r.date && !r.text.includes('[SUB RENEWAL]') && !r.text.includes('[BILL]')) {
           const [y, m, d] = r.date.split('-').map(Number);
           const targetDate = new Date(y, m - 1, d, 9, 0, 0);
-          if (targetDate > new Date()) {
+          if (targetDate > now) {
             futureNotifs.push({ title: "Agenda Reminder", body: r.text, id: idCounter++, schedule: { at: targetDate } });
           }
         }
       });
 
-      // Hand the entire array to the Android Operating System
       if (futureNotifs.length > 0) {
         await LocalNotifications.schedule({ notifications: futureNotifs });
       }
     } catch (e) {}
   };
 
-  // --- IN-APP UI SCANNER ---
-  // This updates the red/green dots on the dashboard while the app is actively open
   const scanForAlerts = () => {
     let count = 0; let hasHigh = false; let hasNormal = false; let hasDone = false;
     const now = new Date();
@@ -113,11 +124,20 @@ export function CalendarProvider({ children }) {
     else if (hasNormal) newColor = '#a855f7';
     else if (hasDone) newColor = '#00cc66';
     setAlertColor(newColor);
+
+    // If there are pending items today, fire the immediate notification (once per day)
+    if (count > 0) {
+      const lastNotified = localStorage.getItem('tot_last_notification');
+      if (lastNotified !== todayStr) {
+        triggerImmediateNotification(count);
+        localStorage.setItem('tot_last_notification', todayStr);
+      }
+    }
   };
 
   useEffect(() => {
     scanForAlerts();
-    syncOSNotifications(); // Automatically programs Android alarms when data changes
+    syncOSNotifications(); 
     const interval = setInterval(scanForAlerts, 2000);
     return () => clearInterval(interval);
   }, [reminders]);
