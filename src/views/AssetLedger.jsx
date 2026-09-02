@@ -13,13 +13,13 @@ export default function AssetLedger() {
   const [openAccordion, setOpenAccordion] = useState(null);
 
   // --- DYNAMIC FORM STATE ---
-  const [assetCategory, setAssetCategory] = useState('Tools & Hardware');
+  const [assetCategory, setAssetCategory] = useState('Electronics');
   const [assetName, setAssetName] = useState('');
   const [assetPrice, setAssetPrice] = useState('');
   const [assetQuantity, setAssetQuantity] = useState('1');
   const [assetDate, setAssetDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [assetWarranty, setAssetWarranty] = useState('1 Year');
-  const [assetStatus, setAssetStatus] = useState('Deployed');
+  const [assetStatus, setAssetStatus] = useState('Active');
   const [assetSn, setAssetSn] = useState('');
   const [assetAssignedTo, setAssetAssignedTo] = useState('');
   const [assetLocation, setAssetLocation] = useState('');
@@ -33,10 +33,10 @@ export default function AssetLedger() {
   const totalValue = assets.reduce((acc, curr) => acc + (parseFloat(curr.price) * (parseFloat(curr.quantity) || 1) || 0), 0);
 
   const guideData = [
-    { title: "📌 What is the Pro Ledger?", content: "Tracks mission-critical gear, deployments, and materials. Logging serials and warranties creates an immutable record for insurance, tax depreciation, and maintenance." },
-    { title: "⚠️ Privacy & Security", content: "All data and photos are stored locally on your device. The file picker is sandboxed by Android for your privacy. Export your CSV regularly." },
-    { title: "💡 Dynamic Entry", content: "Select your category first. The form will dynamically shape-shift to only show you fields relevant to Tools, Materials, or Heavy Equipment." },
-    { title: "📅 Warranty Sync", content: "When you add a Tool or Equipment, use the 'Sync Warranty' button to generate a native .ics calendar event reminding you 2 weeks before expiration." }
+    { title: "📌 What is the Asset Ledger?", content: "Tracks personal property, electronics, mission-critical gear, and materials. Logging serials and warranties creates an immutable record for homeowners/renters insurance claims, tax depreciation, and maintenance." },
+    { title: "⚠️ Privacy & Security", content: "All data and photos are stored locally on your device. The file picker is sandboxed by Android for your privacy. Export your CSV regularly as a backup." },
+    { title: "💡 Dynamic Entry", content: "Select your category first. The form will dynamically shape-shift. For example, selecting 'Materials' hides the serial number and warranty fields to save you time." },
+    { title: "📅 Warranty Sync", content: "When you add an item with a warranty, use the 'Sync Warranty' button to generate a native .ics calendar event reminding you 2 weeks before expiration." }
   ];
 
   const toggleAccordion = (index) => setOpenAccordion(openAccordion === index ? null : index);
@@ -108,7 +108,7 @@ export default function AssetLedger() {
 
   // --- EXPORT CONTROLS ---
   const getCSVString = () => {
-    let csv = "Category,Asset Name,Qty,Total Cost,Purchase Date,Assigned To,Location/Job,Status,Warranty,Serial Number\n";
+    let csv = "Category,Asset Name,Qty,Total Value,Purchase Date,Owner/Assignee,Location/Room,Status,Warranty,Serial Number\n";
     assets.forEach(a => {
       const safeName = `"${a.name || ''}"`;
       const cost = `"$${((a.price || 0) * (a.quantity || 1)).toFixed(2)}"`;
@@ -122,7 +122,7 @@ export default function AssetLedger() {
     const blob = new Blob([getCSVString()], { type: 'text/csv;charset=utf-8' });
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
-    link.setAttribute('download', `Fleet_Ledger_${Date.now()}.csv`);
+    link.setAttribute('download', `Sovereign_Ledger_${Date.now()}.csv`);
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
@@ -146,7 +146,7 @@ export default function AssetLedger() {
       <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.8)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
-          <h2 style={{ margin: 0, color: '#a855f7', fontSize: '1.2rem' }}>Pro Equipment Ledger</h2>
+          <h2 style={{ margin: 0, color: '#a855f7', fontSize: '1.2rem' }}>Asset & Property Ledger</h2>
         </div>
       </header>
 
@@ -159,9 +159,9 @@ export default function AssetLedger() {
         {activeTab === 'Ledger' && (
           <>
             <div style={{ ...cardStyle, textAlign: 'center', border: '1px solid #a855f7' }}>
-              <div style={{ color: '#888', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Total Fleet/Material Value</div>
+              <div style={{ color: '#888', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Total Tracked Value</div>
               <div style={{ color: '#fff', fontSize: '2.5rem', fontWeight: 'bold' }}>${totalValue.toFixed(2)}</div>
-              <div style={{ color: '#ccc', fontSize: '0.9rem' }}>{assets.length} Tracked Records</div>
+              <div style={{ color: '#ccc', fontSize: '0.9rem' }}>{assets.length} Records Logged</div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
@@ -170,8 +170,8 @@ export default function AssetLedger() {
             </div>
 
             <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '10px' }}>
-              {['All', 'Tools & Hardware', 'Materials & Consumables', 'Heavy Equipment', 'General Assets'].map(cat => (
-                <button key={cat} onClick={() => setFilterCategory(cat)} style={filterBtnStyle(filterCategory === cat)}>{cat.split(' ')[0]}</button>
+              {['All', 'Electronics', 'Tools & Hardware', 'Vehicles & Equip', 'Home & General', 'Materials'].map(cat => (
+                <button key={cat} onClick={() => setFilterCategory(cat)} style={filterBtnStyle(filterCategory === cat)}>{cat}</button>
               ))}
             </div>
 
@@ -179,7 +179,7 @@ export default function AssetLedger() {
               <p style={{ color: '#ccc', textAlign: 'center', fontStyle: 'italic', marginTop: '40px' }}>No records found for this category.</p>
             ) : (
               filteredAssets.map(asset => (
-                <div key={asset.id} style={{ ...cardStyle, borderLeft: `4px solid ${asset.category.includes('Materials') ? '#f59e0b' : asset.category.includes('Equipment') ? '#ef4444' : '#a855f7'}` }}>
+                <div key={asset.id} style={{ ...cardStyle, borderLeft: `4px solid ${asset.category.includes('Materials') ? '#f59e0b' : asset.category.includes('Equip') ? '#ef4444' : '#a855f7'}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                     <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.2rem' }}>{asset.name} {asset.quantity > 1 && <span style={{color: '#a855f7'}}>(x{asset.quantity})</span>}</h3>
                     <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', color: '#a855f7', fontWeight: 'bold' }}>{asset.category.split(' ')[0]}</span>
@@ -197,9 +197,9 @@ export default function AssetLedger() {
                   )}
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', color: '#ccc', fontSize: '0.9rem', marginBottom: '15px', background: '#0a0a0a', padding: '10px', borderRadius: '8px' }}>
-                    {asset.assignedTo && <div><span style={{color:'#888', display:'block', fontSize:'0.75rem'}}>ASSIGNED TO</span><strong style={{color:'#fff'}}>{asset.assignedTo}</strong></div>}
-                    {asset.location && <div><span style={{color:'#888', display:'block', fontSize:'0.75rem'}}>LOCATION / SITE</span><strong style={{color:'#fff'}}>{asset.location}</strong></div>}
-                    <div><span style={{color:'#888', display:'block', fontSize:'0.75rem'}}>STATUS</span><strong style={{color: asset.status === 'Deployed' ? '#10b981' : '#fff'}}>{asset.status}</strong></div>
+                    {asset.assignedTo && <div><span style={{color:'#888', display:'block', fontSize:'0.75rem'}}>OWNER / ASSIGNEE</span><strong style={{color:'#fff'}}>{asset.assignedTo}</strong></div>}
+                    {asset.location && <div><span style={{color:'#888', display:'block', fontSize:'0.75rem'}}>ROOM / SITE</span><strong style={{color:'#fff'}}>{asset.location}</strong></div>}
+                    <div><span style={{color:'#888', display:'block', fontSize:'0.75rem'}}>STATUS</span><strong style={{color: asset.status === 'Active' || asset.status === 'Deployed' ? '#10b981' : '#fff'}}>{asset.status}</strong></div>
                     <div><span style={{color:'#888', display:'block', fontSize:'0.75rem'}}>PURCHASED</span><strong style={{color:'#fff'}}>{asset.date}</strong></div>
                     {asset.sn && <div><span style={{color:'#888', display:'block', fontSize:'0.75rem'}}>SERIAL #</span><strong style={{color:'#fff'}}>{asset.sn}</strong></div>}
                     {asset.warranty && <div><span style={{color:'#888', display:'block', fontSize:'0.75rem'}}>WARRANTY</span><strong style={{color:'#fff'}}>{asset.warranty}</strong></div>}
@@ -219,7 +219,7 @@ export default function AssetLedger() {
 
         {activeTab === 'guide' && (
           <div style={{ paddingTop: '10px' }}>
-            <h3 style={{ color: '#10b981', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '1px' }}>Pro Ledger Guide</h3>
+            <h3 style={{ color: '#10b981', textAlign: 'center', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '1px' }}>Ledger Guide</h3>
             {guideData.map((item, idx) => (
               <div key={idx} style={{ background: 'rgba(17,17,17,0.95)', borderRadius: '8px', border: '1px solid #222', marginBottom: '10px', overflow: 'hidden' }}>
                 <button onClick={() => toggleAccordion(idx)} style={{ width: '100%', background: 'transparent', color: openAccordion === idx ? '#10b981' : '#fff', border: 'none', padding: '15px', textAlign: 'left', fontWeight: 'bold', fontSize: '1.05rem', display: 'flex', justifyContent: 'space-between' }}>
@@ -239,7 +239,7 @@ export default function AssetLedger() {
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div style={{ background: '#111', padding: '25px', borderRadius: '12px', border: '1px solid #3b82f6', width: '100%' }}>
               <h2 style={{ color: '#3b82f6', marginTop: 0, textAlign: 'center', textTransform: 'uppercase' }}>Export Controls</h2>
-              <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '25px', fontSize: '0.9rem' }}>Export your encrypted ledger data to a CSV for your records.</p>
+              <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '25px', fontSize: '0.9rem' }}>Export your encrypted ledger data to a CSV for your records or insurance agent.</p>
               <button onClick={downloadCSVFile} style={{ ...btnStyle('#3b82f6', '#fff'), marginBottom: '15px' }}>📥 Download .CSV File</button>
               <button onClick={copyCSVToClipboard} style={{ ...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6', marginBottom: '25px' }}>📋 Copy Raw Data</button>
               <button onClick={() => setShowExportModal(false)} style={{ ...btnStyle('transparent', '#ef4444'), border: '1px solid #ef4444' }}>Cancel</button>
@@ -256,37 +256,36 @@ export default function AssetLedger() {
 
             <label style={labelStyle}>Record Category</label>
             <select value={assetCategory} onChange={(e) => setAssetCategory(e.target.value)} style={{ ...inputStyle, border: '1px solid #a855f7', color: '#a855f7', fontWeight: 'bold' }}>
+              <option value="Electronics">💻 Electronics</option>
               <option value="Tools & Hardware">🛠️ Tools & Hardware</option>
-              <option value="Materials & Consumables">🧱 Materials & Consumables</option>
-              <option value="Heavy Equipment">🚜 Heavy Equipment</option>
-              <option value="General Assets">📦 General Assets</option>
+              <option value="Home & General">📦 Home & General</option>
+              <option value="Vehicles & Equip">🚜 Vehicles & Equip</option>
+              <option value="Materials">🧱 Materials</option>
             </select>
 
             <label style={labelStyle}>{assetCategory.includes('Materials') ? 'Material / Item Name' : 'Asset Make & Model'}</label>
-            <input type="text" placeholder="e.g. DeWalt Hammer Drill, Drywall Sheets" value={assetName} onChange={(e) => setAssetName(e.target.value)} style={inputStyle} />
+            <input type="text" placeholder="e.g. MacBook Pro, Generator, Couch" value={assetName} onChange={(e) => setAssetName(e.target.value)} style={inputStyle} />
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <div style={{ flex: 1 }}>
-                <label style={labelStyle}>{assetCategory.includes('Materials') ? 'Cost Per Unit ($)' : 'Value / Price ($)'}</label>
+                <label style={labelStyle}>Value / Cost ($)</label>
                 <input type="number" placeholder="0.00" value={assetPrice} onChange={(e) => setAssetPrice(e.target.value)} style={inputStyle} />
               </div>
-              {assetCategory.includes('Materials') && (
-                <div style={{ flex: 1 }}>
-                  <label style={labelStyle}>Quantity</label>
-                  <input type="number" value={assetQuantity} onChange={(e) => setAssetQuantity(e.target.value)} style={inputStyle} />
-                </div>
-              )}
+              <div style={{ flex: 1 }}>
+                <label style={labelStyle}>Quantity</label>
+                <input type="number" value={assetQuantity} onChange={(e) => setAssetQuantity(e.target.value)} style={inputStyle} />
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <div style={{ flex: 1 }}>
-                <label style={labelStyle}>Purchase / Log Date</label>
+                <label style={labelStyle}>Purchase Date</label>
                 <input type="date" value={assetDate} onChange={(e) => setAssetDate(e.target.value)} style={inputStyle} />
               </div>
               <div style={{ flex: 1 }}>
                 <label style={labelStyle}>Status</label>
                 <select value={assetStatus} onChange={(e) => setAssetStatus(e.target.value)} style={inputStyle}>
-                  <option>Deployed</option><option>Stored</option><option>Maintenance</option><option>Consumed</option><option>Retired</option>
+                  <option>Active</option><option>Deployed</option><option>Stored</option><option>Maintenance</option><option>Retired</option>
                 </select>
               </div>
             </div>
@@ -304,17 +303,16 @@ export default function AssetLedger() {
               </>
             )}
 
-            {/* DYNAMIC FIELDS: Deployment Tracking */}
             <div style={{ display: 'flex', gap: '10px' }}>
               {!assetCategory.includes('Materials') && (
                 <div style={{ flex: 1 }}>
-                  <label style={labelStyle}>Assigned To</label>
-                  <input type="text" placeholder="e.g. Employee 1" value={assetAssignedTo} onChange={(e) => setAssetAssignedTo(e.target.value)} style={inputStyle} />
+                  <label style={labelStyle}>Owner / Assigned To</label>
+                  <input type="text" placeholder="e.g. John, Employee 1" value={assetAssignedTo} onChange={(e) => setAssetAssignedTo(e.target.value)} style={inputStyle} />
                 </div>
               )}
               <div style={{ flex: 1 }}>
-                <label style={labelStyle}>Job Site / Location</label>
-                <input type="text" placeholder="e.g. Smith Build, Truck 2" value={assetLocation} onChange={(e) => setAssetLocation(e.target.value)} style={inputStyle} />
+                <label style={labelStyle}>Room / Location</label>
+                <input type="text" placeholder="e.g. Living Room, Site B" value={assetLocation} onChange={(e) => setAssetLocation(e.target.value)} style={inputStyle} />
               </div>
             </div>
 
