@@ -18,7 +18,7 @@ export default function MyShiftTracker() {
   const [shifts, setShifts] = useState(() => {
     const saved = localStorage.getItem('tot_shift_shifts');
     return saved ? JSON.parse(saved) : {
-      SUN: [{ start: '', end: '' }], MON: [{ start: '16:00', end: '22:00' }], TUE: [{ start: '', end: '' }], WED: [{ start: '', end: '' }], THU: [{ start: '', end: '' }], FRI: [{ start: '', end: '' }], SAT: [{ start: '', end: '' }]
+      SUN: [{ start: '', end: '', note: '' }], MON: [{ start: '16:00', end: '22:00' }], TUE: [{ start: '', end: '', note: '' }], WED: [{ start: '', end: '', note: '' }], THU: [{ start: '', end: '', note: '' }], FRI: [{ start: '', end: '', note: '' }], SAT: [{ start: '', end: '', note: '' }]
     };
   });
 
@@ -70,20 +70,20 @@ export default function MyShiftTracker() {
   };
 
   const addShift = (day) => {
-    setShifts(prev => ({ ...prev, [day]: [...prev[day], { start: '', end: '' }] }));
+    setShifts(prev => ({ ...prev, [day]: [...prev[day], { start: '', end: '', note: '' }] }));
   };
 
   const removeShift = (day, index) => {
     const newShifts = shifts[day].filter((_, i) => i !== index);
-    if (newShifts.length === 0) newShifts.push({ start: '', end: '' }); // Keep at least one empty box
+    if (newShifts.length === 0) newShifts.push({ start: '', end: '', note: '' }); // Keep at least one empty box
     setShifts(prev => ({ ...prev, [day]: newShifts }));
   };
 
   const clearWeek = () => {
     setShifts({
-      SUN: [{ start: '', end: '' }], MON: [{ start: '', end: '' }], TUE: [{ start: '', end: '' }],
-      WED: [{ start: '', end: '' }], THU: [{ start: '', end: '' }], FRI: [{ start: '', end: '' }],
-      SAT: [{ start: '', end: '' }]
+      SUN: [{ start: '', end: '', note: '' }], MON: [{ start: '', end: '', note: '' }], TUE: [{ start: '', end: '', note: '' }],
+      WED: [{ start: '', end: '', note: '' }], THU: [{ start: '', end: '', note: '' }], FRI: [{ start: '', end: '', note: '' }],
+      SAT: [{ start: '', end: '', note: '' }]
     });
   };
 
@@ -106,7 +106,7 @@ export default function MyShiftTracker() {
         let diff = (endD - startD) / 3600000; 
         dayHours += diff;
         totalHours += diff;
-        shiftStrs.push(`${shift.start} to ${shift.end}`);
+        shiftStrs.push(`${shift.start} to ${shift.end}${shift.note ? ' - ' + shift.note : ''}`);
       }
     });
 
@@ -197,12 +197,15 @@ export default function MyShiftTracker() {
                   </div>
                   
                   {shifts[day].map((shift, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <input type="time" value={shift.start} onChange={(e) => handleShiftChange(day, idx, 'start', e.target.value)} style={{ ...inputStyle, padding: '8px' }} />
-                      <span style={{ color: '#666' }}>to</span>
-                      <input type="time" value={shift.end} onChange={(e) => handleShiftChange(day, idx, 'end', e.target.value)} style={{ ...inputStyle, padding: '8px' }} />
-                      <button onClick={() => removeShift(day, idx)} style={{ background: 'transparent', color: '#ef4444', border: 'none', padding: '8px', fontSize: '1.2em' }}>×</button>
-                    </div>
+                    <div key={idx} style={{ marginBottom: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px', border: '1px solid #333' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                          <input type="time" value={shift.start} onChange={(e) => handleShiftChange(day, idx, 'start', e.target.value)} style={{ ...inputStyle, padding: '8px', margin: 0, flex: 1 }} />
+                          <span style={{ color: '#666' }}>to</span>
+                          <input type="time" value={shift.end} onChange={(e) => handleShiftChange(day, idx, 'end', e.target.value)} style={{ ...inputStyle, padding: '8px', margin: 0, flex: 1 }} />
+                          <button onClick={() => removeShift(day, idx)} style={{ background: 'transparent', color: '#ef4444', border: 'none', padding: '8px', fontSize: '1.2rem', margin: 0 }}>×</button>
+                        </div>
+                        <input type="text" placeholder="Shift notes (job site, delays, coverage)..." value={shift.note || ''} onChange={(e) => handleShiftChange(day, idx, 'note', e.target.value)} style={{ ...inputStyle, padding: '8px', margin: 0, fontSize: '0.9rem', color: '#aaa', width: '100%', boxSizing: 'border-box' }} />
+                      </div>
                   ))}
                 </div>
               ))}
