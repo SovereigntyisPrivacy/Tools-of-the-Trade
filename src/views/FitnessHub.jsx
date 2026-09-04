@@ -11,24 +11,29 @@ export default function FitnessHub() {
   const [ba, setBa] = useState(() => parseFloat(localStorage.getItem('tot_ba')) || 30);
   const [macros, setMacros] = useState(() => JSON.parse(localStorage.getItem('tot_macros')) || { p: 150, c: 200, f: 70 });
   const [waterOz, setWaterOz] = useState(() => parseInt(localStorage.getItem('tot_water_oz')) || 0);
+  const [currentHR, setCurrentHR] = useState('');
   
+  const [calcWt, setCalcWt] = useState(225);
+  const [calcReps, setCalcReps] = useState(5);
+
   const [weightLogs, setWeightLogs] = useState(() => JSON.parse(localStorage.getItem('tot_weight_logs')) || []);
+  const [hrLogs, setHrLogs] = useState(() => JSON.parse(localStorage.getItem('tot_hr_logs')) || []);
   const [hydroVault, setHydroVault] = useState(() => JSON.parse(localStorage.getItem('tot_hydro_vault')) || []);
   const [runLogs, setRunLogs] = useState(() => JSON.parse(localStorage.getItem('tot_run_logs')) || []);
   const [workoutVault, setWorkoutVault] = useState(() => JSON.parse(localStorage.getItem('tot_workout_vault')) || []);
 
+  // V5 Database - Now with 'reps', 'time', and 'hold' types!
   const defaultRoutines = [
-    { id: 'r1', title: "Bodyweight Basics", type: "No Equipment", color: "#f59e0b", desc: "Uses just your body. Great for getting strong anywhere!", movements: [ { name: "Push-ups", sets: 4, defaultWt: 0, defaultReps: 10, desc: "Keep your body straight. Lower your chest to the floor and push up." }, { name: "Air Squats", sets: 4, defaultWt: 0, defaultReps: 15, desc: "Pretend you are sitting down in a chair. Keep your chest up!" }, { name: "Lunges", sets: 3, defaultWt: 0, defaultReps: 10, desc: "Take a big step forward and lower your back knee to gently kiss the ground." }, { name: "Plank Hold", sets: 3, defaultWt: 0, defaultReps: 30, desc: "Rest on your elbows and toes. Squeeze your tummy tight! (Time is in seconds)" } ] },
-    { id: 'r2', title: "Dumbbell Full Body", type: "Gym Weights", color: "#ef4444", desc: "Use hand weights to build strong muscles safely.", movements: [ { name: "Goblet Squats", sets: 4, defaultWt: 20, defaultReps: 10, desc: "Hold a single dumbbell at your chest with both hands like a heavy cup. Squat down deep." }, { name: "Dumbbell Press", sets: 4, defaultWt: 20, defaultReps: 10, desc: "Push the weights straight up over your head until your arms are straight." }, { name: "Dumbbell Rows", sets: 3, defaultWt: 20, defaultReps: 10, desc: "Bend over slightly, keep your back flat, and pull the weights up to your tummy." } ] },
-    { id: 'r4', title: "Morning Awakener", type: "Energy Boost", color: "#eab308", desc: "Quick 5-minute movements to wake up your body and get your blood flowing.", movements: [ { name: "Jumping Jacks", sets: 2, defaultWt: 0, defaultReps: 30, desc: "Jump wide while clapping hands above your head. Fast and light!" }, { name: "Arm Circles", sets: 2, defaultWt: 0, defaultReps: 20, desc: "Hold arms out wide. Make small forward circles, then backward circles." }, { name: "Toe Touches", sets: 2, defaultWt: 0, defaultReps: 10, desc: "Reach up high to the sky, then slowly bend down and touch your toes." } ] },
-    { id: 'r6', title: "Tai Chi (Relaxing Flow)", type: "Mindful", color: "#10b981", desc: "Slow movements that look like a slow-motion dance. Good for focus and breathing.", movements: [ { name: "Deep Breathing", sets: 1, defaultWt: 0, defaultReps: 60, desc: "Stand tall. Breathe in deep through your nose, out slowly through your mouth." }, { name: "Cloud Hands", sets: 1, defaultWt: 0, defaultReps: 60, desc: "Wave your hands slowly from side to side, like moving clouds in the sky." } ] },
-    { id: 'r7', title: "Yoga Stretching", type: "Stretching", color: "#8b5cf6", desc: "Stretching to make your body flexible, calm, and pain-free.", movements: [ { name: "Downward Dog", sets: 1, defaultWt: 0, defaultReps: 45, desc: "Make your body look like an upside-down 'V'. Press your heels toward the floor." }, { name: "Cat and Cow", sets: 2, defaultWt: 0, defaultReps: 15, desc: "On your hands and knees, round your back like a scared cat, then drop your belly like a cow." } ] }
+    { id: 'r1', title: "Bodyweight Basics", type: "No Equipment", color: "#f59e0b", restTime: 45, desc: "Uses just your body. Great for getting strong anywhere!", movements: [ { name: "Push-ups", sets: 4, type: 'reps', defaultWt: 0, defaultReps: 10 }, { name: "Air Squats", sets: 4, type: 'reps', defaultWt: 0, defaultReps: 15 }, { name: "Plank Hold", sets: 3, type: 'time', duration: 60, desc: "Squeeze your core! The coach will time you." } ] },
+    { id: 'r2', title: "Dumbbell Full Body", type: "Gym Weights", color: "#ef4444", restTime: 60, desc: "Use hand weights to build strong muscles safely.", movements: [ { name: "Goblet Squats", sets: 4, type: 'reps', defaultWt: 20, defaultReps: 10 }, { name: "Dumbbell Rows", sets: 3, type: 'reps', defaultWt: 20, defaultReps: 10 } ] },
+    { id: 'r5', title: "Second Shift Primer", type: "Mobility", color: "#00cccc", restTime: 30, desc: "Pre-shift mobility to loosen your joints.", movements: [ { name: "Deep Squat Hold", sets: 2, type: 'time', duration: 60, desc: "Sit deep. The coach will track your 60 seconds." }, { name: "Dead-hang", sets: 2, type: 'time', duration: 60 } ] },
+    { id: 'r6', title: "Mindful Box Breathing", type: "Mindful", color: "#10b981", restTime: 10, desc: "Guided breathing to lower heart rate and stress.", movements: [ { name: "Box Breathing Flow", sets: 1, type: 'hold', holdSecs: 4, relSecs: 4, cycles: 10, desc: "Follow the guided coach. Inhale/Hold, then Exhale/Release." } ] }
   ];
   
-  const [routines, setRoutines] = useState(() => JSON.parse(localStorage.getItem('tot_routines_v3')) || defaultRoutines);
+  const [routines, setRoutines] = useState(() => JSON.parse(localStorage.getItem('tot_routines_v5')) || defaultRoutines);
   const [showBuilder, setShowBuilder] = useState(false);
-  const [newRoutine, setNewRoutine] = useState({ title: '', desc: '' });
-  const [bMovements, setBMovements] = useState([{ name: '', sets: 3, defaultReps: 10 }]);
+  const [newRoutine, setNewRoutine] = useState({ title: '', desc: '', restTime: 60 });
+  const [bMovements, setBMovements] = useState([{ name: '', type: 'reps', sets: 3, defaultReps: 10, duration: 60, holdSecs: 5, relSecs: 5, cycles: 5 }]);
 
   const [activeSession, setActiveSession] = useState(null);
   const [sessionLogs, setSessionLogs] = useState({});
@@ -38,54 +43,109 @@ export default function FitnessHub() {
   
   const [isResting, setIsResting] = useState(false);
   const [restTimeLeft, setRestTimeLeft] = useState(0);
-  const completedSetsRef = useRef(0);
+  
+  // NEW: The Action Coach State
+  const [coach, setCoach] = useState(null); // { mIdx, sIdx, move, phase: 'prep'|'work'|'hold'|'release', timeLeft, cycle }
+
   const [runTime, setRunTime] = useState(0);
   const [runActive, setRunActive] = useState(false);
 
-  const sessionRef = useRef(null); const restIntervalRef = useRef(null); const runRef = useRef(null);
+  const sessionRef = useRef(null); const restIntervalRef = useRef(null); const runRef = useRef(null); const coachRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem('tot_bw', bw); localStorage.setItem('tot_bh', bh); localStorage.setItem('tot_ba', ba);
     localStorage.setItem('tot_macros', JSON.stringify(macros)); localStorage.setItem('tot_water_oz', waterOz.toString());
     localStorage.setItem('tot_hydro_vault', JSON.stringify(hydroVault)); localStorage.setItem('tot_weight_logs', JSON.stringify(weightLogs));
-    localStorage.setItem('tot_run_logs', JSON.stringify(runLogs)); localStorage.setItem('tot_workout_vault', JSON.stringify(workoutVault)); 
-    localStorage.setItem('tot_routines_v3', JSON.stringify(routines));
-  }, [bw, bh, ba, macros, waterOz, hydroVault, weightLogs, runLogs, workoutVault, routines]);
+    localStorage.setItem('tot_hr_logs', JSON.stringify(hrLogs)); localStorage.setItem('tot_run_logs', JSON.stringify(runLogs));
+    localStorage.setItem('tot_workout_vault', JSON.stringify(workoutVault)); localStorage.setItem('tot_routines_v5', JSON.stringify(routines));
+  }, [bw, bh, ba, macros, waterOz, hydroVault, weightLogs, hrLogs, runLogs, workoutVault, routines]);
+
 
   const formatTime = (secs) => { const h = Math.floor(secs/3600); const m = Math.floor((secs%3600)/60); const s = secs%60; return h > 0 ? `${h}:${m < 10 ? '0':''}${m}:${s < 10 ? '0':''}${s}` : `${m}:${s < 10 ? '0':''}${s}`; };
   const totalCals = (macros.p * 4) + (macros.c * 4) + (macros.f * 9);
   const estMiles = ((runTime / 60) * 150 * (bh * 0.413) / 63360).toFixed(2);
+  const oneRM = Math.round(calcWt * (1 + (calcReps / 30)));
+  const waterPercent = Math.min((waterOz / 128) * 100, 100);
 
+  // --- PROGRESS BAR MATH ---
+  let totalSets = 0; let completedSets = 0;
+  if (activeSession) {
+    Object.keys(sessionLogs).forEach(mIdx => {
+      sessionLogs[mIdx].forEach(set => { totalSets++; if(set.done) completedSets++; });
+    });
+  }
+  const sessionProgress = totalSets === 0 ? 0 : Math.round((completedSets / totalSets) * 100);
+
+  // --- DELETERS & LOGGERS ---
   const updateMacro = (field, val) => setMacros(prev => ({ ...prev, [field]: parseInt(val)||0 }));
-  const logWeight = () => { setWeightLogs([{ id: Date.now(), date: new Date().toLocaleDateString(), wt: bw }, ...weightLogs]); alert("Weight saved to Vault!"); };
+  const logWeight = () => { setWeightLogs([{ id: Date.now(), date: new Date().toLocaleString(), wt: bw }, ...weightLogs]); alert("Weight saved!"); };
+  const logHR = () => { if(currentHR) { setHrLogs([{ id: Date.now(), date: new Date().toLocaleString(), bpm: currentHR }, ...hrLogs]); setCurrentHR(''); alert("Heart Rate saved!"); }};
   const addWater = (amt) => setWaterOz(prev => prev + amt);
   const resetWater = () => { if(window.confirm("Archive water to Vault and reset?")) { setHydroVault([{ id: Date.now(), date: new Date().toLocaleDateString(), oz: waterOz }, ...hydroVault]); setWaterOz(0); } };
-
   const toggleRun = () => { if (runActive) { clearInterval(runRef.current); setRunActive(false); } else { setRunActive(true); runRef.current = setInterval(() => setRunTime(prev => prev + 1), 1000); } };
   const saveRun = () => { if(runTime === 0) return; setRunLogs([{ id: Date.now(), date: new Date().toLocaleString(), time: formatTime(runTime), dist: estMiles }, ...runLogs]); clearInterval(runRef.current); setRunActive(false); setRunTime(0); alert("Run archived to Vault!"); };
-
+  
+  const deleteLog = (type, id) => {
+    if(!window.confirm("Permanently delete this record?")) return;
+    if(type === 'workout') setWorkoutVault(prev => prev.filter(l => l.id !== id));
+    if(type === 'weight') setWeightLogs(prev => prev.filter(l => l.id !== id));
+    if(type === 'water') setHydroVault(prev => prev.filter(l => l.id !== id));
+    if(type === 'run') setRunLogs(prev => prev.filter(l => l.id !== id));
+    if(type === 'hr') setHrLogs(prev => prev.filter(l => l.id !== id));
+  };
   const deleteRoutine = (id) => { if(window.confirm("Delete this routine?")) setRoutines(routines.filter(r => r.id !== id)); };
-  const addCustomMove = () => setBMovements([...bMovements, { name: '', sets: 3, defaultReps: 10 }]);
+
+  const exportData = () => {
+    const backup = JSON.stringify({ workouts: workoutVault, weight: weightLogs, hr: hrLogs, run: runLogs, water: hydroVault, macros: macros }, null, 2);
+    const blob = new Blob([backup], { type: "application/json" });
+    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Sovereign_OS_Backup_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  };
+
+  // --- CUSTOM BUILDER ---
+  const addCustomMove = () => setBMovements([...bMovements, { name: '', type: 'reps', sets: 3, defaultReps: 10, duration: 60, holdSecs: 5, relSecs: 5, cycles: 5 }]);
   const updateCMove = (idx, field, val) => { const newM = [...bMovements]; newM[idx][field] = val; setBMovements(newM); };
   const saveCustomRoutine = () => {
     if(!newRoutine.title) return alert("Title required.");
-    setRoutines([...routines, { id: 'c'+Date.now(), title: newRoutine.title, type: 'Custom', color: '#00cc66', desc: newRoutine.desc || 'My custom workout.', movements: bMovements }]);
-    setShowBuilder(false); setNewRoutine({ title: '', desc: '' }); setBMovements([{ name: '', sets: 3, defaultReps: 10 }]); alert("Custom Routine Saved!");
+    setRoutines([...routines, { id: 'c'+Date.now(), title: newRoutine.title, type: 'Custom', color: '#00cc66', restTime: newRoutine.restTime || 60, desc: newRoutine.desc, movements: bMovements }]);
+    setShowBuilder(false); setNewRoutine({ title: '', desc: '', restTime: 60 }); setBMovements([{ name: '', type: 'reps', sets: 3, defaultReps: 10, duration: 60, holdSecs: 5, relSecs: 5, cycles: 5 }]); alert("Custom Routine Saved!");
   };
 
+  // --- THE ACTION COACH ENGINE ---
+  const startActionCoach = (mIdx, sIdx, move) => {
+    setCoach({ mIdx, sIdx, move, phase: 'prep', timeLeft: 3, cycle: 1 });
+    clearInterval(sessionRef.current); clearInterval(coachRef.current);
+    coachRef.current = setInterval(() => {
+      setCoach(prev => {
+        if(!prev) return null;
+        if(prev.timeLeft <= 1) {
+          if(prev.phase === 'prep') return { ...prev, phase: prev.move.type === 'time' ? 'work' : 'hold', timeLeft: prev.move.type === 'time' ? prev.move.duration : prev.move.holdSecs };
+          if(prev.move.type === 'time' && prev.phase === 'work') { endActionCoach(prev.mIdx, prev.sIdx); return null; }
+          if(prev.move.type === 'hold') {
+            if(prev.phase === 'hold') return { ...prev, phase: 'release', timeLeft: prev.move.relSecs };
+            if(prev.phase === 'release') {
+              if(prev.cycle >= prev.move.cycles) { endActionCoach(prev.mIdx, prev.sIdx); return null; }
+              return { ...prev, phase: 'hold', timeLeft: prev.move.holdSecs, cycle: prev.cycle + 1 };
+            }
+          }
+        }
+        return { ...prev, timeLeft: prev.timeLeft - 1 };
+      });
+    }, 1000);
+  };
+  const endActionCoach = (mIdx, sIdx) => { clearInterval(coachRef.current); setCoach(null); toggleSetDone(mIdx, sIdx, true); sessionRef.current = setInterval(() => setSessionTime(p => p + 1), 1000); };
+  const abortCoach = () => { clearInterval(coachRef.current); setCoach(null); sessionRef.current = setInterval(() => setSessionTime(p => p + 1), 1000); };
+
+  // --- SESSION ENGINE ---
   const startRest = () => {
-    completedSetsRef.current += 1;
-    const time = (completedSetsRef.current % 3 === 0) ? 60 : 10;
-    setRestTimeLeft(time); setIsResting(true); setSessionPaused(true);
+    setRestTimeLeft(activeSession.restTime || 60); setIsResting(true); setSessionPaused(true);
     clearInterval(sessionRef.current); clearInterval(restIntervalRef.current);
     restIntervalRef.current = setInterval(() => { setRestTimeLeft(prev => { if (prev <= 1) { endRest(); return 0; } return prev - 1; }); }, 1000);
   };
   const endRest = () => { clearInterval(restIntervalRef.current); setIsResting(false); setSessionPaused(false); sessionRef.current = setInterval(() => setSessionTime(p => p + 1), 1000); };
 
-  const animeQuotes = ['"A dropout will beat a genius through hard work." - Rock Lee', '"I do not fear this new challenge. Rather like a true warrior I will rise to meet it." - Vegeta', '"Push through the pain. Giving up hurts more." - Vegeta', '"There is no such thing as luck in this world. There is only hard work." - Saitama'];
-
   const startWorkout = (rt) => {
-    let initialLogs = {}; completedSetsRef.current = 0;
+    let initialLogs = {}; 
     rt.movements.forEach((m, i) => { initialLogs[i] = Array.from({ length: m.sets }).map(() => ({ wt: m.defaultWt || 0, reps: m.defaultReps || 0, done: false })); });
     setSessionLogs(initialLogs); setActiveSession(rt); setSessionTime(0); setSessionPaused(false); setIsResting(false);
     setCurrentQuote(animeQuotes[Math.floor(Math.random() * animeQuotes.length)]);
@@ -98,16 +158,21 @@ export default function FitnessHub() {
   };
 
   const updateSet = (mIdx, sIdx, field, val) => { const updated = { ...sessionLogs }; updated[mIdx][sIdx][field] = val; setSessionLogs(updated); };
-  const toggleSetDone = (mIdx, sIdx) => { const updated = { ...sessionLogs }; const isDone = !updated[mIdx][sIdx].done; updated[mIdx][sIdx].done = isDone; setSessionLogs(updated); if (isDone) startRest(); };
+  const toggleSetDone = (mIdx, sIdx, forceDone = false) => { 
+    const updated = { ...sessionLogs }; const isDone = forceDone ? true : !updated[mIdx][sIdx].done; 
+    updated[mIdx][sIdx].done = isDone; setSessionLogs(updated); 
+    if (isDone) startRest(); 
+  };
 
   const finishWorkout = (status) => {
     if(!window.confirm(`Log this session as ${status}?`)) return;
-    clearInterval(sessionRef.current); clearInterval(restIntervalRef.current);
+    clearInterval(sessionRef.current); clearInterval(restIntervalRef.current); clearInterval(coachRef.current);
     let totalVol = 0;
     
     const updatedRoutines = routines.map(rt => {
       if (rt.id === activeSession.id && status === 'Completed') {
         const updatedMovements = rt.movements.map((m, mIdx) => {
+          if (m.type !== 'reps') return m;
           let maxLoggedWt = 0; let maxLoggedReps = 0;
           sessionLogs[mIdx].forEach(set => { if (set.done) { const w = parseFloat(set.wt)||0; const r = parseFloat(set.reps)||0; if(w > maxLoggedWt) maxLoggedWt = w; if(r > maxLoggedReps) maxLoggedReps = r; }});
           return { ...m, defaultWt: maxLoggedWt > m.defaultWt ? maxLoggedWt : m.defaultWt, defaultReps: maxLoggedReps > m.defaultReps ? maxLoggedReps : m.defaultReps };
@@ -121,6 +186,7 @@ export default function FitnessHub() {
     setActiveSession(null); setActiveTab('Vault'); setVaultTab('Workouts');
   };
 
+
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
   const inputStyle = { background: '#000', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '8px', width: '100%', boxSizing: 'border-box' };
   const btnStyle = (bg, color) => ({ background: bg, color: color, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer' });
@@ -128,6 +194,20 @@ export default function FitnessHub() {
   if (activeSession) {
     return (
       <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column', color: '#fff', position: 'relative' }}>
+        
+        {/* THE ACTION COACH OVERLAY */}
+        {coach && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: coach.phase === 'hold' ? 'rgba(239, 68, 68, 0.95)' : coach.phase === 'release' ? 'rgba(16, 185, 129, 0.95)' : 'rgba(0,0,0,0.95)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'background 0.5s ease' }}>
+            <h2 style={{ fontSize: '2rem', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '2px' }}>
+              {coach.phase === 'prep' ? 'Get Ready' : coach.phase === 'work' ? 'Go!' : coach.phase === 'hold' ? 'HOLD' : 'RELEASE'}
+            </h2>
+            {coach.move.type === 'hold' && <div style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '20px' }}>Cycle {coach.cycle} of {coach.move.cycles}</div>}
+            <div style={{ fontSize: '7rem', fontWeight: 'bold', color: '#fff', marginBottom: '40px', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>{coach.timeLeft}s</div>
+            <button onClick={abortCoach} style={{ background: '#222', color: '#fff', padding: '15px 40px', fontSize: '1.2rem', borderRadius: '30px', fontWeight: 'bold', border: '2px solid #fff' }}>⏹ Cancel Set</button>
+          </div>
+        )}
+
+        {/* BREATHE OVERLAY */}
         {isResting && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <h1 style={{ fontSize: '4rem', color: '#00ffff', margin: '0 0 20px 0', letterSpacing: '2px' }}>🌬️ BREATHE</h1>
@@ -135,27 +215,51 @@ export default function FitnessHub() {
             <button onClick={endRest} style={{ background: '#3b82f6', color: '#fff', padding: '15px 40px', fontSize: '1.2rem', borderRadius: '30px', fontWeight: 'bold', border: 'none' }}>▶ Resume Early</button>
           </div>
         )}
-        <header style={{ padding: '15px', background: '#111', borderBottom: `2px solid ${activeSession.color}`, position: 'sticky', top: 0, zIndex: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+        <header style={{ background: '#111', position: 'sticky', top: 0, zIndex: 10 }}>
+          <div style={{ padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div><h2 style={{ margin: 0, color: activeSession.color, fontSize: '1.2rem' }}>{activeSession.title}</h2><span style={{ fontSize: '0.9rem', color: '#aaa' }}>Duration: <strong style={{color:'#fff'}}>{formatTime(sessionTime)}</strong></span></div>
             <button onClick={toggleMasterPause} style={{ background: sessionPaused ? '#10b981' : '#f59e0b', color: '#000', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none' }}>{sessionPaused ? '▶ RESUME' : '⏸ PAUSE'}</button>
           </div>
+          {/* THE PROGRESS BAR */}
+          <div style={{ width: '100%', height: '6px', background: '#222' }}>
+            <div style={{ width: `${sessionProgress}%`, background: activeSession.color, height: '100%', transition: 'width 0.3s ease' }}></div>
+          </div>
         </header>
+        
         <div style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '100px', opacity: sessionPaused ? 0.3 : 1, pointerEvents: sessionPaused ? 'none' : 'auto' }}>
           <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px dashed #3b82f6', padding: '15px', borderRadius: '8px', marginBottom: '15px', color: '#3b82f6', fontStyle: 'italic', textAlign: 'center', fontSize: '0.95rem' }}>{currentQuote}</div>
+          
           {activeSession.movements.map((m, mIdx) => (
             <div key={mIdx} style={{ ...cardStyle, borderLeft: `4px solid ${activeSession.color}` }}>
               <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: activeSession.color }}>{m.name}</h3>
               <p style={{ color: '#aaa', fontSize: '0.85rem', lineHeight: '1.4', marginBottom: '15px', fontStyle: 'italic' }}>{m.desc}</p>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', paddingLeft: '28px', color: '#888', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                <span style={{flex: 1}}>Weight (Lbs)</span><span style={{flex: 1}}>Reps/Secs</span><span style={{width: '45px'}}></span>
-              </div>
-              {sessionLogs[mIdx]?.map((set, sIdx) => (
+              
+              {m.type === 'reps' && (
+                <>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', paddingLeft: '28px', color: '#888', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}><span style={{flex: 1}}>Weight (Lbs)</span><span style={{flex: 1}}>Reps</span><span style={{width: '45px'}}></span></div>
+                  {sessionLogs[mIdx]?.map((set, sIdx) => (
+                    <div key={sIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px', background: set.done ? 'rgba(16, 185, 129, 0.1)' : '#000', padding: '8px', borderRadius: '8px', border: set.done ? '1px solid #10b981' : '1px solid #222' }}>
+                      <span style={{ color: '#888', fontWeight: 'bold', width: '20px' }}>{sIdx + 1}</span>
+                      <input type="number" placeholder="Lbs" value={set.wt} onChange={e=>updateSet(mIdx, sIdx, 'wt', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
+                      <input type="number" placeholder="Reps" value={set.reps} onChange={e=>updateSet(mIdx, sIdx, 'reps', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
+                      <button onClick={() => toggleSetDone(mIdx, sIdx)} style={{ background: set.done ? '#10b981' : '#333', color: set.done ? '#000' : '#fff', border: 'none', borderRadius: '6px', width: '45px', height: '40px', fontWeight: 'bold', fontSize: '1.2rem' }}>{set.done ? '✓' : ''}</button>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {(m.type === 'time' || m.type === 'hold') && sessionLogs[mIdx]?.map((set, sIdx) => (
                 <div key={sIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px', background: set.done ? 'rgba(16, 185, 129, 0.1)' : '#000', padding: '8px', borderRadius: '8px', border: set.done ? '1px solid #10b981' : '1px solid #222' }}>
                   <span style={{ color: '#888', fontWeight: 'bold', width: '20px' }}>{sIdx + 1}</span>
-                  <input type="number" placeholder="Lbs" value={set.wt} onChange={e=>updateSet(mIdx, sIdx, 'wt', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
-                  <input type="number" placeholder="Reps" value={set.reps} onChange={e=>updateSet(mIdx, sIdx, 'reps', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
-                  <button onClick={() => toggleSetDone(mIdx, sIdx)} style={{ background: set.done ? '#10b981' : '#333', color: set.done ? '#000' : '#fff', border: 'none', borderRadius: '6px', width: '45px', height: '40px', fontWeight: 'bold', fontSize: '1.2rem' }}>{set.done ? '✓' : ''}</button>
+                  <div style={{ flex: 1, color: set.done ? '#10b981' : '#aaa', fontSize: '0.9rem' }}>
+                    {m.type === 'time' ? `${m.duration}s Timer` : `${m.holdSecs}s Hold / ${m.relSecs}s Rel (${m.cycles}x)`}
+                  </div>
+                  {set.done ? (
+                    <button onClick={() => toggleSetDone(mIdx, sIdx)} style={{ background: 'transparent', color: '#10b981', border: '1px solid #10b981', borderRadius: '6px', padding: '8px 15px', fontWeight: 'bold' }}>✓ DONE</button>
+                  ) : (
+                    <button onClick={() => startActionCoach(mIdx, sIdx, m)} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 15px', fontWeight: 'bold' }}>▶ START</button>
+                  )}
                 </div>
               ))}
             </div>
@@ -168,6 +272,7 @@ export default function FitnessHub() {
       </div>
     );
   }
+
 
   return (
     <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -190,14 +295,31 @@ export default function FitnessHub() {
             {showBuilder && (
               <div style={{ ...cardStyle, border: '1px solid #10b981' }}>
                 <input type="text" placeholder="Workout Title (e.g. Leg Day)" value={newRoutine.title} onChange={e=>setNewRoutine({...newRoutine, title: e.target.value})} style={{...inputStyle, marginBottom: '10px'}} />
-                <input type="text" placeholder="Short Description..." value={newRoutine.desc} onChange={e=>setNewRoutine({...newRoutine, desc: e.target.value})} style={{...inputStyle, marginBottom: '15px'}} />
+                <input type="text" placeholder="Short Description..." value={newRoutine.desc} onChange={e=>setNewRoutine({...newRoutine, desc: e.target.value})} style={{...inputStyle, marginBottom: '10px'}} />
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{display:'block', color:'#00cc66', fontSize:'0.8rem', fontWeight:'bold', marginBottom:'5px'}}>Rest Between Sets (Seconds)</label>
+                  <input type="number" value={newRoutine.restTime} onChange={e=>setNewRoutine({...newRoutine, restTime: parseInt(e.target.value)})} style={inputStyle} />
+                </div>
+
                 <h4 style={{ color: '#00cc66', margin: '0 0 10px 0' }}>Exercises</h4>
-                <div style={{ display: 'flex', gap: '5px', marginBottom: '5px', color: '#888', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}><span style={{flex: 2}}>Name</span><span style={{flex: 1}}>Sets</span><span style={{flex: 1}}>Reps</span></div>
                 {bMovements.map((m, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-                    <input type="text" placeholder="Exercise" value={m.name} onChange={e=>updateCMove(idx, 'name', e.target.value)} style={{...inputStyle, flex: 2, padding: '8px'}} />
-                    <input type="number" placeholder="Sets" value={m.sets} onChange={e=>updateCMove(idx, 'sets', parseInt(e.target.value))} style={{...inputStyle, flex: 1, padding: '8px'}} />
-                    <input type="number" placeholder="Reps" value={m.defaultReps} onChange={e=>updateCMove(idx, 'defaultReps', parseInt(e.target.value))} style={{...inputStyle, flex: 1, padding: '8px'}} />
+                  <div key={idx} style={{ background: '#000', padding: '10px', borderRadius: '8px', border: '1px solid #333', marginBottom: '10px' }}>
+                    <input type="text" placeholder="Exercise Name" value={m.name} onChange={e=>updateCMove(idx, 'name', e.target.value)} style={{...inputStyle, marginBottom: '10px'}} />
+                    <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+                      <select value={m.type} onChange={e=>updateCMove(idx, 'type', e.target.value)} style={{...inputStyle, flex: 1, padding: '8px'}}>
+                        <option value="reps">Weight/Reps</option><option value="time">Duration Timer</option><option value="hold">Hold & Release</option>
+                      </select>
+                      <input type="number" placeholder="Sets" value={m.sets} onChange={e=>updateCMove(idx, 'sets', parseInt(e.target.value))} style={{...inputStyle, flex: 1, padding: '8px'}} />
+                    </div>
+                    {m.type === 'reps' && <input type="number" placeholder="Target Reps" value={m.defaultReps} onChange={e=>updateCMove(idx, 'defaultReps', parseInt(e.target.value))} style={inputStyle} />}
+                    {m.type === 'time' && <input type="number" placeholder="Duration (Seconds)" value={m.duration} onChange={e=>updateCMove(idx, 'duration', parseInt(e.target.value))} style={inputStyle} />}
+                    {m.type === 'hold' && (
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <input type="number" placeholder="Hold (s)" value={m.holdSecs} onChange={e=>updateCMove(idx, 'holdSecs', parseInt(e.target.value))} style={inputStyle} />
+                        <input type="number" placeholder="Rel (s)" value={m.relSecs} onChange={e=>updateCMove(idx, 'relSecs', parseInt(e.target.value))} style={inputStyle} />
+                        <input type="number" placeholder="Cycles" value={m.cycles} onChange={e=>updateCMove(idx, 'cycles', parseInt(e.target.value))} style={inputStyle} />
+                      </div>
+                    )}
                   </div>
                 ))}
                 <button onClick={addCustomMove} style={{ background: '#222', color: '#fff', border: '1px dashed #555', padding: '10px', borderRadius: '6px', width: '100%', marginBottom: '15px' }}>+ Add Another</button>
@@ -235,26 +357,38 @@ export default function FitnessHub() {
 
         {activeTab === 'Metrics' && (
           <>
+            <div style={{ ...cardStyle, borderTop: '4px solid #ef4444', textAlign: 'center' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#ef4444' }}>🏋️ 1-Rep Max Calculator</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div style={{flex: 1}}><label style={{display:'block', color:'#888', fontSize:'0.8rem'}}>Weight (Lbs)</label><input type="number" value={calcWt} onChange={e=>setCalcWt(e.target.value)} style={inputStyle} /></div>
+                <div style={{flex: 1}}><label style={{display:'block', color:'#888', fontSize:'0.8rem'}}>Reps</label><input type="number" value={calcReps} onChange={e=>setCalcReps(e.target.value)} style={inputStyle} /></div>
+              </div>
+              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222' }}>
+                <span style={{ color: '#aaa', display: 'block' }}>Estimated 1-Rep Max:</span>
+                <strong style={{ color: '#ef4444', fontSize: '2rem' }}>{oneRM} lbs</strong>
+              </div>
+            </div>
+
             <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b', textAlign: 'center' }}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#f59e0b' }}>⚖️ Body Weight</h3>
+              <h3 style={{ margin: '0 0 15px 0', color: '#f59e0b' }}>⚖️ Body Weight & Height</h3>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#000', borderRadius: '12px', padding: '10px', border: '1px solid #333', marginBottom: '15px' }}>
                 <button onClick={() => setBw(prev => Math.max(0, prev - 1))} style={{ background: '#222', color: '#f59e0b', border: 'none', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '8px' }}>-</button>
                 <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#fff' }}>{bw} <span style={{fontSize:'1rem', color:'#888'}}>lbs</span></div>
                 <button onClick={() => setBw(prev => prev + 1)} style={{ background: '#222', color: '#f59e0b', border: 'none', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '8px' }}>+</button>
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{flex: 1}}><label style={{display:'block', color:'#888', fontSize:'0.8rem'}}>Height (inches)</label><input type="number" value={bh} onChange={e=>setBh(parseFloat(e.target.value))} style={inputStyle} /></div>
                 <div style={{flex: 1}}><label style={{display:'block', color:'#888', fontSize:'0.8rem'}}>Age</label><input type="number" value={ba} onChange={e=>setBa(parseFloat(e.target.value))} style={inputStyle} /></div>
               </div>
-              <button onClick={logWeight} style={{...btnStyle('#10b981', '#000'), width: '100%', marginTop: '10px'}}>💾 Log Weight to Vault</button>
+              <button onClick={logWeight} style={{...btnStyle('#10b981', '#000'), width: '100%'}}>💾 Log to Vault</button>
             </div>
 
             <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
               <h3 style={{ margin: '0 0 15px 0', color: '#a855f7' }}>🔥 Daily Macros</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <div style={{flex: 1}}><label style={{display:'block', color:'#3b82f6', fontSize:'0.8rem', fontWeight:'bold', marginBottom:'5px'}}>Protein (g)</label><input type="number" value={macros.p} onChange={e=>updateMacro('p', e.target.value)} style={inputStyle} /></div>
-                <div style={{flex: 1}}><label style={{display:'block', color:'#10b981', fontSize:'0.8rem', fontWeight:'bold', marginBottom:'5px'}}>Carbs (g)</label><input type="number" value={macros.c} onChange={e=>updateMacro('c', e.target.value)} style={inputStyle} /></div>
-                <div style={{flex: 1}}><label style={{display:'block', color:'#f59e0b', fontSize:'0.8rem', fontWeight:'bold', marginBottom:'5px'}}>Fats (g)</label><input type="number" value={macros.f} onChange={e=>updateMacro('f', e.target.value)} style={inputStyle} /></div>
+                <div style={{flex: 1}}><label style={{display:'block', color:'#3b82f6', fontSize:'0.8rem'}}>Protein (g)</label><input type="number" value={macros.p} onChange={e=>updateMacro('p', e.target.value)} style={inputStyle} /></div>
+                <div style={{flex: 1}}><label style={{display:'block', color:'#10b981', fontSize:'0.8rem'}}>Carbs (g)</label><input type="number" value={macros.c} onChange={e=>updateMacro('c', e.target.value)} style={inputStyle} /></div>
+                <div style={{flex: 1}}><label style={{display:'block', color:'#f59e0b', fontSize:'0.8rem'}}>Fats (g)</label><input type="number" value={macros.f} onChange={e=>updateMacro('f', e.target.value)} style={inputStyle} /></div>
               </div>
               <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222', textAlign: 'center' }}>
                 <span style={{ color: '#aaa', display: 'block' }}>Estimated Calories:</span>
@@ -263,9 +397,15 @@ export default function FitnessHub() {
             </div>
 
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6', textAlign: 'center' }}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6' }}>💧 Drink Water</h3>
-              <div style={{ fontSize: '3.5rem', fontWeight: 'bold', color: '#fff', marginBottom: '15px' }}>{waterOz}<span style={{ fontSize: '1.2rem', color: '#3b82f6', marginLeft: '5px' }}>oz</span></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}><button onClick={() => addWater(8)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 8</button><button onClick={() => addWater(16)} style={{...btnStyle('#3b82f6', '#000')}}>+ 16</button><button onClick={() => addWater(32)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 32</button></div>
+              <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6' }}>💧 Drink Water ({waterOz} / 128 oz)</h3>
+              <div style={{ width: '100%', background: '#222', height: '12px', borderRadius: '10px', marginBottom: '20px', overflow: 'hidden' }}>
+                <div style={{ width: `${waterPercent}%`, background: '#3b82f6', height: '100%', transition: 'width 0.3s ease' }}></div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                <button onClick={() => addWater(8)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 8</button>
+                <button onClick={() => addWater(16)} style={{...btnStyle('#3b82f6', '#000')}}>+ 16</button>
+                <button onClick={() => addWater(32)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 32</button>
+              </div>
               <button onClick={resetWater} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '0.85rem' }}>Archive to Vault & Reset Day</button>
             </div>
           </>
@@ -273,6 +413,8 @@ export default function FitnessHub() {
 
         {activeTab === 'Vault' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <button onClick={exportData} style={{ background: '#222', border: '1px dashed #a855f7', color: '#a855f7', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Export All Vault Data (.json)</button>
+            
             <div style={{ display: 'flex', background: '#000', padding: '5px', borderRadius: '8px', border: '1px solid #333' }}>
               {['Workouts', 'Biometrics', 'Cardio'].map(t => (
                 <button key={t} onClick={() => setVaultTab(t)} style={{ flex: 1, padding: '8px', background: vaultTab === t ? '#333' : 'transparent', color: vaultTab === t ? '#fff' : '#888', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>{t}</button>
@@ -283,9 +425,16 @@ export default function FitnessHub() {
               <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
                 <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>🏆 Workout History</h3>
                 {workoutVault.length === 0 ? <p style={{color:'#888', fontStyle:'italic'}}>No workouts saved yet.</p> : workoutVault.map((log) => (
-                  <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #222' }}>
-                    <div><strong style={{color:'#fff', display:'block'}}>{log.title}</strong><span style={{color: log.status === 'Completed' ? '#10b981' : '#ef4444', fontSize: '0.8rem', fontWeight: 'bold'}}>{log.status} </span><span style={{color:'#666', fontSize:'0.8rem'}}>• {log.date}</span></div>
-                    <div style={{textAlign:'right'}}><strong style={{color:'#a855f7'}}>{log.volume > 0 ? log.volume : '-'}</strong><span style={{color:'#888', fontSize:'0.8rem', display:'block'}}>Vol/Reps</span></div>
+                  <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', borderBottom: '1px solid #222' }}>
+                    <div>
+                      <strong style={{color:'#fff', display:'block'}}>{log.title}</strong>
+                      <span style={{color: log.status === 'Completed' ? '#10b981' : '#ef4444', fontSize: '0.8rem', fontWeight: 'bold'}}>{log.status} </span>
+                      <span style={{color:'#666', fontSize:'0.8rem'}}>• {log.date}</span>
+                    </div>
+                    <div style={{textAlign:'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px'}}>
+                      <div><strong style={{color:'#a855f7'}}>{log.volume > 0 ? log.volume : '-'}</strong><span style={{color:'#888', fontSize:'0.8rem', marginLeft: '5px'}}>Vol/Reps</span></div>
+                      <button onClick={() => deleteLog('workout', log.id)} style={{background:'transparent', color:'#ef4444', border:'none', fontSize:'0.8rem', cursor:'pointer'}}>🗑️ Delete</button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -294,25 +443,33 @@ export default function FitnessHub() {
             {vaultTab === 'Biometrics' && (
               <>
                 <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
-                  <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>⚖️ Weight Log</h3>
+                  <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>⚖️ Weight & BMI Log</h3>
                   {weightLogs.length === 0 ? <p style={{color:'#888'}}>No weights logged.</p> : weightLogs.map((log, i) => {
                     const prevWt = weightLogs[i+1]?.wt;
                     const diff = prevWt ? (log.wt - prevWt).toFixed(1) : 0;
+                    const logBmi = (((log.wt / (bh * bh)) * 703)).toFixed(1);
                     return (
-                      <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #222' }}>
-                        <span style={{color:'#ccc'}}>{log.date}</span>
+                      <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #222' }}>
+                        <div>
+                          <span style={{color:'#ccc', display: 'block', marginBottom: '5px'}}>{log.date}</span>
+                          <button onClick={() => deleteLog('weight', log.id)} style={{background:'transparent', color:'#ef4444', border:'none', fontSize:'0.8rem', padding: 0}}>🗑️ Delete</button>
+                        </div>
                         <div style={{textAlign:'right'}}>
-                          <strong style={{color:'#f59e0b', fontSize:'1.1rem'}}>{log.wt} lbs</strong>
-                          {prevWt && <span style={{display:'block', fontSize:'0.8rem', color: diff > 0 ? '#ef4444' : '#10b981'}}>{diff > 0 ? '↑' : '↓'} {Math.abs(diff)} lbs</span>}
+                          <strong style={{color:'#f59e0b', fontSize:'1.1rem'}}>{log.wt} lbs <span style={{fontSize:'0.85rem', color:'#aaa'}}>(BMI: {logBmi})</span></strong>
+                          {prevWt && <span style={{display:'block', fontSize:'0.85rem', color: diff > 0 ? '#ef4444' : '#10b981', marginTop: '4px'}}>{diff > 0 ? '↑ Gained' : '↓ Lost'} {Math.abs(diff)} lbs</span>}
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6' }}>
-                  <h3 style={{ margin: '0 0 10px 0', color: '#3b82f6' }}>💧 Hydration Log</h3>
-                  {hydroVault.length === 0 ? <p style={{color:'#888'}}>No water logged.</p> : hydroVault.map((log) => (
-                    <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #222' }}><span style={{color:'#ccc'}}>{log.date}</span><strong style={{color:'#3b82f6'}}>{log.oz} oz</strong></div>
+                
+                <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>❤️ Heart Rate Log</h3>
+                  {hrLogs.length === 0 ? <p style={{color:'#888'}}>No heart rates logged.</p> : hrLogs.map((log) => (
+                    <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #222' }}>
+                      <div><span style={{color:'#ccc', display: 'block'}}>{log.date}</span><button onClick={() => deleteLog('hr', log.id)} style={{background:'transparent', color:'#ef4444', border:'none', fontSize:'0.8rem', padding: 0}}>🗑️ Delete</button></div>
+                      <strong style={{color:'#ef4444', fontSize: '1.2rem'}}>{log.bpm} BPM</strong>
+                    </div>
                   ))}
                 </div>
               </>
@@ -322,9 +479,12 @@ export default function FitnessHub() {
               <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
                 <h3 style={{ margin: '0 0 10px 0', color: '#00ffff' }}>🏃 Run Log</h3>
                 {runLogs.length === 0 ? <p style={{color:'#888'}}>No runs logged.</p> : runLogs.map(log => (
-                  <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #222' }}>
-                    <span style={{color:'#ccc'}}>{log.date}</span>
-                    <div style={{textAlign:'right'}}><strong style={{color:'#00ffff', display:'block'}}>{log.dist} mi</strong><span style={{color:'#888', fontSize:'0.8rem'}}>{log.time}</span></div>
+                  <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #222' }}>
+                    <div>
+                      <span style={{color:'#ccc', display: 'block'}}>{log.date}</span>
+                      <button onClick={() => deleteLog('run', log.id)} style={{background:'transparent', color:'#ef4444', border:'none', fontSize:'0.8rem', padding: 0, marginTop: '5px'}}>🗑️ Delete</button>
+                    </div>
+                    <div style={{textAlign:'right'}}><strong style={{color:'#00ffff', display:'block', fontSize: '1.2rem'}}>{log.dist} mi</strong><span style={{color:'#888', fontSize:'0.8rem'}}>{log.time}</span></div>
                   </div>
                 ))}
               </div>
