@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+const fs = require('fs');
+
+const code = `import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function FitnessHub() {
@@ -18,14 +20,16 @@ export default function FitnessHub() {
   const [workoutVault, setWorkoutVault] = useState(() => JSON.parse(localStorage.getItem('tot_workout_vault')) || []);
 
   const defaultRoutines = [
-    { id: 'r1', title: "Bodyweight Basics", type: "No Equipment", color: "#f59e0b", desc: "Uses just your body. Great for getting strong anywhere!", movements: [ { name: "Push-ups", sets: 4, defaultWt: 0, defaultReps: 10, desc: "Keep your body straight. Lower your chest to the floor and push up." }, { name: "Air Squats", sets: 4, defaultWt: 0, defaultReps: 15, desc: "Pretend you are sitting down in a chair. Keep your chest up!" }, { name: "Lunges", sets: 3, defaultWt: 0, defaultReps: 10, desc: "Take a big step forward and lower your back knee to gently kiss the ground." }, { name: "Plank Hold", sets: 3, defaultWt: 0, defaultReps: 30, desc: "Rest on your elbows and toes. Squeeze your tummy tight! (Time is in seconds)" } ] },
+    { id: 'r1', title: "Bodyweight Basics", type: "No Equipment", color: "#f59e0b", desc: "Uses just your body. Great for getting strong anywhere!", movements: [ { name: "Push-ups", sets: 4, defaultWt: 0, defaultReps: 10, desc: "Keep your body straight like a board. Lower your chest to the floor and push up." }, { name: "Air Squats", sets: 4, defaultWt: 0, defaultReps: 15, desc: "Pretend you are sitting down in a chair. Keep your chest up!" }, { name: "Lunges", sets: 3, defaultWt: 0, defaultReps: 10, desc: "Take a big step forward and lower your back knee to gently kiss the ground." }, { name: "Plank Hold", sets: 3, defaultWt: 0, defaultReps: 30, desc: "Rest on your elbows and toes. Squeeze your tummy tight! (Time is in seconds)" } ] },
     { id: 'r2', title: "Dumbbell Full Body", type: "Gym Weights", color: "#ef4444", desc: "Use hand weights to build strong muscles safely.", movements: [ { name: "Goblet Squats", sets: 4, defaultWt: 20, defaultReps: 10, desc: "Hold a single dumbbell at your chest with both hands like a heavy cup. Squat down deep." }, { name: "Dumbbell Press", sets: 4, defaultWt: 20, defaultReps: 10, desc: "Push the weights straight up over your head until your arms are straight." }, { name: "Dumbbell Rows", sets: 3, defaultWt: 20, defaultReps: 10, desc: "Bend over slightly, keep your back flat, and pull the weights up to your tummy." } ] },
+    { id: 'r3', title: "Barbell Power", type: "Heavy Lifting", color: "#3b82f6", desc: "Classic heavy lifting. Use a spotter and take your time.", movements: [ { name: "Barbell Back Squat", sets: 5, defaultWt: 135, defaultReps: 5, desc: "Rest the bar on your shoulders. Squat deep and drive up through your heels." }, { name: "Bench Press", sets: 5, defaultWt: 135, defaultReps: 5, desc: "Lie flat on the bench. Lower the bar to your chest and push up strong." }, { name: "Deadlift", sets: 3, defaultWt: 135, defaultReps: 5, desc: "Keep your back perfectly straight. Stand up with the bar from the floor." } ] },
     { id: 'r4', title: "Morning Awakener", type: "Energy Boost", color: "#eab308", desc: "Quick 5-minute movements to wake up your body and get your blood flowing.", movements: [ { name: "Jumping Jacks", sets: 2, defaultWt: 0, defaultReps: 30, desc: "Jump wide while clapping hands above your head. Fast and light!" }, { name: "Arm Circles", sets: 2, defaultWt: 0, defaultReps: 20, desc: "Hold arms out wide. Make small forward circles, then backward circles." }, { name: "Toe Touches", sets: 2, defaultWt: 0, defaultReps: 10, desc: "Reach up high to the sky, then slowly bend down and touch your toes." } ] },
-    { id: 'r6', title: "Tai Chi (Relaxing Flow)", type: "Mindful", color: "#10b981", desc: "Slow movements that look like a slow-motion dance. Good for focus and breathing.", movements: [ { name: "Deep Breathing", sets: 1, defaultWt: 0, defaultReps: 60, desc: "Stand tall. Breathe in deep through your nose, out slowly through your mouth." }, { name: "Cloud Hands", sets: 1, defaultWt: 0, defaultReps: 60, desc: "Wave your hands slowly from side to side, like moving clouds in the sky." } ] },
-    { id: 'r7', title: "Yoga Stretching", type: "Stretching", color: "#8b5cf6", desc: "Stretching to make your body flexible, calm, and pain-free.", movements: [ { name: "Downward Dog", sets: 1, defaultWt: 0, defaultReps: 45, desc: "Make your body look like an upside-down 'V'. Press your heels toward the floor." }, { name: "Cat and Cow", sets: 2, defaultWt: 0, defaultReps: 15, desc: "On your hands and knees, round your back like a scared cat, then drop your belly like a cow." } ] }
+    { id: 'r5', title: "Second Shift Primer", type: "Mobility", color: "#00cccc", desc: "Pre-shift mobility to loosen your joints before a long evening of standing or working.", movements: [ { name: "Deep Squat Hold", sets: 2, defaultWt: 0, defaultReps: 60, desc: "Sit in a very deep squat. Use your elbows to gently push your knees outward." }, { name: "Dead-hang", sets: 2, defaultWt: 0, defaultReps: 60, desc: "Hang from a pull-up bar. Relax your back entirely and let gravity stretch you." } ] },
+    { id: 'r6', title: "Tai Chi (Relaxing Flow)", type: "Mindful", color: "#10b981", desc: "Slow movements that look like a slow-motion dance. Good for focus and breathing.", movements: [ { name: "Deep Breathing", sets: 1, defaultWt: 0, defaultReps: 60, desc: "Stand tall. Breathe in deep through your nose, out slowly through your mouth." }, { name: "Cloud Hands", sets: 1, defaultWt: 0, defaultReps: 60, desc: "Wave your hands slowly from side to side, like moving clouds in the sky." }, { name: "Push the Wave", sets: 1, defaultWt: 0, defaultReps: 60, desc: "Gently push your hands forward like you are pushing water at the beach." } ] },
+    { id: 'r7', title: "Yoga Stretching", type: "Stretching", color: "#8b5cf6", desc: "Stretching to make your body flexible, calm, and pain-free.", movements: [ { name: "Downward Dog", sets: 1, defaultWt: 0, defaultReps: 45, desc: "Make your body look like an upside-down 'V'. Press your heels toward the floor." }, { name: "Cat and Cow", sets: 2, defaultWt: 0, defaultReps: 15, desc: "On your hands and knees, round your back like a scared cat, then drop your belly like a cow." }, { name: "Child's Pose", sets: 1, defaultWt: 0, defaultReps: 60, desc: "Sit back on your heels, reach your arms far forward on the floor, and rest your head." } ] }
   ];
   
-  const [routines, setRoutines] = useState(() => JSON.parse(localStorage.getItem('tot_routines_v3')) || defaultRoutines);
+  const [routines, setRoutines] = useState(() => JSON.parse(localStorage.getItem('tot_routines_v2')) || defaultRoutines);
   const [showBuilder, setShowBuilder] = useState(false);
   const [newRoutine, setNewRoutine] = useState({ title: '', desc: '' });
   const [bMovements, setBMovements] = useState([{ name: '', sets: 3, defaultReps: 10 }]);
@@ -49,10 +53,10 @@ export default function FitnessHub() {
     localStorage.setItem('tot_macros', JSON.stringify(macros)); localStorage.setItem('tot_water_oz', waterOz.toString());
     localStorage.setItem('tot_hydro_vault', JSON.stringify(hydroVault)); localStorage.setItem('tot_weight_logs', JSON.stringify(weightLogs));
     localStorage.setItem('tot_run_logs', JSON.stringify(runLogs)); localStorage.setItem('tot_workout_vault', JSON.stringify(workoutVault)); 
-    localStorage.setItem('tot_routines_v3', JSON.stringify(routines));
+    localStorage.setItem('tot_routines_v2', JSON.stringify(routines));
   }, [bw, bh, ba, macros, waterOz, hydroVault, weightLogs, runLogs, workoutVault, routines]);
 
-  const formatTime = (secs) => { const h = Math.floor(secs/3600); const m = Math.floor((secs%3600)/60); const s = secs%60; return h > 0 ? `${h}:${m < 10 ? '0':''}${m}:${s < 10 ? '0':''}${s}` : `${m}:${s < 10 ? '0':''}${s}`; };
+  const formatTime = (secs) => { const h = Math.floor(secs/3600); const m = Math.floor((secs%3600)/60); const s = secs%60; return h > 0 ? \`\${h}:\${m < 10 ? '0':''}\${m}:\${s < 10 ? '0':''}\${s}\` : \`\${m}:\${s < 10 ? '0':''}\${s}\`; };
   const totalCals = (macros.p * 4) + (macros.c * 4) + (macros.f * 9);
   const estMiles = ((runTime / 60) * 150 * (bh * 0.413) / 63360).toFixed(2);
 
@@ -101,7 +105,7 @@ export default function FitnessHub() {
   const toggleSetDone = (mIdx, sIdx) => { const updated = { ...sessionLogs }; const isDone = !updated[mIdx][sIdx].done; updated[mIdx][sIdx].done = isDone; setSessionLogs(updated); if (isDone) startRest(); };
 
   const finishWorkout = (status) => {
-    if(!window.confirm(`Log this session as ${status}?`)) return;
+    if(!window.confirm(\`Log this session as \${status}?\`)) return;
     clearInterval(sessionRef.current); clearInterval(restIntervalRef.current);
     let totalVol = 0;
     
@@ -128,6 +132,7 @@ export default function FitnessHub() {
   if (activeSession) {
     return (
       <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column', color: '#fff', position: 'relative' }}>
+        
         {isResting && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <h1 style={{ fontSize: '4rem', color: '#00ffff', margin: '0 0 20px 0', letterSpacing: '2px' }}>🌬️ BREATHE</h1>
@@ -135,26 +140,33 @@ export default function FitnessHub() {
             <button onClick={endRest} style={{ background: '#3b82f6', color: '#fff', padding: '15px 40px', fontSize: '1.2rem', borderRadius: '30px', fontWeight: 'bold', border: 'none' }}>▶ Resume Early</button>
           </div>
         )}
-        <header style={{ padding: '15px', background: '#111', borderBottom: `2px solid ${activeSession.color}`, position: 'sticky', top: 0, zIndex: 10 }}>
+
+        <header style={{ padding: '15px', background: '#111', borderBottom: \`2px solid \${activeSession.color}\`, position: 'sticky', top: 0, zIndex: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div><h2 style={{ margin: 0, color: activeSession.color, fontSize: '1.2rem' }}>{activeSession.title}</h2><span style={{ fontSize: '0.9rem', color: '#aaa' }}>Duration: <strong style={{color:'#fff'}}>{formatTime(sessionTime)}</strong></span></div>
-            <button onClick={toggleMasterPause} style={{ background: sessionPaused ? '#10b981' : '#f59e0b', color: '#000', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none' }}>{sessionPaused ? '▶ RESUME' : '⏸ PAUSE'}</button>
+            <button onClick={toggleMasterPause} style={{ background: sessionPaused ? '#10b981' : '#f59e0b', color: '#000', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none' }}>
+              {sessionPaused ? '▶ RESUME' : '⏸ PAUSE'}
+            </button>
           </div>
         </header>
+        
         <div style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '100px', opacity: sessionPaused ? 0.3 : 1, pointerEvents: sessionPaused ? 'none' : 'auto' }}>
           <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px dashed #3b82f6', padding: '15px', borderRadius: '8px', marginBottom: '15px', color: '#3b82f6', fontStyle: 'italic', textAlign: 'center', fontSize: '0.95rem' }}>{currentQuote}</div>
+
           {activeSession.movements.map((m, mIdx) => (
-            <div key={mIdx} style={{ ...cardStyle, borderLeft: `4px solid ${activeSession.color}` }}>
+            <div key={mIdx} style={{ ...cardStyle, borderLeft: \`4px solid \${activeSession.color}\` }}>
               <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: activeSession.color }}>{m.name}</h3>
               <p style={{ color: '#aaa', fontSize: '0.85rem', lineHeight: '1.4', marginBottom: '15px', fontStyle: 'italic' }}>{m.desc}</p>
+              
               <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', paddingLeft: '28px', color: '#888', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
                 <span style={{flex: 1}}>Weight (Lbs)</span><span style={{flex: 1}}>Reps/Secs</span><span style={{width: '45px'}}></span>
               </div>
+
               {sessionLogs[mIdx]?.map((set, sIdx) => (
                 <div key={sIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px', background: set.done ? 'rgba(16, 185, 129, 0.1)' : '#000', padding: '8px', borderRadius: '8px', border: set.done ? '1px solid #10b981' : '1px solid #222' }}>
                   <span style={{ color: '#888', fontWeight: 'bold', width: '20px' }}>{sIdx + 1}</span>
                   <input type="number" placeholder="Lbs" value={set.wt} onChange={e=>updateSet(mIdx, sIdx, 'wt', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
-                  <input type="number" placeholder="Reps" value={set.reps} onChange={e=>updateSet(mIdx, sIdx, 'reps', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
+                  <input type="number" placeholder="Reps/Secs" value={set.reps} onChange={e=>updateSet(mIdx, sIdx, 'reps', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
                   <button onClick={() => toggleSetDone(mIdx, sIdx)} style={{ background: set.done ? '#10b981' : '#333', color: set.done ? '#000' : '#fff', border: 'none', borderRadius: '6px', width: '45px', height: '40px', fontWeight: 'bold', fontSize: '1.2rem' }}>{set.done ? '✓' : ''}</button>
                 </div>
               ))}
@@ -206,7 +218,7 @@ export default function FitnessHub() {
             )}
 
             {routines.map((rt) => (
-              <div key={rt.id} style={{ ...cardStyle, borderLeft: `4px solid ${rt.color}` }}>
+              <div key={rt.id} style={{ ...cardStyle, borderLeft: \`4px solid \${rt.color}\` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.1rem' }}>{rt.title}</h3>
                   <button onClick={() => deleteRoutine(rt.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold' }}>🗑️ Delete</button>
@@ -220,13 +232,13 @@ export default function FitnessHub() {
 
         {activeTab === 'Cardio' && (
           <div style={{ ...cardStyle, borderTop: '4px solid #00ffff', textAlign: 'center' }}>
-            <h3 style={{ margin: '0 0 5px 0', color: '#00ffff' }}>🏃 Offline Cardio</h3>
+            <h3 style={{ margin: '0 0 5px 0', color: '#00ffff' }}>🏃 Offline Cardio Tracker</h3>
             <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '20px' }}>Distance uses your height algorithm, not GPS.</p>
             <div style={{ background: '#000', width: '200px', height: '200px', borderRadius: '50%', border: runActive ? '4px solid #00ffff' : '4px solid #333', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
               <span style={{ fontSize: '3.5rem', fontWeight: 'bold', color: runActive ? '#fff' : '#555', fontVariantNumeric: 'tabular-nums' }}>{formatTime(runTime)}</span>
               <span style={{ color: '#00ffff', fontSize: '1.2rem', fontWeight: 'bold' }}>{estMiles} mi</span>
             </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
               <button onClick={toggleRun} style={{ ...btnStyle(runActive ? '#f59e0b' : '#00ffff', '#000'), flex: 2 }}>{runActive ? '⏸ Pause' : '▶ Start Run'}</button>
               <button onClick={saveRun} style={{ ...btnStyle('#10b981', '#000'), flex: 1 }}>💾 Save</button>
             </div>
@@ -236,17 +248,20 @@ export default function FitnessHub() {
         {activeTab === 'Metrics' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b', textAlign: 'center' }}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#f59e0b' }}>⚖️ Body Weight</h3>
+              <h3 style={{ margin: '0 0 15px 0', color: '#f59e0b' }}>⚖️ My Current Weight</h3>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#000', borderRadius: '12px', padding: '10px', border: '1px solid #333', marginBottom: '15px' }}>
                 <button onClick={() => setBw(prev => Math.max(0, prev - 1))} style={{ background: '#222', color: '#f59e0b', border: 'none', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '8px' }}>-</button>
                 <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#fff' }}>{bw} <span style={{fontSize:'1rem', color:'#888'}}>lbs</span></div>
                 <button onClick={() => setBw(prev => prev + 1)} style={{ background: '#222', color: '#f59e0b', border: 'none', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '8px' }}>+</button>
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{flex: 1}}><label style={{display:'block', color:'#888', fontSize:'0.8rem'}}>Height (inches)</label><input type="number" value={bh} onChange={e=>setBh(parseFloat(e.target.value))} style={inputStyle} /></div>
-                <div style={{flex: 1}}><label style={{display:'block', color:'#888', fontSize:'0.8rem'}}>Age</label><input type="number" value={ba} onChange={e=>setBa(parseFloat(e.target.value))} style={inputStyle} /></div>
+              <div style={{ display: 'flex', gap: '5px', marginBottom: '5px', color: '#888', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                <span style={{flex: 1}}>Height (Inches)</span><span style={{flex: 1}}>Age</span>
               </div>
-              <button onClick={logWeight} style={{...btnStyle('#10b981', '#000'), width: '100%', marginTop: '10px'}}>💾 Log Weight to Vault</button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input type="number" placeholder="Height (inches)" value={bh} onChange={e=>setBh(parseFloat(e.target.value))} style={{...inputStyle, flex: 1}} />
+                <input type="number" placeholder="Age" value={ba} onChange={e=>setBa(parseFloat(e.target.value))} style={{...inputStyle, flex: 1}} />
+                <button onClick={logWeight} style={{...btnStyle('#10b981', '#000'), flex: 1}}>💾 Log It</button>
+              </div>
             </div>
 
             <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
@@ -263,10 +278,14 @@ export default function FitnessHub() {
             </div>
 
             <div style={{ ...cardStyle, borderTop: '4px solid #3b82f6', textAlign: 'center' }}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6' }}>💧 Drink Water</h3>
+              <h3 style={{ margin: '0 0 15px 0', color: '#3b82f6' }}>💧 Drink Water!</h3>
               <div style={{ fontSize: '3.5rem', fontWeight: 'bold', color: '#fff', marginBottom: '15px' }}>{waterOz}<span style={{ fontSize: '1.2rem', color: '#3b82f6', marginLeft: '5px' }}>oz</span></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}><button onClick={() => addWater(8)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 8</button><button onClick={() => addWater(16)} style={{...btnStyle('#3b82f6', '#000')}}>+ 16</button><button onClick={() => addWater(32)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 32</button></div>
-              <button onClick={resetWater} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '0.85rem' }}>Archive to Vault & Reset Day</button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                <button onClick={() => addWater(8)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 8</button>
+                <button onClick={() => addWater(16)} style={{...btnStyle('#3b82f6', '#000')}}>+ 16</button>
+                <button onClick={() => addWater(32)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 32</button>
+              </div>
+              <button onClick={resetWater} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '0.85rem' }}>Start a New Day (Saves to Vault)</button>
             </div>
           </>
         )}
@@ -335,3 +354,7 @@ export default function FitnessHub() {
     </div>
   );
 }
+\`;
+
+fs.writeFileSync('src/views/FitnessHub.jsx', code);
+console.log('✅ FitnessHub successfully overwritten without any terminal bracket errors!');
