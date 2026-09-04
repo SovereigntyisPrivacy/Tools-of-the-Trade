@@ -8,6 +8,8 @@ import './App.css';
 
 const Dashboard = lazy(() => import('./views/Dashboard'));
 const Settings = lazy(() => import('./views/Settings'));
+const CulinaryHub = lazy(() => import('./views/CulinaryHub'));
+const FitnessHub = lazy(() => import('./views/FitnessHub'));
 const CalculatorHub = lazy(() => import('./views/CalculatorHub'));
 const TimesheetCalc = lazy(() => import('./views/TimesheetCalc'));
 const TaxCalc = lazy(() => import('./views/TaxCalc'));
