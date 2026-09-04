@@ -16,7 +16,6 @@ const EngineeringCalc = lazy(() => import('./views/EngineeringCalc'));
 const NuclearCalc = lazy(() => import('./views/NuclearCalc'));
 const MathCalc = lazy(() => import('./views/MathCalc'));
 const EquationLibrary = lazy(() => import('./views/EquationLibrary'));
-const LifestyleCalc = lazy(() => import('./views/LifestyleCalc'));
 const TechCalc = lazy(() => import('./views/TechCalc'));
 const BuilderCalc = lazy(() => import('./views/BuilderCalc'));
 const FinanceCalc = lazy(() => import('./views/FinanceCalc'));
