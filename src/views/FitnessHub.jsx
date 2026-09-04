@@ -20,7 +20,7 @@ export default function FitnessHub() {
   const [runLogs, setRunLogs] = useState(() => JSON.parse(localStorage.getItem('tot_run_logs')) || []);
   const [workoutVault, setWorkoutVault] = useState(() => JSON.parse(localStorage.getItem('tot_workout_vault')) || []);
 
-  // --- KID-FRIENDLY ROUTINE DATABASE ---
+  // --- UNIVERSAL ROUTINE DATABASE ---
   const defaultRoutines = [
     { 
       id: 'r1', title: "Bodyweight Basics", type: "No Equipment", color: "#f59e0b", desc: "Uses just your body. Great for getting strong anywhere!", 
@@ -28,15 +28,15 @@ export default function FitnessHub() {
         { name: "Push-ups", sets: 4, defaultWt: 0, defaultReps: 10, desc: "Keep your body straight like a board. Lower your chest to the floor and push up." }, 
         { name: "Air Squats", sets: 4, defaultWt: 0, defaultReps: 15, desc: "Pretend you are sitting down in a chair. Keep your chest up!" }, 
         { name: "Lunges", sets: 3, defaultWt: 0, defaultReps: 10, desc: "Take a big step forward and lower your back knee to gently kiss the ground." }, 
-        { name: "Plank Hold", sets: 3, defaultWt: 0, defaultReps: 30, desc: "Rest on your elbows and toes. Squeeze your tummy tight!" } 
+        { name: "Plank Hold", sets: 3, defaultWt: 0, defaultReps: 30, desc: "Rest on your elbows and toes. Squeeze your tummy tight! (Time is in seconds)" } 
       ] 
     },
     { 
-      id: 'r2', title: "Heavy Barbell & Dumbbell", type: "Gym Weights", color: "#ef4444", desc: "Use heavy weights to build big muscles. Lift carefully and safely!", 
+      id: 'r2', title: "Dumbbell Strength", type: "Gym Weights", color: "#ef4444", desc: "Use heavy weights to build big muscles. Lift carefully and safely!", 
       movements: [ 
-        { name: "Goblet Squats (Dumbbell)", sets: 4, defaultWt: 20, defaultReps: 10, desc: "Hold a weight at your chest like a big cup. Squat down deep." }, 
+        { name: "Goblet Squats", sets: 4, defaultWt: 20, defaultReps: 10, desc: "Hold a dumbbell at your chest like a big cup. Squat down deep." }, 
         { name: "Overhead Press", sets: 4, defaultWt: 20, defaultReps: 10, desc: "Push the weights straight up over your head until your arms are straight." }, 
-        { name: "Dumbbell Rows", sets: 3, defaultWt: 20, defaultReps: 10, desc: "Bend over slightly and pull the weight up to your tummy." } 
+        { name: "Dumbbell Rows", sets: 3, defaultWt: 20, defaultReps: 10, desc: "Bend over slightly, keep your back flat, and pull the weight up to your tummy." } 
       ] 
     },
     {
@@ -58,7 +58,6 @@ export default function FitnessHub() {
   
   const [routines, setRoutines] = useState(() => JSON.parse(localStorage.getItem('tot_routines')) || defaultRoutines);
   
-  // Custom Routine Builder State
   const [showBuilder, setShowBuilder] = useState(false);
   const [newRoutine, setNewRoutine] = useState({ title: '', desc: '' });
   const [bMovements, setBMovements] = useState([{ name: '', sets: 3, defaultReps: 10 }]);
@@ -74,7 +73,6 @@ export default function FitnessHub() {
   const [restTimeLeft, setRestTimeLeft] = useState(0);
   const completedSetsRef = useRef(0);
 
-  // --- STATE: RUN TRACKER ---
   const [runTime, setRunTime] = useState(0);
   const [runActive, setRunActive] = useState(false);
 
@@ -97,7 +95,6 @@ export default function FitnessHub() {
 
   const formatTime = (secs) => { const h = Math.floor(secs/3600); const m = Math.floor((secs%3600)/60); const s = secs%60; return h > 0 ? `${h}:${m < 10 ? '0':''}${m}:${s < 10 ? '0':''}${s}` : `${m}:${s < 10 ? '0':''}${s}`; };
   
-  // OFFLINE BIOMETRIC DISTANCE (Height * 0.413 = Stride. Avg 150 steps/min)
   const estMiles = ((runTime / 60) * 150 * (bh * 0.413) / 63360).toFixed(2);
 
   const logWeight = () => setWeightLogs([{ date: new Date().toLocaleDateString(), wt: bw }, ...weightLogs]);
@@ -109,7 +106,12 @@ export default function FitnessHub() {
   const toggleRun = () => { if (runActive) { clearInterval(runRef.current); setRunActive(false); } else { setRunActive(true); runRef.current = setInterval(() => setRunTime(prev => prev + 1), 1000); } };
   const saveRun = () => { if(runTime === 0) return; setRunLogs([{ id: Date.now(), date: new Date().toLocaleString(), time: formatTime(runTime), dist: estMiles }, ...runLogs]); clearInterval(runRef.current); setRunActive(false); setRunTime(0); alert("Run archived!"); };
 
-  // --- EASY CUSTOM ROUTINE BUILDER ---
+  const deleteRoutine = (id) => {
+    if(window.confirm("Are you sure you want to delete this routine?")) {
+      setRoutines(routines.filter(r => r.id !== id));
+    }
+  };
+
   const addCustomMove = () => setBMovements([...bMovements, { name: '', sets: 3, defaultReps: 10 }]);
   const updateCMove = (idx, field, val) => { const newM = [...bMovements]; newM[idx][field] = val; setBMovements(newM); };
   const saveCustomRoutine = () => {
@@ -118,7 +120,6 @@ export default function FitnessHub() {
     setShowBuilder(false); setNewRoutine({ title: '', desc: '' }); setBMovements([{ name: '', sets: 3, defaultReps: 10 }]);
   };
 
-  // --- REST & BREATHE ENGINE ---
   const startRest = () => {
     completedSetsRef.current += 1;
     const time = (completedSetsRef.current % 3 === 0) ? 60 : 10;
@@ -133,7 +134,6 @@ export default function FitnessHub() {
     sessionRef.current = setInterval(() => setSessionTime(p => p + 1), 1000);
   };
 
-  // --- ACTIVE SESSION LOGIC ---
   const startWorkout = (rt) => {
     let initialLogs = {}; completedSetsRef.current = 0;
     rt.movements.forEach((m, i) => { initialLogs[i] = Array.from({ length: m.sets }).map(() => ({ wt: m.defaultWt || 0, reps: m.defaultReps || 0, done: false })); });
@@ -150,7 +150,7 @@ export default function FitnessHub() {
   const updateSet = (mIdx, sIdx, field, val) => { const updated = { ...sessionLogs }; updated[mIdx][sIdx][field] = val; setSessionLogs(updated); };
   const toggleSetDone = (mIdx, sIdx) => {
     const updated = { ...sessionLogs }; const isDone = !updated[mIdx][sIdx].done; updated[mIdx][sIdx].done = isDone; setSessionLogs(updated);
-    if (isDone) startRest(); // Triggers the Breathe overlay
+    if (isDone) startRest();
   };
 
   const finishWorkout = (status) => {
@@ -158,7 +158,6 @@ export default function FitnessHub() {
     clearInterval(sessionRef.current); clearInterval(restIntervalRef.current);
     let totalVol = 0;
     
-    // Auto-Progression Magic
     const updatedRoutines = routines.map(rt => {
       if (rt.id === activeSession.id && status === 'Completed') {
         const updatedMovements = rt.movements.map((m, mIdx) => {
@@ -190,9 +189,8 @@ export default function FitnessHub() {
     return (
       <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column', color: '#fff', position: 'relative' }}>
         
-        {/* BREATHE OVERLAY */}
         {isResting && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <h1 style={{ fontSize: '4rem', color: '#00ffff', margin: '0 0 20px 0', letterSpacing: '2px' }}>🌬️ BREATHE</h1>
             <div style={{ fontSize: '6rem', fontWeight: 'bold', color: '#fff', marginBottom: '40px' }}>{restTimeLeft}s</div>
             <button onClick={endRest} style={{ background: '#3b82f6', color: '#fff', padding: '15px 40px', fontSize: '1.2rem', borderRadius: '30px', fontWeight: 'bold', border: 'none' }}>▶ Resume Early</button>
@@ -216,11 +214,15 @@ export default function FitnessHub() {
               <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: activeSession.color }}>{m.name}</h3>
               <p style={{ color: '#aaa', fontSize: '0.85rem', lineHeight: '1.4', marginBottom: '15px', fontStyle: 'italic' }}>{m.desc}</p>
               
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', paddingLeft: '28px', color: '#888', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                <span style={{flex: 1}}>Weight (Lbs)</span><span style={{flex: 1}}>Reps / Secs</span><span style={{width: '45px'}}></span>
+              </div>
+
               {sessionLogs[mIdx]?.map((set, sIdx) => (
                 <div key={sIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px', background: set.done ? 'rgba(16, 185, 129, 0.1)' : '#000', padding: '8px', borderRadius: '8px', border: set.done ? '1px solid #10b981' : '1px solid #222' }}>
                   <span style={{ color: '#888', fontWeight: 'bold', width: '20px' }}>{sIdx + 1}</span>
-                  <input type="number" placeholder="lbs" value={set.wt} onChange={e=>updateSet(mIdx, sIdx, 'wt', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
-                  <input type="number" placeholder="reps" value={set.reps} onChange={e=>updateSet(mIdx, sIdx, 'reps', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
+                  <input type="number" placeholder="Lbs" value={set.wt} onChange={e=>updateSet(mIdx, sIdx, 'wt', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
+                  <input type="number" placeholder="Reps/Secs" value={set.reps} onChange={e=>updateSet(mIdx, sIdx, 'reps', e.target.value)} disabled={set.done} style={{ ...inputStyle, padding: '8px', flex: 1, opacity: set.done ? 0.5 : 1 }} />
                   <button onClick={() => toggleSetDone(mIdx, sIdx)} style={{ background: set.done ? '#10b981' : '#333', color: set.done ? '#000' : '#fff', border: 'none', borderRadius: '6px', width: '45px', height: '40px', fontWeight: 'bold', fontSize: '1.2rem' }}>{set.done ? '✓' : ''}</button>
                 </div>
               ))}
@@ -252,16 +254,20 @@ export default function FitnessHub() {
         
         {activeTab === 'Routines' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <button onClick={() => setShowBuilder(!showBuilder)} style={btnStyle('transparent', '#10b981', {border: '1px dashed #10b981'})}>{showBuilder ? 'Cancel' : '+ Build Custom Routine'}</button>
+            <button onClick={() => setShowBuilder(!showBuilder)} style={btnStyle('transparent', '#10b981', {border: '1px dashed #10b981'})}>{showBuilder ? 'Cancel Builder' : '+ Build Custom Routine'}</button>
             
             {showBuilder && (
               <div style={{ ...cardStyle, border: '1px solid #10b981' }}>
                 <input type="text" placeholder="Workout Title (e.g. Leg Day)" value={newRoutine.title} onChange={e=>setNewRoutine({...newRoutine, title: e.target.value})} style={{...inputStyle, marginBottom: '10px'}} />
                 <input type="text" placeholder="Short Description..." value={newRoutine.desc} onChange={e=>setNewRoutine({...newRoutine, desc: e.target.value})} style={{...inputStyle, marginBottom: '15px'}} />
+                
                 <h4 style={{ color: '#00cc66', margin: '0 0 10px 0' }}>Exercises</h4>
+                <div style={{ display: 'flex', gap: '5px', marginBottom: '5px', color: '#888', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                  <span style={{flex: 2}}>Name</span><span style={{flex: 1}}>Sets</span><span style={{flex: 1}}>Reps/Sec</span>
+                </div>
                 {bMovements.map((m, idx) => (
                   <div key={idx} style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-                    <input type="text" placeholder="Name" value={m.name} onChange={e=>updateCMove(idx, 'name', e.target.value)} style={{...inputStyle, flex: 2, padding: '8px'}} />
+                    <input type="text" placeholder="Exercise Name" value={m.name} onChange={e=>updateCMove(idx, 'name', e.target.value)} style={{...inputStyle, flex: 2, padding: '8px'}} />
                     <input type="number" placeholder="Sets" value={m.sets} onChange={e=>updateCMove(idx, 'sets', parseInt(e.target.value))} style={{...inputStyle, flex: 1, padding: '8px'}} />
                     <input type="number" placeholder="Reps" value={m.defaultReps} onChange={e=>updateCMove(idx, 'defaultReps', parseInt(e.target.value))} style={{...inputStyle, flex: 1, padding: '8px'}} />
                   </div>
@@ -273,7 +279,10 @@ export default function FitnessHub() {
 
             {routines.map((rt) => (
               <div key={rt.id} style={{ ...cardStyle, borderLeft: `4px solid ${rt.color}` }}>
-                <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.1rem' }}>{rt.title}</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.1rem' }}>{rt.title}</h3>
+                  <button onClick={() => deleteRoutine(rt.id)} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold' }}>🗑️ Delete</button>
+                </div>
                 <p style={{ color: '#aaa', fontSize: '0.85rem', lineHeight: '1.4', marginBottom: '15px' }}>{rt.desc}</p>
                 <button onClick={() => startWorkout(rt)} style={{ ...btnStyle(rt.color, '#000') }}>▶ Start Workout</button>
               </div>
@@ -305,8 +314,11 @@ export default function FitnessHub() {
                 <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#fff' }}>{bw} <span style={{fontSize:'1rem', color:'#888'}}>lbs</span></div>
                 <button onClick={() => setBw(prev => prev + 1)} style={{ background: '#222', color: '#f59e0b', border: 'none', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '8px' }}>+</button>
               </div>
+              <div style={{ display: 'flex', gap: '5px', marginBottom: '5px', color: '#888', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                <span style={{flex: 1}}>Height (Inches)</span><span style={{flex: 1}}>Age</span>
+              </div>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <input type="number" placeholder="Height (in)" value={bh} onChange={e=>setBh(parseFloat(e.target.value))} style={{...inputStyle, flex: 1}} />
+                <input type="number" placeholder="Height (inches)" value={bh} onChange={e=>setBh(parseFloat(e.target.value))} style={{...inputStyle, flex: 1}} />
                 <input type="number" placeholder="Age" value={ba} onChange={e=>setBa(parseFloat(e.target.value))} style={{...inputStyle, flex: 1}} />
                 <button onClick={logWeight} style={{...btnStyle('#10b981', '#000'), flex: 1}}>💾 Log It</button>
               </div>
