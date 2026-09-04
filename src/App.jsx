@@ -138,7 +138,9 @@ function App() {
                 <Route path="/vault" element={<Vault />} />
 
                 {/* Calculators */}
-                <Route path="/calculator" element={<CalculatorHub />} />
+                <Route path="/culinary" element={<CulinaryHub />} />
+        <Route path="/fitness" element={<FitnessHub />} />
+        <Route path="/calculator" element={<CalculatorHub />} />
                 <Route path="/calculator/timesheet" element={<TimesheetCalc />} />
                 <Route path="/calculator/tax" element={<TaxCalc />} />
                 <Route path="/calculator/solar" element={<SolarCalc />} />
@@ -147,8 +149,7 @@ function App() {
                 <Route path="/calculator/nuclear" element={<NuclearCalc />} />
                 <Route path="/calculator/math" element={<MathCalc />} />
                 <Route path="/calculator/equations" element={<EquationLibrary />} />
-                <Route path="/calculator/lifestyle" element={<LifestyleCalc />} />
-                <Route path="/calculator/tech" element={<TechCalc />} />
+                                <Route path="/calculator/tech" element={<TechCalc />} />
                 <Route path="/calculator/builder" element={<BuilderCalc />} />
                 <Route path="/calculator/finance" element={<FinanceCalc />} />
 

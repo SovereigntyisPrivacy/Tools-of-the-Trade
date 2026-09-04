@@ -12,7 +12,6 @@ export default function CalculatorHub() {
     { id: 'engineering', icon: '📐', title: 'Engineering', desc: 'Structural limits, materials, and physics formulas.', path: '/calculator/engineering' },
     { id: 'nuclear', icon: '☢️', title: 'Nuclear Decay', desc: 'Half-life, radiation shielding, and isotope decay rates.', path: '/calculator/nuclear' },
     { id: 'finance', icon: '💰', title: 'Finance & Loans', desc: 'Mortgage amortization and total interest logic.', path: '/calculator/finance' },
-    { id: 'lifestyle', icon: '🏋️', title: 'Lifestyle & Health', desc: 'Culinary yield scaling and 1RM kinetic strength.', path: '/calculator/lifestyle' },
     { id: 'builder', icon: '🔨', title: 'DIY & Builder', desc: 'Construction material estimators and tool logic.', path: '/calculator/builder' },
     { id: 'tech', icon: '💻', title: 'Tech & Network', desc: 'Bandwidth transfer times and IP subnet calculation.', path: '/calculator/tech' },
     { id: 'agronomy', icon: '🌱', title: 'Agronomy & Extract', desc: 'Botanical lighting, extraction yields, and volumetric dosing.', path: '/agronomy' },
