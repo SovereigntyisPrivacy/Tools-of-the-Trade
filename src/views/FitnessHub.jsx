@@ -22,15 +22,15 @@ export default function FitnessHub() {
   const [runLogs, setRunLogs] = useState(() => JSON.parse(localStorage.getItem('tot_run_logs')) || []);
   const [workoutVault, setWorkoutVault] = useState(() => JSON.parse(localStorage.getItem('tot_workout_vault')) || []);
 
-  // V5 Database - Now with 'reps', 'time', and 'hold' types!
+  // V6 Database - Replaced the Primer and upgraded the descriptions
   const defaultRoutines = [
     { id: 'r1', title: "Bodyweight Basics", type: "No Equipment", color: "#f59e0b", restTime: 45, desc: "Uses just your body. Great for getting strong anywhere!", movements: [ { name: "Push-ups", sets: 4, type: 'reps', defaultWt: 0, defaultReps: 10 }, { name: "Air Squats", sets: 4, type: 'reps', defaultWt: 0, defaultReps: 15 }, { name: "Plank Hold", sets: 3, type: 'time', duration: 60, desc: "Squeeze your core! The coach will time you." } ] },
     { id: 'r2', title: "Dumbbell Full Body", type: "Gym Weights", color: "#ef4444", restTime: 60, desc: "Use hand weights to build strong muscles safely.", movements: [ { name: "Goblet Squats", sets: 4, type: 'reps', defaultWt: 20, defaultReps: 10 }, { name: "Dumbbell Rows", sets: 3, type: 'reps', defaultWt: 20, defaultReps: 10 } ] },
-    { id: 'r5', title: "Second Shift Primer", type: "Mobility", color: "#00cccc", restTime: 30, desc: "Pre-shift mobility to loosen your joints.", movements: [ { name: "Deep Squat Hold", sets: 2, type: 'time', duration: 60, desc: "Sit deep. The coach will track your 60 seconds." }, { name: "Dead-hang", sets: 2, type: 'time', duration: 60 } ] },
+    { id: 'r5', title: "Shift Worker Posture Reset", type: "Mobility", color: "#00cccc", restTime: 15, desc: "Relieve lower back pain, calf fatigue, and wrist strain from standing and working all evening.", movements: [ { name: "Standing Back Extensions", sets: 1, type: 'time', duration: 60, desc: "Place hands on your lower back and gently lean backward to fix slouched posture." }, { name: "Wall Calf Stretch", sets: 2, type: 'hold', holdSecs: 30, relSecs: 5, cycles: 1, desc: "Lean against a wall, keep back leg straight, press heel into the floor." }, { name: "Wrist & Forearm Stretch", sets: 2, type: 'hold', holdSecs: 20, relSecs: 5, cycles: 1, desc: "Extend arm out, gently pull your fingers back toward your body." } ] },
     { id: 'r6', title: "Mindful Box Breathing", type: "Mindful", color: "#10b981", restTime: 10, desc: "Guided breathing to lower heart rate and stress.", movements: [ { name: "Box Breathing Flow", sets: 1, type: 'hold', holdSecs: 4, relSecs: 4, cycles: 10, desc: "Follow the guided coach. Inhale/Hold, then Exhale/Release." } ] }
   ];
   
-  const [routines, setRoutines] = useState(() => JSON.parse(localStorage.getItem('tot_routines_v5')) || defaultRoutines);
+  const [routines, setRoutines] = useState(() => JSON.parse(localStorage.getItem('tot_routines_v6')) || defaultRoutines);
   const [showBuilder, setShowBuilder] = useState(false);
   const [newRoutine, setNewRoutine] = useState({ title: '', desc: '', restTime: 60 });
   const [bMovements, setBMovements] = useState([{ name: '', type: 'reps', sets: 3, defaultReps: 10, duration: 60, holdSecs: 5, relSecs: 5, cycles: 5 }]);
@@ -43,9 +43,7 @@ export default function FitnessHub() {
   
   const [isResting, setIsResting] = useState(false);
   const [restTimeLeft, setRestTimeLeft] = useState(0);
-  
-  // NEW: The Action Coach State
-  const [coach, setCoach] = useState(null); // { mIdx, sIdx, move, phase: 'prep'|'work'|'hold'|'release', timeLeft, cycle }
+  const [coach, setCoach] = useState(null);
 
   const [runTime, setRunTime] = useState(0);
   const [runActive, setRunActive] = useState(false);
@@ -57,7 +55,7 @@ export default function FitnessHub() {
     localStorage.setItem('tot_macros', JSON.stringify(macros)); localStorage.setItem('tot_water_oz', waterOz.toString());
     localStorage.setItem('tot_hydro_vault', JSON.stringify(hydroVault)); localStorage.setItem('tot_weight_logs', JSON.stringify(weightLogs));
     localStorage.setItem('tot_hr_logs', JSON.stringify(hrLogs)); localStorage.setItem('tot_run_logs', JSON.stringify(runLogs));
-    localStorage.setItem('tot_workout_vault', JSON.stringify(workoutVault)); localStorage.setItem('tot_routines_v5', JSON.stringify(routines));
+    localStorage.setItem('tot_workout_vault', JSON.stringify(workoutVault)); localStorage.setItem('tot_routines_v6', JSON.stringify(routines));
   }, [bw, bh, ba, macros, waterOz, hydroVault, weightLogs, hrLogs, runLogs, workoutVault, routines]);
 
 
@@ -67,16 +65,10 @@ export default function FitnessHub() {
   const oneRM = Math.round(calcWt * (1 + (calcReps / 30)));
   const waterPercent = Math.min((waterOz / 128) * 100, 100);
 
-  // --- PROGRESS BAR MATH ---
   let totalSets = 0; let completedSets = 0;
-  if (activeSession) {
-    Object.keys(sessionLogs).forEach(mIdx => {
-      sessionLogs[mIdx].forEach(set => { totalSets++; if(set.done) completedSets++; });
-    });
-  }
+  if (activeSession) { Object.keys(sessionLogs).forEach(mIdx => { sessionLogs[mIdx].forEach(set => { totalSets++; if(set.done) completedSets++; }); }); }
   const sessionProgress = totalSets === 0 ? 0 : Math.round((completedSets / totalSets) * 100);
 
-  // --- DELETERS & LOGGERS ---
   const updateMacro = (field, val) => setMacros(prev => ({ ...prev, [field]: parseInt(val)||0 }));
   const logWeight = () => { setWeightLogs([{ id: Date.now(), date: new Date().toLocaleString(), wt: bw }, ...weightLogs]); alert("Weight saved!"); };
   const logHR = () => { if(currentHR) { setHrLogs([{ id: Date.now(), date: new Date().toLocaleString(), bpm: currentHR }, ...hrLogs]); setCurrentHR(''); alert("Heart Rate saved!"); }};
@@ -102,7 +94,6 @@ export default function FitnessHub() {
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
-  // --- CUSTOM BUILDER ---
   const addCustomMove = () => setBMovements([...bMovements, { name: '', type: 'reps', sets: 3, defaultReps: 10, duration: 60, holdSecs: 5, relSecs: 5, cycles: 5 }]);
   const updateCMove = (idx, field, val) => { const newM = [...bMovements]; newM[idx][field] = val; setBMovements(newM); };
   const saveCustomRoutine = () => {
@@ -111,7 +102,6 @@ export default function FitnessHub() {
     setShowBuilder(false); setNewRoutine({ title: '', desc: '', restTime: 60 }); setBMovements([{ name: '', type: 'reps', sets: 3, defaultReps: 10, duration: 60, holdSecs: 5, relSecs: 5, cycles: 5 }]); alert("Custom Routine Saved!");
   };
 
-  // --- THE ACTION COACH ENGINE ---
   const startActionCoach = (mIdx, sIdx, move) => {
     setCoach({ mIdx, sIdx, move, phase: 'prep', timeLeft: 3, cycle: 1 });
     clearInterval(sessionRef.current); clearInterval(coachRef.current);
@@ -136,13 +126,25 @@ export default function FitnessHub() {
   const endActionCoach = (mIdx, sIdx) => { clearInterval(coachRef.current); setCoach(null); toggleSetDone(mIdx, sIdx, true); sessionRef.current = setInterval(() => setSessionTime(p => p + 1), 1000); };
   const abortCoach = () => { clearInterval(coachRef.current); setCoach(null); sessionRef.current = setInterval(() => setSessionTime(p => p + 1), 1000); };
 
-  // --- SESSION ENGINE ---
   const startRest = () => {
     setRestTimeLeft(activeSession.restTime || 60); setIsResting(true); setSessionPaused(true);
     clearInterval(sessionRef.current); clearInterval(restIntervalRef.current);
     restIntervalRef.current = setInterval(() => { setRestTimeLeft(prev => { if (prev <= 1) { endRest(); return 0; } return prev - 1; }); }, 1000);
   };
   const endRest = () => { clearInterval(restIntervalRef.current); setIsResting(false); setSessionPaused(false); sessionRef.current = setInterval(() => setSessionTime(p => p + 1), 1000); };
+
+  const animeQuotes = [
+    '"A dropout will beat a genius through hard work." - Rock Lee',
+    '"I do not fear this new challenge. Rather like a true warrior I will rise to meet it." - Vegeta',
+    '"Whether you win or lose, looking back and learning from your experience is a part of life." - All Might',
+    '"Push through the pain. Giving up hurts more." - Vegeta',
+    '"Don\'t believe in yourself. Believe in me! Believe in the Kamina who believes in you!" - Kamina',
+    '"Stand up and walk. Keep moving forward. You\'ve got two good legs." - Edward Elric',
+    '"If you don\'t take risks, you can\'t create a future." - Monkey D. Luffy',
+    '"There is no such thing as luck in this world. There is only hard work." - Saitama',
+    '"Hard work is worthless for those that don\'t believe in themselves." - Naruto Uzumaki',
+    '"A lesson without pain is meaningless." - Edward Elric'
+  ];
 
   const startWorkout = (rt) => {
     let initialLogs = {}; 
@@ -195,7 +197,6 @@ export default function FitnessHub() {
     return (
       <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column', color: '#fff', position: 'relative' }}>
         
-        {/* THE ACTION COACH OVERLAY */}
         {coach && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: coach.phase === 'hold' ? 'rgba(239, 68, 68, 0.95)' : coach.phase === 'release' ? 'rgba(16, 185, 129, 0.95)' : 'rgba(0,0,0,0.95)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'background 0.5s ease' }}>
             <h2 style={{ fontSize: '2rem', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '2px' }}>
@@ -207,7 +208,6 @@ export default function FitnessHub() {
           </div>
         )}
 
-        {/* BREATHE OVERLAY */}
         {isResting && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <h1 style={{ fontSize: '4rem', color: '#00ffff', margin: '0 0 20px 0', letterSpacing: '2px' }}>🌬️ BREATHE</h1>
@@ -221,14 +221,16 @@ export default function FitnessHub() {
             <div><h2 style={{ margin: 0, color: activeSession.color, fontSize: '1.2rem' }}>{activeSession.title}</h2><span style={{ fontSize: '0.9rem', color: '#aaa' }}>Duration: <strong style={{color:'#fff'}}>{formatTime(sessionTime)}</strong></span></div>
             <button onClick={toggleMasterPause} style={{ background: sessionPaused ? '#10b981' : '#f59e0b', color: '#000', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none' }}>{sessionPaused ? '▶ RESUME' : '⏸ PAUSE'}</button>
           </div>
-          {/* THE PROGRESS BAR */}
           <div style={{ width: '100%', height: '6px', background: '#222' }}>
             <div style={{ width: `${sessionProgress}%`, background: activeSession.color, height: '100%', transition: 'width 0.3s ease' }}></div>
           </div>
         </header>
         
         <div style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '100px', opacity: sessionPaused ? 0.3 : 1, pointerEvents: sessionPaused ? 'none' : 'auto' }}>
-          <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px dashed #3b82f6', padding: '15px', borderRadius: '8px', marginBottom: '15px', color: '#3b82f6', fontStyle: 'italic', textAlign: 'center', fontSize: '0.95rem' }}>{currentQuote}</div>
+          
+          <div style={{ background: 'rgba(59, 130, 246, 0.15)', border: '2px solid #3b82f6', padding: '20px', borderRadius: '12px', marginBottom: '20px', color: '#60a5fa', fontStyle: 'italic', textAlign: 'center', fontSize: '1.1rem', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.2)' }}>
+            {currentQuote}
+          </div>
           
           {activeSession.movements.map((m, mIdx) => (
             <div key={mIdx} style={{ ...cardStyle, borderLeft: `4px solid ${activeSession.color}` }}>
@@ -258,7 +260,7 @@ export default function FitnessHub() {
                   {set.done ? (
                     <button onClick={() => toggleSetDone(mIdx, sIdx)} style={{ background: 'transparent', color: '#10b981', border: '1px solid #10b981', borderRadius: '6px', padding: '8px 15px', fontWeight: 'bold' }}>✓ DONE</button>
                   ) : (
-                    <button onClick={() => startActionCoach(mIdx, sIdx, m)} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 15px', fontWeight: 'bold' }}>▶ START</button>
+                    <button onClick={() => startActionCoach(mIdx, sIdx, m)} style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 15px', fontWeight: 'bold' }}>▶ START COACH</button>
                   )}
                 </div>
               ))}
@@ -300,7 +302,6 @@ export default function FitnessHub() {
                   <label style={{display:'block', color:'#00cc66', fontSize:'0.8rem', fontWeight:'bold', marginBottom:'5px'}}>Rest Between Sets (Seconds)</label>
                   <input type="number" value={newRoutine.restTime} onChange={e=>setNewRoutine({...newRoutine, restTime: parseInt(e.target.value)})} style={inputStyle} />
                 </div>
-
                 <h4 style={{ color: '#00cc66', margin: '0 0 10px 0' }}>Exercises</h4>
                 {bMovements.map((m, idx) => (
                   <div key={idx} style={{ background: '#000', padding: '10px', borderRadius: '8px', border: '1px solid #333', marginBottom: '10px' }}>
@@ -342,7 +343,7 @@ export default function FitnessHub() {
 
         {activeTab === 'Cardio' && (
           <div style={{ ...cardStyle, borderTop: '4px solid #00ffff', textAlign: 'center' }}>
-            <h3 style={{ margin: '0 0 5px 0', color: '#00ffff' }}>🏃 Offline Cardio</h3>
+            <h3 style={{ margin: '0 0 5px 0', color: '#00ffff' }}>🏃 Offline Cardio Tracker</h3>
             <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '20px' }}>Distance uses your height algorithm, not GPS.</p>
             <div style={{ background: '#000', width: '200px', height: '200px', borderRadius: '50%', border: runActive ? '4px solid #00ffff' : '4px solid #333', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
               <span style={{ fontSize: '3.5rem', fontWeight: 'bold', color: runActive ? '#fff' : '#555', fontVariantNumeric: 'tabular-nums' }}>{formatTime(runTime)}</span>
@@ -383,16 +384,11 @@ export default function FitnessHub() {
               <button onClick={logWeight} style={{...btnStyle('#10b981', '#000'), width: '100%'}}>💾 Log to Vault</button>
             </div>
 
-            <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#a855f7' }}>🔥 Daily Macros</h3>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <div style={{flex: 1}}><label style={{display:'block', color:'#3b82f6', fontSize:'0.8rem'}}>Protein (g)</label><input type="number" value={macros.p} onChange={e=>updateMacro('p', e.target.value)} style={inputStyle} /></div>
-                <div style={{flex: 1}}><label style={{display:'block', color:'#10b981', fontSize:'0.8rem'}}>Carbs (g)</label><input type="number" value={macros.c} onChange={e=>updateMacro('c', e.target.value)} style={inputStyle} /></div>
-                <div style={{flex: 1}}><label style={{display:'block', color:'#f59e0b', fontSize:'0.8rem'}}>Fats (g)</label><input type="number" value={macros.f} onChange={e=>updateMacro('f', e.target.value)} style={inputStyle} /></div>
-              </div>
-              <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222', textAlign: 'center' }}>
-                <span style={{ color: '#aaa', display: 'block' }}>Estimated Calories:</span>
-                <strong style={{ color: '#a855f7', fontSize: '2rem' }}>{totalCals}</strong>
+            <div style={{ ...cardStyle, borderTop: '4px solid #ef4444', textAlign: 'center' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#ef4444' }}>❤️ Medical & Vitals</h3>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input type="number" placeholder="Enter Heart Rate (BPM)" value={currentHR} onChange={e=>setCurrentHR(e.target.value)} style={{...inputStyle, flex: 2}} />
+                <button onClick={logHR} style={{...btnStyle('#ef4444', '#fff'), flex: 1}}>Log BPM</button>
               </div>
             </div>
 
