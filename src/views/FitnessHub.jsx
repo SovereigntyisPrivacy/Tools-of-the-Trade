@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 export default function FitnessHub() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Routines');
-  const [vaultTab, setVaultTab] = useState('Workouts');
+  const [activeTab, setActiveTab] = useState('Workouts');
+  const [vaultTab, setVaultTab] = useState('Exercises');
 
   const [bw, setBw] = useState(() => parseFloat(localStorage.getItem('tot_bw')) || 185);
   const [bh, setBh] = useState(() => parseFloat(localStorage.getItem('tot_bh')) || 71);
@@ -22,16 +22,17 @@ export default function FitnessHub() {
   const [runLogs, setRunLogs] = useState(() => JSON.parse(localStorage.getItem('tot_run_logs')) || []);
   const [workoutVault, setWorkoutVault] = useState(() => JSON.parse(localStorage.getItem('tot_workout_vault')) || []);
 
-  // V7 Database - Upgraded with specific Breathing Protocols
+  // V8 Database - Completely overhauled for family-friendly reading
   const defaultRoutines = [
-    { id: 'r1', title: "Bodyweight Basics", type: "No Equipment", color: "#f59e0b", restTime: 45, desc: "Uses just your body. Great for getting strong anywhere!", movements: [ { name: "Push-ups", sets: 4, type: 'reps', defaultWt: 0, defaultReps: 10 }, { name: "Air Squats", sets: 4, type: 'reps', defaultWt: 0, defaultReps: 15 }, { name: "Plank Hold", sets: 3, type: 'time', duration: 60 } ] },
-    { id: 'r2', title: "Dumbbell Full Body", type: "Gym Weights", color: "#ef4444", restTime: 60, desc: "Use hand weights to build strong muscles safely.", movements: [ { name: "Goblet Squats", sets: 4, type: 'reps', defaultWt: 20, defaultReps: 10 }, { name: "Dumbbell Press", sets: 4, type: 'reps', defaultWt: 20, defaultReps: 10 }, { name: "Dumbbell Rows", sets: 3, type: 'reps', defaultWt: 20, defaultReps: 10 } ] },
-    { id: 'r5', title: "Shift Worker Posture Reset", type: "Mobility", color: "#00cccc", restTime: 15, desc: "Relieve lower back pain, calf fatigue, and wrist strain.", movements: [ { name: "Standing Back Extensions", sets: 1, type: 'time', duration: 60 }, { name: "Wall Calf Stretch", sets: 2, type: 'time', duration: 30 } ] },
-    { id: 'r6', title: "Navy SEAL Box Breathing", type: "Tactical", color: "#10b981", restTime: 10, desc: "Used by special forces to steady heart rate and calm nerves under extreme stress.", movements: [ { name: "Box Breathing Flow", sets: 1, type: 'breathing', inhaleSecs: 4, hold1Secs: 4, exhaleSecs: 4, hold2Secs: 4, cycles: 10, desc: "Follow the coach: Inhale 4s, Hold 4s, Exhale 4s, Hold Empty 4s." } ] },
-    { id: 'r7', title: "4-7-8 Athletic Recovery", type: "Recovery", color: "#8b5cf6", restTime: 10, desc: "Designed for immediate nervous system down-regulation and fast sleep onset.", movements: [ { name: "4-7-8 Flow", sets: 1, type: 'breathing', inhaleSecs: 4, hold1Secs: 7, exhaleSecs: 8, hold2Secs: 0, cycles: 8, desc: "Inhale quickly, hold long, exhale very slowly. No bottom hold." } ] }
+    { id: 'r1', title: "Bodyweight Basics", type: "No Equipment", color: "#f59e0b", restTime: 45, desc: "Uses just your body. Great for getting strong anywhere!", movements: [ { name: "Push-ups", sets: 4, type: 'reps', defaultWt: 0, defaultReps: 10, desc: "Keep your body straight. Lower your chest to the floor and push up." }, { name: "Air Squats", sets: 4, type: 'reps', defaultWt: 0, defaultReps: 15, desc: "Pretend you are sitting down in a chair. Keep your chest up!" }, { name: "Lunges", sets: 3, type: 'reps', defaultWt: 0, defaultReps: 10, desc: "Take a big step forward and lower your back knee to gently kiss the ground." } ] },
+    { id: 'r2', title: "Dumbbell Full Body", type: "Gym Weights", color: "#ef4444", restTime: 60, desc: "Use hand weights to build strong muscles safely.", movements: [ { name: "Goblet Squats", sets: 4, type: 'reps', defaultWt: 20, defaultReps: 10, desc: "Hold a single dumbbell at your chest. Squat down deep." }, { name: "Dumbbell Press", sets: 4, type: 'reps', defaultWt: 20, defaultReps: 10, desc: "Push the weights straight up over your head." }, { name: "Dumbbell Rows", sets: 3, type: 'reps', defaultWt: 20, defaultReps: 10, desc: "Bend over slightly, pull the weights up to your tummy." } ] },
+    { id: 'r4', title: "Morning Energy Boost", type: "Warm-Up", color: "#eab308", restTime: 15, desc: "Quick 5-minute movements to wake up your body.", movements: [ { name: "Jumping Jacks", sets: 2, type: 'reps', defaultWt: 0, defaultReps: 30, desc: "Jump wide while clapping hands above your head." }, { name: "Arm Circles", sets: 2, type: 'reps', defaultWt: 0, defaultReps: 20, desc: "Make small forward circles, then backward." } ] },
+    { id: 'r5', title: "Soreness Relief Stretches", type: "Stretching", color: "#00cccc", restTime: 30, desc: "Relieve lower back pain and leg tiredness from working all day.", movements: [ { name: "Standing Back Bends", sets: 2, type: 'time', duration: 60, desc: "Put hands on your hips and gently lean back." }, { name: "Hanging Stretch", sets: 2, type: 'time', duration: 60, desc: "Hang from a bar to stretch your back out." } ] },
+    { id: 'r6', title: "Calm Focus Breathing", type: "Relaxation", color: "#10b981", restTime: 10, desc: "A simple breathing trick to steady your heart and feel calm.", movements: [ { name: "Guided Breathing", sets: 1, type: 'breathing', inhaleSecs: 4, hold1Secs: 4, exhaleSecs: 4, hold2Secs: 4, cycles: 10, desc: "Follow the coach: Inhale, Hold, Exhale, Hold Empty." } ] },
+    { id: 'r7', title: "Deep Sleep Breathing", type: "Recovery", color: "#8b5cf6", restTime: 10, desc: "Helps you relax and fall asleep quickly at night.", movements: [ { name: "Sleep Breathing Flow", sets: 1, type: 'breathing', inhaleSecs: 4, hold1Secs: 7, exhaleSecs: 8, hold2Secs: 0, cycles: 8, desc: "Inhale fast, hold for a long time, exhale very slowly." } ] }
   ];
   
-  const [routines, setRoutines] = useState(() => JSON.parse(localStorage.getItem('tot_routines_v7')) || defaultRoutines);
+  const [routines, setRoutines] = useState(() => JSON.parse(localStorage.getItem('tot_routines_v8')) || defaultRoutines);
   const [showBuilder, setShowBuilder] = useState(false);
   const [newRoutine, setNewRoutine] = useState({ title: '', desc: '', restTime: 60 });
   const [bMovements, setBMovements] = useState([{ name: '', type: 'reps', sets: 3, defaultReps: 10, duration: 60, holdSecs: 5, relSecs: 5, inhaleSecs: 4, hold1Secs: 4, exhaleSecs: 4, hold2Secs: 4, cycles: 5 }]);
@@ -56,7 +57,7 @@ export default function FitnessHub() {
     localStorage.setItem('tot_macros', JSON.stringify(macros)); localStorage.setItem('tot_water_oz', waterOz.toString());
     localStorage.setItem('tot_hydro_vault', JSON.stringify(hydroVault)); localStorage.setItem('tot_weight_logs', JSON.stringify(weightLogs));
     localStorage.setItem('tot_hr_logs', JSON.stringify(hrLogs)); localStorage.setItem('tot_run_logs', JSON.stringify(runLogs));
-    localStorage.setItem('tot_workout_vault', JSON.stringify(workoutVault)); localStorage.setItem('tot_routines_v7', JSON.stringify(routines));
+    localStorage.setItem('tot_workout_vault', JSON.stringify(workoutVault)); localStorage.setItem('tot_routines_v8', JSON.stringify(routines));
   }, [bw, bh, ba, macros, waterOz, hydroVault, weightLogs, hrLogs, runLogs, workoutVault, routines]);
 
   const formatTime = (secs) => { const h = Math.floor(secs/3600); const m = Math.floor((secs%3600)/60); const s = secs%60; return h > 0 ? `${h}:${m < 10 ? '0':''}${m}:${s < 10 ? '0':''}${s}` : `${m}:${s < 10 ? '0':''}${s}`; };
@@ -70,12 +71,12 @@ export default function FitnessHub() {
   const sessionProgress = totalSets === 0 ? 0 : Math.round((completedSets / totalSets) * 100);
 
   const updateMacro = (field, val) => setMacros(prev => ({ ...prev, [field]: parseInt(val)||0 }));
-  const logWeight = () => { setWeightLogs([{ id: Date.now(), date: new Date().toLocaleString(), wt: bw }, ...weightLogs]); alert("Weight saved!"); };
+  const logWeight = () => { setWeightLogs([{ id: Date.now(), date: new Date().toLocaleString(), wt: bw }, ...weightLogs]); alert("Weight saved to History!"); };
   const logHR = () => { if(currentHR) { setHrLogs([{ id: Date.now(), date: new Date().toLocaleString(), bpm: currentHR }, ...hrLogs]); setCurrentHR(''); alert("Heart Rate saved!"); }};
   const addWater = (amt) => setWaterOz(prev => prev + amt);
-  const resetWater = () => { if(window.confirm("Archive water to Vault and reset?")) { setHydroVault([{ id: Date.now(), date: new Date().toLocaleDateString(), oz: waterOz }, ...hydroVault]); setWaterOz(0); } };
+  const resetWater = () => { if(window.confirm("Save water to History and reset?")) { setHydroVault([{ id: Date.now(), date: new Date().toLocaleDateString(), oz: waterOz }, ...hydroVault]); setWaterOz(0); } };
   const toggleRun = () => { if (runActive) { clearInterval(runRef.current); setRunActive(false); } else { setRunActive(true); runRef.current = setInterval(() => setRunTime(prev => prev + 1), 1000); } };
-  const saveRun = () => { if(runTime === 0) return; setRunLogs([{ id: Date.now(), date: new Date().toLocaleString(), time: formatTime(runTime), dist: estMiles }, ...runLogs]); clearInterval(runRef.current); setRunActive(false); setRunTime(0); alert("Run archived to Vault!"); };
+  const saveRun = () => { if(runTime === 0) return; setRunLogs([{ id: Date.now(), date: new Date().toLocaleString(), time: formatTime(runTime), dist: estMiles }, ...runLogs]); clearInterval(runRef.current); setRunActive(false); setRunTime(0); alert("Saved to History!"); };
   
   const deleteLog = (type, id) => {
     if(!window.confirm("Permanently delete this record?")) return;
@@ -85,12 +86,12 @@ export default function FitnessHub() {
     if(type === 'run') setRunLogs(prev => prev.filter(l => l.id !== id));
     if(type === 'hr') setHrLogs(prev => prev.filter(l => l.id !== id));
   };
-  const deleteRoutine = (id) => { if(window.confirm("Delete this routine?")) setRoutines(routines.filter(r => r.id !== id)); };
+  const deleteRoutine = (id) => { if(window.confirm("Delete this workout?")) setRoutines(routines.filter(r => r.id !== id)); };
 
   const exportData = () => {
     const backup = JSON.stringify({ workouts: workoutVault, weight: weightLogs, hr: hrLogs, run: runLogs, water: hydroVault, macros: macros }, null, 2);
     const blob = new Blob([backup], { type: "application/json" });
-    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Sovereign_OS_Backup_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`;
+    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Health_History_Backup_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`;
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
@@ -99,10 +100,9 @@ export default function FitnessHub() {
   const saveCustomRoutine = () => {
     if(!newRoutine.title) return alert("Title required.");
     setRoutines([...routines, { id: 'c'+Date.now(), title: newRoutine.title, type: 'Custom', color: '#00cc66', restTime: newRoutine.restTime || 60, desc: newRoutine.desc, movements: bMovements }]);
-    setShowBuilder(false); setNewRoutine({ title: '', desc: '', restTime: 60 }); setBMovements([{ name: '', type: 'reps', sets: 3, defaultReps: 10, duration: 60, holdSecs: 5, relSecs: 5, inhaleSecs: 4, hold1Secs: 4, exhaleSecs: 4, hold2Secs: 4, cycles: 5 }]); alert("Custom Routine Saved!");
+    setShowBuilder(false); setNewRoutine({ title: '', desc: '', restTime: 60 }); setBMovements([{ name: '', type: 'reps', sets: 3, defaultReps: 10, duration: 60, holdSecs: 5, relSecs: 5, inhaleSecs: 4, hold1Secs: 4, exhaleSecs: 4, hold2Secs: 4, cycles: 5 }]); alert("Workout Saved!");
   };
 
-  // --- THE BREATHING & ACTION COACH ENGINE ---
   const startActionCoach = (mIdx, sIdx, move) => {
     setCoach({ mIdx, sIdx, move, phase: 'prep', timeLeft: 3, cycle: 1 });
     clearInterval(sessionRef.current); clearInterval(coachRef.current);
@@ -111,12 +111,10 @@ export default function FitnessHub() {
       setCoach(prev => {
         if(!prev) return null;
         if(prev.timeLeft <= 1) {
-          // Standard Time Timer
           if(prev.move.type === 'time') {
              if(prev.phase === 'prep') return { ...prev, phase: 'work', timeLeft: prev.move.duration };
              endActionCoach(prev.mIdx, prev.sIdx); return null;
           }
-          // Isometric Hold (e.g. Wall Sits)
           if(prev.move.type === 'hold') {
             if(prev.phase === 'prep') return { ...prev, phase: 'hold', timeLeft: prev.move.holdSecs };
             if(prev.phase === 'hold') return { ...prev, phase: 'release', timeLeft: prev.move.relSecs };
@@ -125,7 +123,6 @@ export default function FitnessHub() {
               return { ...prev, phase: 'hold', timeLeft: prev.move.holdSecs, cycle: prev.cycle + 1 };
             }
           }
-          // New Breathing Protocol
           if(prev.move.type === 'breathing') {
             if(prev.phase === 'prep') return { ...prev, phase: 'inhale', timeLeft: prev.move.inhaleSecs };
             if(prev.phase === 'inhale') {
@@ -182,7 +179,7 @@ export default function FitnessHub() {
   };
 
   const finishWorkout = (status) => {
-    if(!window.confirm(`Log this session as ${status}?`)) return;
+    if(!window.confirm(`Log this workout as ${status}?`)) return;
     clearInterval(sessionRef.current); clearInterval(restIntervalRef.current); clearInterval(coachRef.current);
     let totalVol = 0;
     
@@ -200,7 +197,7 @@ export default function FitnessHub() {
     setRoutines(updatedRoutines);
     Object.keys(sessionLogs).forEach(mIdx => { sessionLogs[mIdx].forEach(set => { if (set.done) { const w = parseFloat(set.wt)||0; const r = parseFloat(set.reps)||0; totalVol += (w === 0 && r > 0 ? r : w * r); } }); });
     setWorkoutVault([{ id: Date.now(), date: new Date().toLocaleString(), title: activeSession.title, volume: totalVol, duration: formatTime(sessionTime), status: status }, ...workoutVault]);
-    setActiveSession(null); setActiveTab('Vault'); setVaultTab('Workouts');
+    setActiveSession(null); setActiveTab('History'); setVaultTab('Exercises');
   };
 
 
@@ -212,7 +209,6 @@ export default function FitnessHub() {
     return (
       <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column', color: '#fff', position: 'relative' }}>
         
-        {/* THE ACTION COACH OVERLAY (DYNAMIC COLORS) */}
         {coach && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: coach.phase === 'inhale' ? 'rgba(59, 130, 246, 0.95)' : coach.phase === 'hold1' ? 'rgba(139, 92, 246, 0.95)' : coach.phase === 'exhale' || coach.phase === 'release' ? 'rgba(16, 185, 129, 0.95)' : coach.phase === 'hold2' || coach.phase === 'hold' ? 'rgba(239, 68, 68, 0.95)' : 'rgba(0,0,0,0.95)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'background 0.5s ease' }}>
             <h2 style={{ fontSize: '2.5rem', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>
@@ -269,8 +265,8 @@ export default function FitnessHub() {
                   <span style={{ color: '#888', fontWeight: 'bold', width: '20px' }}>{sIdx + 1}</span>
                   <div style={{ flex: 1, color: set.done ? '#10b981' : '#aaa', fontSize: '0.9rem' }}>
                     {m.type === 'time' && `${m.duration}s Timer`}
-                    {m.type === 'hold' && `${m.holdSecs}s Hold / ${m.relSecs}s Rel (${m.cycles}x)`}
-                    {m.type === 'breathing' && `Breath Flow (${m.cycles}x)`}
+                    {m.type === 'hold' && `${m.holdSecs}s Hold / ${m.relSecs}s Rest (${m.cycles}x)`}
+                    {m.type === 'breathing' && `Guided Breathing (${m.cycles} cycles)`}
                   </div>
                   {set.done ? (
                     <button onClick={() => toggleSetDone(mIdx, sIdx)} style={{ background: 'transparent', color: '#10b981', border: '1px solid #10b981', borderRadius: '6px', padding: '8px 15px', fontWeight: 'bold' }}>✓ DONE</button>
@@ -294,23 +290,23 @@ export default function FitnessHub() {
     <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button onClick={() => navigate('/')} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px' }}>← Hub</button>
-        <h2 style={{ margin: 0, color: '#ef4444', fontSize: '1.2rem' }}>Performance Engine</h2>
+        <h2 style={{ margin: 0, color: '#ef4444', fontSize: '1.2rem' }}>Fitness & Health</h2>
       </header>
 
       <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-        {['Routines', 'Cardio', 'Metrics', 'Vault'].map(tab => (
+        {['Workouts', 'Run/Walk', 'Health Stats', 'History'].map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', border: 'none', background: activeTab === tab ? '#10b981' : '#222', color: activeTab === tab ? '#000' : '#aaa' }}>{tab}</button>
         ))}
       </div>
 
       <div style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '80px' }}>
-        {activeTab === 'Routines' && (
+        {activeTab === 'Workouts' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <button onClick={() => setShowBuilder(!showBuilder)} style={btnStyle('transparent', '#10b981', {border: '1px dashed #10b981'})}>{showBuilder ? 'Cancel Builder' : '+ Build Custom Routine'}</button>
+            <button onClick={() => setShowBuilder(!showBuilder)} style={btnStyle('transparent', '#10b981', {border: '1px dashed #10b981'})}>{showBuilder ? 'Cancel Builder' : '+ Build Custom Workout'}</button>
             
             {showBuilder && (
               <div style={{ ...cardStyle, border: '1px solid #10b981' }}>
-                <input type="text" placeholder="Workout Title (e.g. Tactical Breath)" value={newRoutine.title} onChange={e=>setNewRoutine({...newRoutine, title: e.target.value})} style={{...inputStyle, marginBottom: '10px'}} />
+                <input type="text" placeholder="Workout Title (e.g. Leg Day)" value={newRoutine.title} onChange={e=>setNewRoutine({...newRoutine, title: e.target.value})} style={{...inputStyle, marginBottom: '10px'}} />
                 <input type="text" placeholder="Short Description..." value={newRoutine.desc} onChange={e=>setNewRoutine({...newRoutine, desc: e.target.value})} style={{...inputStyle, marginBottom: '10px'}} />
                 <div style={{ marginBottom: '15px' }}>
                   <label style={{display:'block', color:'#00cc66', fontSize:'0.8rem', fontWeight:'bold', marginBottom:'5px'}}>Rest Between Sets (Seconds)</label>
@@ -322,8 +318,8 @@ export default function FitnessHub() {
                     <input type="text" placeholder="Exercise Name" value={m.name} onChange={e=>updateCMove(idx, 'name', e.target.value)} style={{...inputStyle, marginBottom: '10px'}} />
                     <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
                       <select value={m.type} onChange={e=>updateCMove(idx, 'type', e.target.value)} style={{...inputStyle, flex: 1, padding: '8px'}}>
-                        <option value="reps">Weight/Reps</option><option value="time">Duration Timer</option>
-                        <option value="hold">Isometric Hold</option><option value="breathing">Breathing Flow</option>
+                        <option value="reps">Lift Weights</option><option value="time">Timed Exercise</option>
+                        <option value="hold">Hold Still</option><option value="breathing">Guided Breathing</option>
                       </select>
                       <input type="number" placeholder="Sets" value={m.sets} onChange={e=>updateCMove(idx, 'sets', parseInt(e.target.value))} style={{...inputStyle, flex: 1, padding: '8px'}} />
                     </div>
@@ -332,7 +328,7 @@ export default function FitnessHub() {
                     {m.type === 'hold' && (
                       <div style={{ display: 'flex', gap: '5px' }}>
                         <input type="number" placeholder="Hold (s)" value={m.holdSecs} onChange={e=>updateCMove(idx, 'holdSecs', parseInt(e.target.value))} style={inputStyle} />
-                        <input type="number" placeholder="Rel (s)" value={m.relSecs} onChange={e=>updateCMove(idx, 'relSecs', parseInt(e.target.value))} style={inputStyle} />
+                        <input type="number" placeholder="Rest (s)" value={m.relSecs} onChange={e=>updateCMove(idx, 'relSecs', parseInt(e.target.value))} style={inputStyle} />
                         <input type="number" placeholder="Cycles" value={m.cycles} onChange={e=>updateCMove(idx, 'cycles', parseInt(e.target.value))} style={inputStyle} />
                       </div>
                     )}
@@ -347,8 +343,8 @@ export default function FitnessHub() {
                     )}
                   </div>
                 ))}
-                <button onClick={addCustomMove} style={{ background: '#222', color: '#fff', border: '1px dashed #555', padding: '10px', borderRadius: '6px', width: '100%', marginBottom: '15px' }}>+ Add Another</button>
-                <button onClick={saveCustomRoutine} style={btnStyle('#10b981', '#000')}>💾 Save Routine</button>
+                <button onClick={addCustomMove} style={{ background: '#222', color: '#fff', border: '1px dashed #555', padding: '10px', borderRadius: '6px', width: '100%', marginBottom: '15px' }}>+ Add Another Exercise</button>
+                <button onClick={saveCustomRoutine} style={btnStyle('#10b981', '#000')}>💾 Save Workout</button>
               </div>
             )}
 
@@ -365,38 +361,37 @@ export default function FitnessHub() {
           </div>
         )}
 
-        {/* Keeping Cardio, Metrics, and Vault identically intact */}
-        {activeTab === 'Cardio' && (
+        {activeTab === 'Run/Walk' && (
           <div style={{ ...cardStyle, borderTop: '4px solid #00ffff', textAlign: 'center' }}>
-            <h3 style={{ margin: '0 0 5px 0', color: '#00ffff' }}>🏃 Offline Cardio Tracker</h3>
-            <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '20px' }}>Distance uses your height algorithm, not GPS.</p>
+            <h3 style={{ margin: '0 0 5px 0', color: '#00ffff' }}>🏃 Run & Walk Tracker</h3>
+            <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '20px' }}>Distance is estimated automatically!</p>
             <div style={{ background: '#000', width: '200px', height: '200px', borderRadius: '50%', border: runActive ? '4px solid #00ffff' : '4px solid #333', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
               <span style={{ fontSize: '3.5rem', fontWeight: 'bold', color: runActive ? '#fff' : '#555', fontVariantNumeric: 'tabular-nums' }}>{formatTime(runTime)}</span>
               <span style={{ color: '#00ffff', fontSize: '1.2rem', fontWeight: 'bold' }}>{estMiles} mi</span>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={toggleRun} style={{ ...btnStyle(runActive ? '#f59e0b' : '#00ffff', '#000'), flex: 2 }}>{runActive ? '⏸ Pause' : '▶ Start Run'}</button>
+              <button onClick={toggleRun} style={{ ...btnStyle(runActive ? '#f59e0b' : '#00ffff', '#000'), flex: 2 }}>{runActive ? '⏸ Pause' : '▶ Start'}</button>
               <button onClick={saveRun} style={{ ...btnStyle('#10b981', '#000'), flex: 1 }}>💾 Save</button>
             </div>
           </div>
         )}
 
-        {activeTab === 'Metrics' && (
+        {activeTab === 'Health Stats' && (
           <>
             <div style={{ ...cardStyle, borderTop: '4px solid #ef4444', textAlign: 'center' }}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#ef4444' }}>🏋️ 1-Rep Max Calculator</h3>
+              <h3 style={{ margin: '0 0 15px 0', color: '#ef4444' }}>🏋️ Strength Calculator (Max Lift)</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{flex: 1}}><label style={{display:'block', color:'#888', fontSize:'0.8rem'}}>Weight (Lbs)</label><input type="number" value={calcWt} onChange={e=>setCalcWt(e.target.value)} style={inputStyle} /></div>
                 <div style={{flex: 1}}><label style={{display:'block', color:'#888', fontSize:'0.8rem'}}>Reps</label><input type="number" value={calcReps} onChange={e=>setCalcReps(e.target.value)} style={inputStyle} /></div>
               </div>
               <div style={{ background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid #222' }}>
-                <span style={{ color: '#aaa', display: 'block' }}>Estimated 1-Rep Max:</span>
+                <span style={{ color: '#aaa', display: 'block' }}>Estimated Maximum Lift:</span>
                 <strong style={{ color: '#ef4444', fontSize: '2rem' }}>{oneRM} lbs</strong>
               </div>
             </div>
 
             <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b', textAlign: 'center' }}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#f59e0b' }}>⚖️ Body Weight & Height</h3>
+              <h3 style={{ margin: '0 0 15px 0', color: '#f59e0b' }}>⚖️ Body Weight</h3>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#000', borderRadius: '12px', padding: '10px', border: '1px solid #333', marginBottom: '15px' }}>
                 <button onClick={() => setBw(prev => Math.max(0, prev - 1))} style={{ background: '#222', color: '#f59e0b', border: 'none', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '8px' }}>-</button>
                 <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#fff' }}>{bw} <span style={{fontSize:'1rem', color:'#888'}}>lbs</span></div>
@@ -406,11 +401,19 @@ export default function FitnessHub() {
                 <div style={{flex: 1}}><label style={{display:'block', color:'#888', fontSize:'0.8rem'}}>Height (inches)</label><input type="number" value={bh} onChange={e=>setBh(parseFloat(e.target.value))} style={inputStyle} /></div>
                 <div style={{flex: 1}}><label style={{display:'block', color:'#888', fontSize:'0.8rem'}}>Age</label><input type="number" value={ba} onChange={e=>setBa(parseFloat(e.target.value))} style={inputStyle} /></div>
               </div>
-              <button onClick={logWeight} style={{...btnStyle('#10b981', '#000'), width: '100%'}}>💾 Log to Vault</button>
+              <button onClick={logWeight} style={{...btnStyle('#10b981', '#000'), width: '100%'}}>💾 Log to History</button>
+            </div>
+
+            <div style={{ ...cardStyle, borderTop: '4px solid #ef4444', textAlign: 'center' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#ef4444' }}>❤️ Heart Rate Monitor</h3>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input type="number" placeholder="Enter Beats Per Minute (BPM)" value={currentHR} onChange={e=>setCurrentHR(e.target.value)} style={{...inputStyle, flex: 2}} />
+                <button onClick={logHR} style={{...btnStyle('#ef4444', '#fff'), flex: 1}}>Log BPM</button>
+              </div>
             </div>
 
             <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#a855f7' }}>🔥 Daily Macros</h3>
+              <h3 style={{ margin: '0 0 15px 0', color: '#a855f7' }}>🔥 Daily Food & Calories</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <div style={{flex: 1}}><label style={{display:'block', color:'#3b82f6', fontSize:'0.8rem'}}>Protein (g)</label><input type="number" value={macros.p} onChange={e=>updateMacro('p', e.target.value)} style={inputStyle} /></div>
                 <div style={{flex: 1}}><label style={{display:'block', color:'#10b981', fontSize:'0.8rem'}}>Carbs (g)</label><input type="number" value={macros.c} onChange={e=>updateMacro('c', e.target.value)} style={inputStyle} /></div>
@@ -428,26 +431,26 @@ export default function FitnessHub() {
                 <div style={{ width: `${waterPercent}%`, background: '#3b82f6', height: '100%', transition: 'width 0.3s ease' }}></div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
-                <button onClick={() => addWater(8)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 8</button>
-                <button onClick={() => addWater(16)} style={{...btnStyle('#3b82f6', '#000')}}>+ 16</button>
-                <button onClick={() => addWater(32)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 32</button>
+                <button onClick={() => addWater(8)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 8 oz</button>
+                <button onClick={() => addWater(16)} style={{...btnStyle('#3b82f6', '#000')}}>+ 16 oz</button>
+                <button onClick={() => addWater(32)} style={{...btnStyle('#222', '#3b82f6'), border: '1px solid #3b82f6'}}>+ 32 oz</button>
               </div>
-              <button onClick={resetWater} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '0.85rem' }}>Archive to Vault & Reset Day</button>
+              <button onClick={resetWater} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '0.85rem' }}>Save to History & Start New Day</button>
             </div>
           </>
         )}
 
-        {activeTab === 'Vault' && (
+        {activeTab === 'History' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <button onClick={exportData} style={{ background: '#222', border: '1px dashed #a855f7', color: '#a855f7', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Export All Vault Data (.json)</button>
+            <button onClick={exportData} style={{ background: '#222', border: '1px dashed #a855f7', color: '#a855f7', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Backup My Data to Phone (.json)</button>
             
             <div style={{ display: 'flex', background: '#000', padding: '5px', borderRadius: '8px', border: '1px solid #333' }}>
-              {['Workouts', 'Biometrics', 'Cardio'].map(t => (
+              {['Exercises', 'Body Stats', 'Run/Walk'].map(t => (
                 <button key={t} onClick={() => setVaultTab(t)} style={{ flex: '1', padding: '8px', background: vaultTab === t ? '#333' : 'transparent', color: vaultTab === t ? '#fff' : '#888', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>{t}</button>
               ))}
             </div>
 
-            {vaultTab === 'Workouts' && (
+            {vaultTab === 'Exercises' && (
               <div style={{ ...cardStyle, borderTop: '4px solid #a855f7' }}>
                 <h3 style={{ margin: '0 0 10px 0', color: '#a855f7' }}>🏆 Workout History</h3>
                 {workoutVault.length === 0 ? <p style={{color:'#888', fontStyle:'italic'}}>No workouts saved yet.</p> : workoutVault.map((log) => (
@@ -466,10 +469,10 @@ export default function FitnessHub() {
               </div>
             )}
 
-            {vaultTab === 'Biometrics' && (
+            {vaultTab === 'Body Stats' && (
               <>
                 <div style={{ ...cardStyle, borderTop: '4px solid #f59e0b' }}>
-                  <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>⚖️ Weight & BMI Log</h3>
+                  <h3 style={{ margin: '0 0 10px 0', color: '#f59e0b' }}>⚖️ Weight Log</h3>
                   {weightLogs.length === 0 ? <p style={{color:'#888'}}>No weights logged.</p> : weightLogs.map((log, i) => {
                     const prevWt = weightLogs[i+1]?.wt;
                     const diff = prevWt ? (log.wt - prevWt).toFixed(1) : 0;
@@ -488,12 +491,22 @@ export default function FitnessHub() {
                     );
                   })}
                 </div>
+                
+                <div style={{ ...cardStyle, borderTop: '4px solid #ef4444' }}>
+                  <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>❤️ Heart Rate Log</h3>
+                  {hrLogs.length === 0 ? <p style={{color:'#888'}}>No heart rates logged.</p> : hrLogs.map((log) => (
+                    <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #222' }}>
+                      <div><span style={{color:'#ccc', display: 'block'}}>{log.date}</span><button onClick={() => deleteLog('hr', log.id)} style={{background:'transparent', color:'#ef4444', border:'none', fontSize:'0.8rem', padding: 0}}>🗑️ Delete</button></div>
+                      <strong style={{color:'#ef4444', fontSize: '1.2rem'}}>{log.bpm} BPM</strong>
+                    </div>
+                  ))}
+                </div>
               </>
             )}
-            
-            {vaultTab === 'Cardio' && (
+
+            {vaultTab === 'Run/Walk' && (
               <div style={{ ...cardStyle, borderTop: '4px solid #00ffff' }}>
-                <h3 style={{ margin: '0 0 10px 0', color: '#00ffff' }}>🏃 Run Log</h3>
+                <h3 style={{ margin: '0 0 10px 0', color: '#00ffff' }}>🏃 Run & Walk Log</h3>
                 {runLogs.length === 0 ? <p style={{color:'#888'}}>No runs logged.</p> : runLogs.map(log => (
                   <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #222' }}>
                     <div>
