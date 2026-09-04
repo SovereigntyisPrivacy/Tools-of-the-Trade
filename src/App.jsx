@@ -1,5 +1,6 @@
+import React, { useState, useEffect, Component, lazy, Suspense } from 'react';
 import LiveWallpaper from './core/LiveWallpaper';
-import React, { Suspense, lazy, useState } from 'react';
+
 import { HashRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './core/ThemeContext';
 import { CalendarProvider } from './core/CalendarContext';
