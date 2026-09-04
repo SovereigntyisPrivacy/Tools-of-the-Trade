@@ -202,7 +202,7 @@ export default function CulinaryHub() {
                     <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
                       <input type="text" placeholder="Qty" value={ing.qty} onChange={e=>updateIng(ing.id, 'qty', e.target.value)} style={{ ...inputStyle, width: '70px', padding: '8px' }} />
                       <input type="text" placeholder="Unit" value={ing.unit} onChange={e=>updateIng(ing.id, 'unit', e.target.value)} style={{ ...inputStyle, width: '60px', padding: '8px' }} />
-                      <span style={{ color: '#555', margin: '0 5px' }}>=></span>
+                      <span style={{ color: '#555', margin: '0 5px' }}>=&gt;</span>
                       <strong style={{ color: '#a855f7', fontWeight: 'bold', flex: 1, textAlign: 'right' }}>
                         {scaledVal > 0 ? `${scaledVal.toFixed(2)} ` : ''} 
                         {fractionStr && scaledVal > 0 && <span style={{ color: '#aaa', fontSize: '0.85rem', display: 'block' }}>~({fractionStr}{fractionStr.includes('tbsp') || fractionStr.includes('tsp') ? '' : ' ' + ing.unit})</span>}
