@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="en">
   <head>
+<script>
+    window.onerror = function(msg, url, line) {
+      alert("CRASH LOG:\n" + msg + "\nLine: " + line);
+    };
+    window.onunhandledrejection = function(event) {
+      alert("PROMISE CRASH:\n" + (event.reason ? event.reason.toString() : event));
+    };
+  </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
