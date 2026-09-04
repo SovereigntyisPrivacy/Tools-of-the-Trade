@@ -179,10 +179,10 @@ export default function AssetLedger() {
               <p style={{ color: '#ccc', textAlign: 'center', fontStyle: 'italic', marginTop: '40px' }}>No records found for this category.</p>
             ) : (
               filteredAssets.map(asset => (
-                <div key={asset.id} style={{ ...cardStyle, borderLeft: `4px solid ${asset.category.includes('Materials') ? '#f59e0b' : asset.category.includes('Equip') ? '#ef4444' : '#a855f7'}` }}>
+                <div key={asset.id} style={{ ...cardStyle, borderLeft: `4px solid ${(asset.category || 'General').includes('Materials') ? '#f59e0b' : (asset.category || 'General').includes('Equip') ? '#ef4444' : '#a855f7'}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                     <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.2rem' }}>{asset.name} {asset.quantity > 1 && <span style={{color: '#a855f7'}}>(x{asset.quantity})</span>}</h3>
-                    <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', color: '#a855f7', fontWeight: 'bold' }}>{asset.category.split(' ')[0]}</span>
+                    <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', color: '#a855f7', fontWeight: 'bold' }}>{(asset.category || 'General').split(' ')[0]}</span>
                   </div>
                   <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '15px' }}>
                     ${((asset.price || 0) * (asset.quantity || 1)).toFixed(2)} <span style={{fontSize:'0.85rem', color:'#666', fontWeight:'normal'}}>{asset.quantity > 1 ? `($${asset.price.toFixed(2)}/ea)` : ''}</span>
@@ -206,7 +206,7 @@ export default function AssetLedger() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px', borderTop: '1px dashed #333', paddingTop: '15px' }}>
-                    {asset.warranty && asset.warranty !== 'None' && asset.warranty !== 'Lifetime' && !asset.category.includes('Materials') && (
+                    {asset.warranty && asset.warranty !== 'None' && asset.warranty !== 'Lifetime' && !(asset.category || 'General').includes('Materials') && (
                       <button onClick={() => generateWarrantyCalendarEvent(asset)} style={{ flex: 1, background: '#222', color: '#a855f7', border: '1px solid #333', padding: '10px', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.9rem' }}>📅 Sync Warranty</button>
                     )}
                     <button onClick={() => deleteAsset(asset.id)} style={{ flex: asset.warranty && asset.warranty !== 'None' ? 1 : '1 1 100%', background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '10px', borderRadius: '6px', fontWeight: 'bold' }}>Delete</button>

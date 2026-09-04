@@ -62,6 +62,8 @@ export default function Dashboard() {
     { id: "calendar", name: "Master Calendar", path: "/calendar", icon: "📅", badge: "CORE", badgeColor: "#a855f7" },
       { id: "timesheet", name: "Fleet Payroll", path: "/calculator/timesheet", icon: "⏱️", badge: "CORE", badgeColor: "#a855f7" },
   { id: "myschedule", name: "Shift Tracker", path: "/myschedule", icon: "👤", badge: "CORE", badgeColor: "#3b82f6" },
+    { id: "culinary", name: "Culinary Engine", path: "/culinary", icon: "🍳", badge: "NEW", badgeColor: "#f59e0b" },
+  { id: "fitness", name: "Fitness Tracker", path: "/fitness", icon: "💪", badge: "NEW", badgeColor: "#10b981" },
   { id: "budget", name: "Budget Engine", path: "/budget", icon: "💵", badge: "CORE", badgeColor: "#00cc66" },
     { id: "learning", name: "Learning Center", path: "/learning", icon: "📚", badge: "NEW", badgeColor: "#00ffff" },
     { id: "calculator", name: "Omni-Calculator", path: "/calculator", icon: "🧮", badge: "", badgeColor: "#222" },
