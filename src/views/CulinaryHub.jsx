@@ -178,6 +178,11 @@ export default function CulinaryHub() {
                 <h3 style={{ margin: '0 0 15px 0', color: '#00ffff', textAlign: 'center' }}>⚖️ Master Converter</h3>
                 <p style={{ color: '#aaa', fontSize: '0.8rem', textAlign: 'center', marginBottom: '15px' }}>Accepts fractions (e.g., "1 3/4") and decimals.</p>
                 
+                
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{display:'block', color:'#aaa', fontSize:'0.8rem', fontWeight:'bold', marginBottom:'5px'}}>Amount</label>
+                  <input type="text" value={convAmt} onChange={e=>setConvAmt(e.target.value)} style={{...inputStyle, fontSize: '1.2rem', textAlign: 'center'}} />
+                </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "8px", alignItems: "end", marginBottom: "15px" }}>
                   <div>
                     <label style={{display:"block", color:"#aaa", fontSize:"0.8rem", fontWeight:"bold", marginBottom:"5px"}}>From</label>
