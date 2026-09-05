@@ -24,6 +24,16 @@ function NuclearCalc() {
   const [workAreaDose, setWorkAreaDose] = useState(''); // mR/hr
   const [doseLimit, setDoseLimit] = useState(''); // mR
 
+  
+  // 5. Fallout 7:10 Rule State
+  const [h1Rate, setH1Rate] = useState(""); // Rate at H+1 (1 hour post-detonation)
+  const [targetHour, setTargetHour] = useState("7");
+  let projectedRate = 0;
+  if (h1Rate && targetHour) {
+    // Rt = R1 * t^-1.2 (The Way-Wigner formula for fallout decay)
+    projectedRate = parseFloat(h1Rate) * Math.pow(parseFloat(targetHour), -1.2);
+  }
+
   // --- Physics Calculations ---
 
   // 1. Exponential Decay: N(t) = N0 * e^(-(ln(2)/t_half) * t)
@@ -216,11 +226,55 @@ function NuclearCalc() {
               <span style={{ color: '#fff', fontWeight: 'bold' }}>{decayedPercent.toFixed(2)}%</span>
             </div>
           </div>
+        
+        {/* 5. Post-Detonation Fallout (7:10 Rule) */}
+        <div style={{ background: "rgba(20,20,20,0.8)", borderTop: "4px solid #f59e0b", borderRadius: "12px", padding: "20px", marginBottom: "20px" }}>
+          <h3 style={{ color: "#f59e0b", marginTop: 0, borderBottom: "1px solid #333", paddingBottom: "10px" }}>☢️ Fallout Decay (7:10 Rule)</h3>
+          <p style={{ color: "#aaa", fontSize: "0.85em", marginBottom: "15px", lineHeight: "1.4" }}>For every 7-fold increase in time after a nuclear detonation, radiation levels drop by a factor of 10. (e.g., 100 R/hr at 1 hour drops to 10 R/hr at 7 hours, and 1 R/hr at 49 hours).</p>
+          
+          <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", color: "#f59e0b", fontSize: "0.85em", marginBottom: "4px", fontWeight: "bold" }}>Dose Rate at H+1</label>
+              <input type="number" placeholder="e.g. 100" value={h1Rate} onChange={e => setH1Rate(e.target.value)} style={{ width: "100%", padding: "10px", background: "#000", border: "1px solid #333", color: "#fff", borderRadius: "8px" }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", color: "#aaa", fontSize: "0.85em", marginBottom: "4px" }}>Target Hours Later</label>
+              <input type="number" placeholder="e.g. 49" value={targetHour} onChange={e => setTargetHour(e.target.value)} style={{ width: "100%", padding: "10px", background: "#000", border: "1px solid #333", color: "#fff", borderRadius: "8px" }} />
+            </div>
+          </div>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.1em", background: "#000", padding: "15px", borderRadius: "8px", border: "1px solid #333" }}>
+            <span style={{ color: "#fff", fontWeight: "bold" }}>Projected Rate:</span>
+            <span style={{ color: "#f59e0b", fontWeight: "bold" }}>{projectedRate > 0 ? projectedRate.toFixed(2) : "0.00"} <span style={{fontSize:"0.7em"}}>Unit/hr</span></span>
+          </div>
+        </div>
+
+        {/* 6. Biological Exposure Context */}
+        <div style={{ background: "rgba(20,20,20,0.8)", borderLeft: "4px solid #ef4444", borderRadius: "12px", padding: "20px", marginBottom: "20px" }}>
+          <h3 style={{ color: "#ef4444", marginTop: 0, textTransform: "uppercase" }}>Biological Exposure Guide</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #333", paddingBottom: "8px", marginBottom: "8px" }}>
+            <span style={{ color: "#ccc", fontSize: "0.9em" }}>Chest X-Ray</span><strong style={{ color: "#10b981" }}>10 mRem</strong>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #333", paddingBottom: "8px", marginBottom: "8px" }}>
+            <span style={{ color: "#ccc", fontSize: "0.9em" }}>Avg Yearly Background</span><strong style={{ color: "#10b981" }}>620 mRem</strong>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #333", paddingBottom: "8px", marginBottom: "8px" }}>
+            <span style={{ color: "#ccc", fontSize: "0.9em" }}>EPA Yearly Limit (Workers)</span><strong style={{ color: "#facc15" }}>5 Rem (5,000 mRem)</strong>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #333", paddingBottom: "8px", marginBottom: "8px" }}>
+            <span style={{ color: "#ccc", fontSize: "0.9em" }}>Mild Rad Sickness / Nausea</span><strong style={{ color: "#f97316" }}>50 Rem (50,000 mRem)</strong>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #333", paddingBottom: "8px", marginBottom: "8px" }}>
+            <span style={{ color: "#ccc", fontSize: "0.9em" }}>Severe Damage / Evacuate</span><strong style={{ color: "#ef4444" }}>100 Rem (100,000 mRem)</strong>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ color: "#ccc", fontSize: "0.9em" }}>Lethal Dose 50% (LD50/30)</span><strong style={{ color: "#991b1b" }}>400 Rem (400,000 mRem)</strong>
+          </div>
+          <p style={{ color: "#888", fontSize: "0.75em", marginTop: "15px", fontStyle: "italic", textAlign: "center" }}>1000 mRem = 1 Rem. 100 Rem = 1 Sievert (Sv).</p>
         </div>
 
       </div>
     </div>
   );
 }
-
 export default NuclearCalc;
