@@ -141,7 +141,7 @@ export default function Dashboard() {
               <strong>6. User Responsibility:</strong> By bypassing this screen, you acknowledge that you are solely responsible for compliance with your local, state, and federal laws regarding cryptography, data routing, and physical applications.
             </p>
 <p style={{ marginBottom: '15px', color: '#ccc', lineHeight: '1.5', fontSize: '0.9rem' }}>
-  <strong style={{ color: '#fff' }}>7. Don't Trust, Verify:</strong> This application is proudly fully open-source (GPL-3.0). The codebase is publicly available for independent auditing to mathematically prove the absence of telemetry, trackers, or backdoors. Do not take our word for it—compile it yourself.
+  <strong style={{ color: '#fff' }}>7. The Sovereign Ecosystem:</strong> Tools of the Trade is a proprietary, zero-telemetry utility built for daily deployment. However, for users requiring mathematically verifiable, air-gapped architecture, our fully open-source (GPL-3.0) flagship suite—<strong>SovereignTools</strong>—is freely available on GitHub for independent auditing.
 </p>
 <p style={{ marginBottom: '25px', color: '#ccc', lineHeight: '1.5', fontSize: '0.9rem' }}>
   <strong style={{ color: '#fff' }}>8. Forensic Capabilities:</strong> This suite includes active data-destruction protocols (Panic Wipes) designed to overwrite storage sectors with zero-bytes. The developer cannot recover data you choose to incinerate. You are the sole custodian of your information.
