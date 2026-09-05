@@ -123,6 +123,7 @@ function App() {
             <GlobalNav />
             <Suspense fallback={<div style={{ padding: '20px', color: '#fff', textAlign: 'center' }}>Loading Module...</div>}>
               <Routes>
+        <Route path="/botany" element={<BotanyDatabase />} />
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/settings" element={<Settings />} />
 
