@@ -23,9 +23,12 @@ export default function Settings() {
     { id: 'qrscanner', name: 'Universal Lens' }, { id: 'morse', name: 'Optical Comm Link' },
     { id: 'cipher', name: 'Cipher & Keygen' }, { id: 'firstaid', name: 'Trauma & CPR' },
     { id: 'mindset', name: 'Mindset Tracker' }, { id: 'botany', name: 'Botany & Foraging' }
-];
+,
 
-  const navigate = useNavigate();
+  { id: 'scanner', name: 'AI Visual Scanner' }, { id: 'pharmacology', name: 'Pharmacology DB' },
+  { id: 'firearms', name: 'Firearms & Armory' }, { id: 'mechanics', name: 'Mechanics & Engines' },
+  { id: 'electronics', name: 'Electronics & Wiring' }, { id: 'education', name: 'Education Archive' }
+const navigate = useNavigate();
 
   const [devMode, setDevMode] = useState(() => localStorage.getItem('fleet_dev_mode') === 'true');
   const [isArmed, setIsArmed] = useState(() => !!localStorage.getItem('fleet_access_pin'));
