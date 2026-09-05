@@ -268,7 +268,7 @@ export default function CulinaryHub() {
                     </div>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                       <input type="number" value={ing.amt} onChange={e=>updateScaleIng(ing.id, 'amt', e.target.value)} style={{...inputStyle, width: '70px', padding: '8px'}} />
-                      <span style={{color:'#ccc'}}>{ing.unit}</span><span style={{color:'#555'}}>=&gt;</span>
+                      <input type="text" value={ing.unit} onChange={e=>updateScaleIng(ing.id, "unit", e.target.value)} style={{ background: "#000", color: "#ccc", border: "1px solid #333", padding: "8px", borderRadius: "8px", width: "70px", textAlign: "center" }} /><span style={{color:'#555'}}>=&gt;</span>
                       <div style={{ flex: 1, textAlign: 'right' }}><strong style={{color:'#a855f7', display:'block', fontSize:'1.1rem'}}>{(ing.amt * multiplier).toFixed(2)}</strong>{ing.approx && <span style={{color:'#888', fontSize:'0.8rem'}}>{ing.approx}</span>}</div>
                     </div>
                   </div>

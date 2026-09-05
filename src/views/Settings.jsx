@@ -13,7 +13,7 @@ export default function Settings() {
   };
 
   const ALL_TOOLS = [
-    { id: 'chronos', name: 'Chronos Hub' }, { id: 'burner', name: 'Burner Pad' },
+    { id: 'chronos', name: 'Culinary Engine', 'Fitness Tracker', 'Survival Library', 'Chronos Hub' }, { id: 'burner', name: 'Burner Pad' },
     { id: 'sop', name: 'Tasklist Creator' }, { id: 'subscriptions', name: 'Sub Tracker' },
     { id: 'vault', name: 'Data Vault' }, { id: 'calendar', name: 'Master Calendar' },
       { id: 'timesheet', name: 'Fleet Payroll' }, { id: 'myschedule', name: 'Shift Tracker' },
