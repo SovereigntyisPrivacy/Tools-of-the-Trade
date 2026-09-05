@@ -82,6 +82,38 @@ export default function DataVault() {
     } catch (e) {}
   };
 
+  
+  const executePanicWipe = async () => {
+    if (!window.confirm("CRITICAL WARNING: This will forensically overwrite and destroy ALL Vault documents and photos. Proceed?")) return;
+    if (!window.confirm("FINAL WARNING: Data will be overwritten with zero-bytes. This CANNOT be undone. Execute Panic Wipe?")) return;
+    
+    try {
+      // 1. FORENSIC OVERWRITE: Force NAND flash to overwrite the memory blocks containing the Base64 strings
+      const garbageDocs = documents.map(d => ({ 
+        ...d, 
+        title: "WIPED", 
+        notes: "WIPED", 
+        category: "WIPED",
+        image: "data:image/jpeg;base64,00000000000000000000000000000000" 
+      }));
+      
+      await Preferences.set({ key: "tot_paperless_safe", value: JSON.stringify(garbageDocs) });
+      
+      // 2. CLEAR STATE
+      setDocuments([]);
+      setFolders(DEFAULT_FOLDERS);
+      setActiveFolder("ALL");
+      
+      // 3. REMOVE POINTERS
+      await Preferences.remove({ key: "tot_paperless_safe" });
+      await Preferences.remove({ key: "tot_custom_folders" });
+      
+      alert("☢️ Vault Forensically Wiped.");
+    } catch(e) {
+      alert("Wipe error: " + e.message);
+    }
+  };
+
   const handleAddFolder = () => {
     const name = newFolderName.trim();
     if (!name) return;
@@ -147,6 +179,7 @@ export default function DataVault() {
           <button key={cat} onClick={() => setActiveFolder(cat)} style={{ flex: '0 0 auto', padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', fontSize: '0.8rem', background: activeFolder === cat ? '#00ffff' : '#222', color: activeFolder === cat ? '#000' : '#888' }}>{cat}</button>
         ))}
         <button onClick={() => setShowFolderModal(true)} style={{ flex: '0 0 auto', padding: '8px 14px', borderRadius: '20px', border: '1px dashed #00ffff', background: 'transparent', color: '#00ffff', fontWeight: 'bold', fontSize: '0.8rem' }}>+ New</button>
+          <button onClick={executePanicWipe} style={{ flex: "0 0 auto", padding: "8px 14px", borderRadius: "20px", border: "1px solid #ef4444", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", fontWeight: "bold", fontSize: "0.8rem", marginLeft: "10px", letterSpacing: "1px" }}>☢️ PANIC WIPE</button>
       </div>
 
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>

@@ -116,45 +116,29 @@ const REMEDIES_GUIDES = [
 ];
 
 const WARNINGS_GUIDES = [
-  {
-    title: 'Impaled Objects', icon: '📌',
-    desc: 'NEVER pull a knife, stick, shrapnel, or glass out of a deep wound. The object is acting as a plug preventing them from bleeding out. Pack dressings heavily around the object to stabilize it in place and wrap tightly.'
-  },
-  {
-    title: 'Frostbite & Severe Cold', icon: '🥶',
-    desc: 'NEVER aggressively rub frostbitten skin or throw the casualty into a hot bath. This physically destroys the frozen tissue and the sudden temperature change can shock the heart. Warm them slowly with body heat and blankets.'
-  },
-  {
-    title: 'Unwashed Poppy Seeds', icon: '⚠️',
-    desc: 'Avoid consuming large amounts before medical, military, CDL, or employment drug screenings. They can trigger a false positive for opiates.'
-  },
-  {
-    title: 'Activated Charcoal & Medications', icon: '⚠️',
-    desc: 'Charcoal is great for food poisoning because it absorbs toxins in the stomach. However, it will also absorb and neutralize any prescription medications you took recently.'
-  },
-  {
-    title: 'Undiluted Essential Oils', icon: '⚠️',
-    desc: 'Never put "hot" oils (like Oregano, Clove, or Peppermint) directly on the skin without mixing them into a carrier oil (like coconut or olive oil) first. They can cause severe chemical burns.'
-  },
-  {
-    title: 'Acetaminophen (Tylenol) Overdose', icon: '💊',
-    desc: 'Tylenol is processed entirely by the liver. Exceeding 4,000mg in a 24-hour period can cause irreversible, fatal liver failure. Pay close attention to cold/flu medicines (like NyQuil), as they often contain hidden Acetaminophen.'
-  },
-  {
-    title: 'Toxic Fumes (Bleach & Ammonia)', icon: '☠️',
-    desc: 'Never mix bleach with ammonia, vinegar, or rubbing alcohol. It instantly creates toxic chloramine or chloroform gas which causes severe respiratory damage and death.'
-  }
+  { title: 'Impaled Objects', icon: '🗡️', desc: 'NEVER pull a knife, stick, shrapnel, or glass out of a deep wound. The object is acting as a plug preventing them from bleeding out. Pack dressings heavily around the object to stabilize it in place and wrap tightly.' },
+  { title: 'Frostbite & Severe Cold', icon: '🥶', desc: 'NEVER aggressively rub frostbitten skin or throw the casualty into a hot bath. This physically destroys the frozen tissue and the sudden temperature change can shock the heart. Warm them slowly with body heat and blankets.' },
+  { title: 'Unwashed Poppy Seeds', icon: '⚠️', desc: 'Avoid consuming large amounts before medical, military, CDL, or employment drug screenings. They can trigger a false positive for opiates.' },
+  { title: 'Activated Charcoal & Medications', icon: '⚠️', desc: 'Charcoal is great for food poisoning because it absorbs toxins in the stomach. However, it will also absorb and neutralize any prescription medications you took recently.' },
+  { title: 'Undiluted Essential Oils', icon: '⚠️', desc: 'Never put "hot" oils (like Oregano, Clove, or Peppermint) directly on the skin without mixing them into a carrier oil (like coconut or olive oil) first. They can cause severe chemical burns.' },
+  { title: 'Acetaminophen (Tylenol) Overdose', icon: '💊', desc: 'Tylenol is processed entirely by the liver. Exceeding 4,000mg in a 24-hour period can cause irreversible, fatal liver failure. Pay close attention to cold/flu medicines (like NyQuil), as they often contain hidden Acetaminophen.' },
+  { title: 'Toxic Fumes (Bleach & Ammonia)', icon: '☠️', desc: 'Never mix bleach with ammonia, vinegar, or rubbing alcohol. It instantly creates toxic chloramine or chloroform gas which causes severe respiratory damage and death.' }
 ];
 
 export default function FirstAidHub() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('cpr');
+  
+  // CPR State
   const [cprActive, setCprActive] = useState(false);
   const [compressionCount, setCompressionCount] = useState(0);
   const [phase, setPhase] = useState('standby');
   const [pulseToggle, setPulseToggle] = useState(false);
+  const [cprElapsed, setCprElapsed] = useState(0); // <-- NEW STOPWATCH STATE
+  
+  // TQ State
+  const [tqTime, setTqTime] = useState(null); // <-- NEW TQ TIMESTAMP STATE
 
-  // Keep the audio channel open so Android doesn't kill it
   const audioCtxRef = useRef(null);
 
   const playBeep = () => {
@@ -162,17 +146,18 @@ export default function FirstAidHub() {
       if (!audioCtxRef.current) return;
       const osc = audioCtxRef.current.createOscillator();
       const gain = audioCtxRef.current.createGain();
-      osc.connect(gain); 
+      osc.connect(gain);
       gain.connect(audioCtxRef.current.destination);
-      osc.type = 'sine'; 
+      osc.type = 'sine';
       osc.frequency.setValueAtTime(800, audioCtxRef.current.currentTime);
       gain.gain.setValueAtTime(1, audioCtxRef.current.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.1);
-      osc.start(audioCtxRef.current.currentTime); 
+      osc.start(audioCtxRef.current.currentTime);
       osc.stop(audioCtxRef.current.currentTime + 0.1);
     } catch(e) {}
   };
 
+  // Metronome Interval
   useEffect(() => {
     let beatInterval; let flashTimeout;
     if (cprActive && phase === 'compressions') {
@@ -194,61 +179,66 @@ export default function FirstAidHub() {
     return () => { clearInterval(beatInterval); clearTimeout(beatInterval); clearTimeout(flashTimeout); };
   }, [cprActive, phase]);
 
+  // Independent Stopwatch Timer
+  useEffect(() => {
+    let timer;
+    if (cprActive) timer = setInterval(() => setCprElapsed(p => p + 1), 1000);
+    return () => clearInterval(timer);
+  }, [cprActive]);
+
   const toggleCPR = () => {
-    if (cprActive) { 
-      setCprActive(false); setPhase('standby'); setCompressionCount(0); setPulseToggle(false); 
-    } else { 
-      // Force the audio context to open EXACTLY on the user tap to bypass mobile OS muting
+    if (cprActive) {
+      setCprActive(false); setPhase('standby'); setCompressionCount(0); setPulseToggle(false);
+    } else {
       if (!audioCtxRef.current) {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtxRef.current = new AudioContext();
       }
-      if (audioCtxRef.current.state === 'suspended') {
-        audioCtxRef.current.resume();
-      }
-      setCprActive(true); setPhase('compressions'); setCompressionCount(0); 
+      if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
+      
+      setCprActive(true); setPhase('compressions'); setCompressionCount(0); setCprElapsed(0);
     }
   };
 
+  const formatElapsed = (secs) => { const m = Math.floor(secs / 60); const s = secs % 60; return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`; };
+
+  const logTQTime = () => setTqTime(new Date().toLocaleTimeString('en-US', { hour12: false }));
+
   const glassCard = { background: 'rgba(17, 17, 17, 0.7)', backdropFilter: 'blur(10px)', borderRadius: '12px', border: '1px solid #333', padding: '20px', marginBottom: '15px' };
+
 
   const renderCPR = () => (
     <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ ...glassCard, borderTop: '4px solid #ef4444', width: '100%', textAlign: 'center' }}>
         <h3 style={{ color: '#ef4444', marginTop: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>CPR Assistant</h3>
-        <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: '10px' }}>
-          <strong>HANDS-ONLY CPR:</strong> Push hard and fast in the center of the chest at 100 beats per minute. Do not stop until help arrives.
-        </p>
-        <p style={{ color: '#facc15', fontSize: '0.85rem', marginBottom: '20px', fontWeight: 'bold' }}>
-          PRO-TIP: Do not be afraid to break a rib or two, because you will. If ribs are breaking, it means you are compressing deep enough to actually pump the heart.
-        </p>
+        <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: '10px' }}><strong>HANDS-ONLY CPR:</strong> Push hard and fast in the center of the chest at 100 beats per minute. Do not stop until help arrives.</p>
+        <p style={{ color: '#facc15', fontSize: '0.85rem', marginBottom: '20px', fontWeight: 'bold' }}>PRO-TIP: Do not be afraid to break a rib or two, because you WILL. If ribs are breaking, it means you are compressing deep enough to actually pump the heart.</p>
+        
+        {/* NEW ELAPSED CPR CLOCK */}
+        {cprActive && (
+          <div style={{ background: '#000', padding: '10px', borderRadius: '8px', border: '1px solid #333', width: 'fit-content', margin: '0 auto 20px auto' }}>
+             <span style={{ color: '#888', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '5px' }}>Elapsed Time</span>
+             <span style={{ color: '#00ffff', fontSize: '2rem', fontWeight: 'bold', fontFamily: 'monospace' }}>{formatElapsed(cprElapsed)}</span>
+          </div>
+        )}
 
-        <div style={{ 
-          width: '240px', height: '240px', borderRadius: '50%', margin: '0 auto 25px auto', 
-          display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-          background: phase === 'compressions' ? (pulseToggle ? '#ef4444' : '#7f1d1d') : (phase === 'breaths' ? '#1e3a8a' : '#111'),
-          border: `4px solid ${phase === 'standby' ? '#333' : (phase === 'breaths' ? '#3b82f6' : '#fca5a5')}`,
-          boxShadow: phase === 'compressions' && pulseToggle ? '0 0 40px rgba(239, 68, 68, 1)' : 'none',
-          transition: 'none'
-        }}>
+        <div style={{ width: '240px', height: '240px', borderRadius: '50%', margin: '0 auto 25px auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: phase === 'compressions' ? (pulseToggle ? '#ef4444' : '#7f1d1d') : (phase === 'breaths' ? '#1e3a8a' : '#111'), border: `4px solid ${phase === 'standby' ? '#333' : (phase === 'breaths' ? '#3b82f6' : '#ef4444')}`, boxShadow: phase === 'compressions' && pulseToggle ? '0 0 40px rgba(239,68,68,1)' : 'none', transition: 'none' }}>
           {phase === 'standby' && <span style={{ color: '#888', fontSize: '1.2rem', fontWeight: 'bold' }}>READY</span>}
           {phase === 'compressions' && (
-            <>
-              <span style={{ color: '#fff', fontSize: '5rem', fontWeight: '900', lineHeight: '1' }}>{compressionCount}</span>
-              <span style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '900', textTransform: 'uppercase', opacity: pulseToggle ? 1 : 0, transition: 'none' }}>PUSH</span>
-            </>
+             <>
+               <span style={{ color: '#fff', fontSize: '5rem', fontWeight: '900', lineHeight: '1' }}>{compressionCount}</span>
+               <span style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '900', textTransform: 'uppercase', opacity: pulseToggle ? 1 : 0, transition: 'none' }}>PUSH</span>
+             </>
           )}
           {phase === 'breaths' && (
-            <>
-              <span style={{ color: '#fff', fontSize: '1.6rem', fontWeight: '900', textAlign: 'center', padding: '0 10px' }}>GIVE 2 BREATHS</span>
-              <span style={{ color: '#facc15', fontSize: '1rem', fontWeight: 'bold', marginTop: '10px', background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px' }}>*OPTIONAL*</span>
-            </>
+             <>
+               <span style={{ color: '#fff', fontSize: '1.6rem', fontWeight: '900', textAlign: 'center', padding: '0 10px' }}>GIVE 2 BREATHS</span>
+               <span style={{ color: '#facc15', fontSize: '1rem', fontWeight: 'bold', marginTop: '10px', background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px' }}>*OPTIONAL*</span>
+             </>
           )}
         </div>
-
-        <button onClick={toggleCPR} style={{ width: '100%', background: cprActive ? '#222' : '#ef4444', color: cprActive ? '#ef4444' : '#fff', border: cprActive ? '2px solid #ef4444' : 'none', padding: '18px', borderRadius: '8px', fontWeight: '900', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-          {cprActive ? '🛑 STOP CPR' : '🚨 START CPR METRONOME'}
-        </button>
+        
+        <button onClick={toggleCPR} style={{ width: '100%', background: cprActive ? '#222' : '#ef4444', color: cprActive ? '#ef4444' : '#fff', border: cprActive ? '2px solid #ef4444' : 'none', padding: '18px', borderRadius: '8px', fontWeight: '900', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '1px' }}>{cprActive ? '🛑 STOP CPR' : '🚨 START CPR METRONOME'}</button>
       </div>
 
       <div style={{ ...glassCard, width: '100%', borderLeft: '4px solid #facc15' }}>
@@ -258,11 +248,11 @@ export default function FirstAidHub() {
       
       <div style={{ ...glassCard, width: '100%', borderLeft: '4px solid #ef4444', padding: '0', overflow: 'hidden' }}>
         <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '15px', borderBottom: '1px solid #333' }}>
-          <h4 style={{ color: '#ef4444', margin: '0', textTransform: 'uppercase', textAlign: 'center', letterSpacing: '1px' }}>Depth & Technique Scaling</h4>
+           <h4 style={{ color: '#ef4444', margin: '0', textTransform: 'uppercase', textAlign: 'center', letterSpacing: '1px' }}>Depth & Technique Scaling</h4>
         </div>
         <div style={{ padding: '15px' }}>
           <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 15px 0' }}>🧑 <strong>Adult (Puberty & Older):</strong><br/><span style={{ color: '#ccc', fontSize: '0.8rem' }}>Use two hands interlocked. Compress center of chest <strong>at least 2 inches deep</strong>.</span></p>
-          <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 15px 0' }}>👦 <strong>Child (1 Yr to Puberty):</strong><br/><span style={{ color: '#ccc', fontSize: '0.8rem' }}>Use one or two hands. Compress center of chest <strong>about 2 inches deep</strong>.</span></p>
+          <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 15px 0' }}>🧒 <strong>Child (1 Yr to Puberty):</strong><br/><span style={{ color: '#ccc', fontSize: '0.8rem' }}>Use one or two hands. Compress center of chest <strong>about 2 inches deep</strong>.</span></p>
           <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0' }}>👶 <strong>Infant (Under 1 Yr):</strong><br/><span style={{ color: '#ccc', fontSize: '0.8rem' }}>Use two fingers in the center of the chest, just below the nipple line. Compress <strong>about 1.5 inches deep</strong>. If doing breaths, only use gentle puffs, not full lung capacities.</span></p>
         </div>
       </div>
@@ -277,26 +267,24 @@ export default function FirstAidHub() {
             <span style={{ fontSize: '1.5rem' }}>{item.icon}</span><h3 style={{ margin: 0, color: '#fff', fontSize: '1.1rem' }}>{item.title}</h3>
           </div>
           <div style={{ padding: '15px' }}>
-            {item.steps.map((step, sIdx) => <p key={sIdx} style={{ color: '#ccc', fontSize: '0.9rem', lineHeight: '1.5', margin: '0 0 10px 0', paddingLeft: '10px', textIndent: '-10px' }}>{step}</p>)}
-            {item.tip && <div style={{ marginTop: '15px', padding: '10px', background: '#111', borderRadius: '6px', border: `1px solid ${accentColor}` }}><p style={{ margin: 0, color: accentColor, fontSize: '0.85rem', fontWeight: 'bold' }}>{item.tip}</p></div>}
+            {item.steps && item.steps.map((step, sIdx) => <p key={sIdx} style={{ color: '#ccc', fontSize: '0.9rem', lineHeight: '1.5', margin: '0 0 10px 0', paddingLeft: '10px', textIndent: '-10px' }}>{step}</p>)}
+            {item.tip && <div style={{ marginTop: '15px', padding: '10px', background: '#111', borderRadius: '6px', borderLeft: `3px solid ${accentColor}` }}><p style={{ margin: 0, color: accentColor, fontSize: '0.85rem', fontWeight: 'bold' }}>{item.tip}</p></div>}
           </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderRemedies = () => (
-    <div>
-      {renderDatabase(REMEDIES_GUIDES, '#10b981')}
-      
-      <h3 style={{ color: '#ef4444', textTransform: 'uppercase', textAlign: 'center', marginTop: '30px', marginBottom: '15px', letterSpacing: '2px' }}>Red Flags & Avoidance</h3>
-      {WARNINGS_GUIDES.map((warn, idx) => (
-        <div key={idx} style={{ ...glassCard, borderTop: '3px solid #ef4444', margin: '0 0 15px 0', padding: '15px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-            <span style={{ fontSize: '1.2rem' }}>{warn.icon}</span>
-            <h4 style={{ margin: 0, color: '#ef4444', fontSize: '1rem', textTransform: 'uppercase' }}>{warn.title}</h4>
-          </div>
-          <p style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.5', margin: 0 }}>{warn.desc}</p>
+          
+          {/* THE TQ TIMESTAMP INJECTOR */}
+          {item.title.includes('Massive Hemorrhage') && (
+            <div style={{ padding: '15px', background: '#0a0a0a', borderTop: '1px dashed #ef4444', textAlign: 'center' }}>
+              {tqTime ? (
+                <div>
+                  <span style={{ color: '#888', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Tourniquet Applied At:</span>
+                  <div style={{ color: '#ef4444', fontSize: '3rem', fontWeight: '900', letterSpacing: '3px', fontFamily: 'monospace' }}>{tqTime}</div>
+                  <button onClick={logTQTime} style={{ background: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '6px', padding: '8px 15px', marginTop: '10px', fontSize: '0.8rem' }}>↻ Update Time</button>
+                </div>
+              ) : (
+                <button onClick={logTQTime} style={{ background: '#ef4444', color: '#fff', width: '100%', padding: '15px', borderRadius: '8px', fontWeight: '900', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '1px' }}>🩸 Log TQ Time</button>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -308,9 +296,9 @@ export default function FirstAidHub() {
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', marginRight: '15px' }}>← Hub</button>
         <h2 style={{ margin: 0, color: '#ef4444', fontSize: '1.2rem' }}>Trauma & First Aid</h2>
       </header>
-
+      
       <div style={{ background: '#7f1d1d', padding: '10px', textAlign: 'center', fontSize: '0.75rem', color: '#fca5a5', fontWeight: 'bold', letterSpacing: '1px' }}>
-        FOR EDUCATIONAL REFERENCE. CALL 911 IMMEDIATELY IN AN EMERGENCY.
+         FOR EDUCATIONAL REFERENCE. CALL 911 IMMEDIATELY IN AN EMERGENCY.
       </div>
 
       <div style={{ display: 'flex', padding: '15px', gap: '8px', background: 'rgba(0,0,0,0.5)', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch' }}>
@@ -318,13 +306,27 @@ export default function FirstAidHub() {
         <button onClick={() => setActiveTab('tccc')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'tccc' ? '#f97316' : '#222', color: activeTab === 'tccc' ? '#fff' : '#888' }}>TCCC / Trauma</button>
         <button onClick={() => setActiveTab('general')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'general' ? '#3b82f6' : '#222', color: activeTab === 'general' ? '#fff' : '#888' }}>General Aid</button>
         <button onClick={() => setActiveTab('remedies')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'remedies' ? '#10b981' : '#222', color: activeTab === 'remedies' ? '#fff' : '#888' }}>Remedies</button>
+        <button onClick={() => setActiveTab('warnings')} style={{ flex: '0 0 auto', padding: '10px 15px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'warnings' ? '#a855f7' : '#222', color: activeTab === 'warnings' ? '#fff' : '#888' }}>Warnings</button>
       </div>
 
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
         {activeTab === 'cpr' && renderCPR()}
         {activeTab === 'tccc' && renderDatabase(TCCC_GUIDES, '#f97316')}
         {activeTab === 'general' && renderDatabase(GENERAL_GUIDES, '#3b82f6')}
-        {activeTab === 'remedies' && renderRemedies()}
+        {activeTab === 'remedies' && renderDatabase(REMEDIES_GUIDES, '#10b981')}
+        {activeTab === 'warnings' && (
+           <div style={{ marginTop: '20px' }}>
+             <h3 style={{ color: '#ef4444', textTransform: 'uppercase', textAlign: 'center', marginTop: '10px', marginBottom: '15px', letterSpacing: '2px' }}>Red Flags & Avoidance</h3>
+             {WARNINGS_GUIDES.map((warn, wIdx) => (
+                <div key={wIdx} style={{ ...glassCard, borderTop: '3px solid #ef4444', margin: '0 0 15px 0', padding: '15px' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                     <span style={{ fontSize: '1.2rem' }}>{warn.icon}</span><h4 style={{ margin: 0, color: '#ef4444', fontSize: '1rem', textTransform: 'uppercase' }}>{warn.title}</h4>
+                   </div>
+                   <p style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: '1.5', margin: 0 }}>{warn.desc}</p>
+                </div>
+             ))}
+           </div>
+        )}
       </div>
     </div>
   );
