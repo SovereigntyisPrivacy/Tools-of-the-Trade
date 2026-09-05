@@ -22,8 +22,8 @@ export default function Settings() {
     { id: 'ledger', name: 'Asset Ledger' }, { id: 'civics', name: 'Civics & Rights' },
     { id: 'qrscanner', name: 'Universal Lens' }, { id: 'morse', name: 'Optical Comm Link' },
     { id: 'cipher', name: 'Cipher & Keygen' }, { id: 'firstaid', name: 'Trauma & CPR' },
-    { id: 'mindset', name: 'Mindset Tracker' }
-  ];
+    { id: 'mindset', name: 'Mindset Tracker' }, { id: 'botany', name: 'Botany & Foraging' }
+];
 
   const navigate = useNavigate();
 
