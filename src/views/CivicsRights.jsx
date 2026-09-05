@@ -39,7 +39,23 @@ export default function CivicsRights() {
     { id: 30, text: "Nothing in this Declaration may be interpreted as implying for any State, group or person any right to engage in any activity or to perform any act aimed at the destruction of any of the rights and freedoms set forth herein." }
   ];
 
-  // --- STYLES ---
+  
+const ENCOUNTERS_GUIDE = [
+  {
+    title: "The 5th Amendment & Digital Passcodes",
+    content: "Under current legal interpretations, the 5th Amendment protects the contents of your mind. Therefore, law enforcement generally CANNOT force you to surrender a memorized alphanumeric passcode. However, your physical traits are not protected. They CAN legally compel you to unlock a device using FaceID, TouchID, or iris scanners. In high-risk environments, temporarily disable biometric unlocking."
+  },
+  {
+    title: "The Encounter Script (Read Aloud)",
+    content: "If detained, you do not have to guess what to say. Memorize or read the following: 'I do not consent to any searches of my person, my property, my vehicle, or my digital devices. I invoke my 5th Amendment right to remain silent. I will not answer any questions without my attorney present. Am I being detained, or am I free to go?'"
+  },
+  {
+    title: "Border Searches (Exceptions)",
+    content: "Be aware that standard 4th Amendment protections against unreasonable search and seizure are heavily diluted at international borders and ports of entry. Customs and Border Protection (CBP) claims broad authority to perform 'basic' searches of electronic devices without a warrant. Keep highly sensitive data entirely off-device or forensically wiped when crossing borders."
+  }
+];
+
+// --- STYLES ---
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
   const titleStyle = { margin: '0 0 8px 0', fontSize: '1.1em', fontWeight: 'bold' };
   const textStyle = { color: '#aaa', fontSize: '0.9em', margin: 0, lineHeight: '1.5' };
@@ -53,11 +69,12 @@ export default function CivicsRights() {
 
       {/* TOP TABS */}
       <div style={{ display: 'flex', background: '#111', padding: '10px', borderBottom: '1px solid #333', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-        {['Amendments', 'Constitution', 'Human Rights', 'Guide'].map(tab => {
+        {['Amendments', 'Constitution', 'Human Rights', 'Encounters', 'Guide'].map(tab => {
           let activeColor = '#fff';
           if (tab === 'Amendments') activeColor = '#ef4444';
           if (tab === 'Constitution') activeColor = '#3b82f6';
           if (tab === 'Human Rights') activeColor = '#00cc66';
+      if (tab === 'Encounters') activeColor = '#a855f7';
           if (tab === 'Guide') activeColor = '#f59e0b';
 
           return (
@@ -173,6 +190,22 @@ export default function CivicsRights() {
         {/* ========================================== */}
         {/* TAB 4: GUIDE & ETHOS                       */}
         {/* ========================================== */}
+        
+        {/* TAB: ENCOUNTERS */}
+        {activeTab === 'Encounters' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px', borderLeft: '4px solid #a855f7' }}>
+              <h3 style={{ margin: '0 0 15px 0', fontSize: '1.1em', fontWeight: 'bold', color: '#a855f7', textAlign: 'center', textTransform: 'uppercase' }}>Digital & Civil Encounters</h3>
+              {ENCOUNTERS_GUIDE.map((enc, idx) => (
+                <div key={idx} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: idx !== ENCOUNTERS_GUIDE.length - 1 ? '1px dashed #333' : 'none' }}>
+                  <h4 style={{ color: '#fff', fontSize: '1.05em', marginBottom: '8px', marginTop: '0' }}>{enc.title}</h4>
+                  <p style={{ color: '#aaa', fontSize: '0.9em', lineHeight: '1.5', margin: 0 }}>{enc.content}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+  
         {activeTab === 'Guide' && (
           <>
             <div style={{ ...cardStyle, textAlign: 'center', padding: '30px 15px', background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
