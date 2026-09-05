@@ -274,6 +274,7 @@ function NuclearCalc() {
         </div>
 
       </div>
+      </div>
     </div>
   );
 }
