@@ -103,12 +103,12 @@ export default function CipherKeygen() {
         // ENCODE
         if (transMode === 'Base64') result = btoa(unescape(encodeURIComponent(transInput)));
         if (transMode === 'Hex') result = transInput.split('').map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' ');
-        if (transMode === 'Binary') result = transInput.split('').map(c => c.charCodeAt(0).toString(2).padStart(8, '0')).join(' ');
+        if (transMode === 'Binary') result = (transInput.replace(/[^01]/g, '').match(/.{1,8}/g) || []).map('').map(c => c.charCodeAt(0).toString(2).padStart(8, '0')).join(' ');
       } else {
         // DECODE
         if (transMode === 'Base64') result = decodeURIComponent(escape(atob(transInput)));
         if (transMode === 'Hex') result = transInput.replace(/\s+/g, '').match(/.{1,2}/g)?.map(byte => String.fromCharCode(parseInt(byte, 16))).join('') || '';
-        if (transMode === 'Binary') result = transInput.split(/\s+/).map(bin => String.fromCharCode(parseInt(bin, 2))).join('');
+        if (transMode === 'Binary') result = (transInput.replace(/[^01]/g, '').match(/.{1,8}/g) || []).map(/\s+/).map(bin => String.fromCharCode(parseInt(bin, 2))).join('');
       }
       setTransOutput(result);
     } catch (e) {
