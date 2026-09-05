@@ -3,30 +3,24 @@ import { useNavigate } from 'react-router-dom';
 
 export default function CulinaryHub() {
   const navigate = useNavigate();
-  
-  // --- MAIN NAVIGATION STATE ---
   const [activeTab, setActiveTab] = useState('Tools');
   const [toolsTab, setToolsTab] = useState('Converter');
   const [refTab, setRefTab] = useState('Meats');
 
-  // --- CONVERTER STATE ---
   const [convAmt, setConvAmt] = useState('1.5');
   const [convFrom, setConvFrom] = useState('Cups');
   const [convTo, setConvTo] = useState('Grams');
   const [convIng, setConvIng] = useState('Flour (AP)');
 
-  // --- BAKER'S MATH STATE ---
   const [bakeFlour, setBakeFlour] = useState(1000);
   const [bakeHyd, setBakeHyd] = useState(70);
   const [bakeSalt, setBakeSalt] = useState(2);
   const [bakeYeast, setBakeYeast] = useState(1);
 
-  // --- EQUILIBRIUM BRINE STATE ---
   const [brineMeat, setBrineMeat] = useState(1500);
   const [brineLiq, setBrineLiq] = useState(1000);
   const [brinePct, setBrinePct] = useState(1.25);
 
-  // --- RECIPE SCALER STATE ---
   const [scaleOrig, setScaleOrig] = useState(2);
   const [scaleTarget, setScaleTarget] = useState(1);
   const [scaleIngs, setScaleIngs] = useState([
@@ -35,7 +29,6 @@ export default function CulinaryHub() {
     { id: 3, name: 'Garlic', amt: 4, unit: 'clove', approx: '~(2 cloves)' }
   ]);
 
-  // --- CALCULATOR LOGIC ---
   const densities = { 'Flour (AP)': 125, 'Sugar (White)': 200, 'Butter': 227, 'Water / Liquid': 236, 'Salt (Kosher)': 130 };
   const baseGrams = (parseFloat(convAmt) || 0) * (convFrom === 'Cups' ? (densities[convIng] || 236) : convFrom === 'Tbsp' ? ((densities[convIng] || 236)/16) : 1);
   const convResult = convTo === 'Grams' ? baseGrams : convTo === 'Ounces' ? (baseGrams / 28.35) : baseGrams;
@@ -52,11 +45,11 @@ export default function CulinaryHub() {
   const updateScaleIng = (id, field, val) => setScaleIngs(scaleIngs.map(ing => ing.id === id ? { ...ing, [field]: val } : ing));
   const removeScaleIng = (id) => setScaleIngs(scaleIngs.filter(ing => ing.id !== id));
 
-  // --- STYLES ---
   const cardStyle = { background: '#111', borderRadius: '12px', border: '1px solid #333', padding: '15px', marginBottom: '15px' };
   const inputStyle = { background: '#000', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '8px', width: '100%', boxSizing: 'border-box' };
   const btnStyle = (bg, color) => ({ background: bg, color: color, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', width: '100%', cursor: 'pointer' });
   const rowStyle = { display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #222' };
+
 
   return (
     <div className="view-wrapper" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -73,11 +66,8 @@ export default function CulinaryHub() {
       </div>
 
       <div style={{ padding: '15px', overflowY: 'auto', flex: 1, paddingBottom: '80px' }}>
-        
         {activeTab === 'Tools' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            
-            {/* TOOLS SUB-TABS */}
             <div style={{ display: 'flex', background: '#000', padding: '5px', borderRadius: '8px', border: '1px solid #333', overflowX: 'auto', scrollbarWidth: 'none' }}>
               {['Converter', 'Baker %', 'Brine', 'Scaler'].map(t => (
                 <button key={t} onClick={() => setToolsTab(t)} style={{ flex: '1 0 auto', padding: '8px 12px', background: toolsTab === t ? '#333' : 'transparent', color: toolsTab === t ? '#00ffff' : '#888', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>{t}</button>
@@ -161,7 +151,7 @@ export default function CulinaryHub() {
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                       <input type="number" value={ing.amt} onChange={e=>updateScaleIng(ing.id, 'amt', e.target.value)} style={{...inputStyle, width: '70px', padding: '8px'}} />
                       <span style={{color:'#ccc'}}>{ing.unit}</span>
-                      <span style={{color:'#555'}}>=></span>
+                      <span style={{color:'#555'}}>=&gt;</span>
                       <div style={{ flex: 1, textAlign: 'right' }}>
                         <strong style={{color:'#a855f7', display:'block', fontSize:'1.1rem'}}>{(ing.amt * multiplier).toFixed(2)}</strong>
                         {ing.approx && <span style={{color:'#888', fontSize:'0.8rem'}}>{ing.approx}</span>}
@@ -177,8 +167,6 @@ export default function CulinaryHub() {
 
         {activeTab === 'Reference' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            
-            {/* REFERENCE SUB-TABS */}
             <div style={{ display: 'flex', background: '#000', padding: '5px', borderRadius: '8px', border: '1px solid #333' }}>
               {['Meats', 'Seafood', 'Guides'].map(t => (
                 <button key={t} onClick={() => setRefTab(t)} style={{ flex: 1, padding: '8px', background: refTab === t ? '#333' : 'transparent', color: refTab === t ? '#f59e0b' : '#888', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>{t}</button>
