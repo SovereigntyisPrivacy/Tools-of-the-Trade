@@ -39,6 +39,32 @@ export default function CulinaryHub() {
   const volUnits = { 'tsp': 4.92892, 'Tbsp': 14.7868, 'fl oz': 29.5735, 'Cups': 236.588, 'Pints': 473.176, 'Quarts': 946.353, 'Gallons': 3785.41, 'mL': 1, 'Liters': 1000 };
   const massUnits = { 'Grams': 1, 'Ounces': 28.3495, 'Pounds': 453.592, 'Kilograms': 1000 };
   // Density = Grams per 1 US Cup (236.588 mL)
+  
+  // Helper to convert decimals back to clean kitchen fractions
+  const toKitchenFraction = (decimal) => {
+    if (!decimal || isNaN(decimal)) return "";
+    const whole = Math.floor(decimal);
+    const remainder = decimal - whole;
+    const tolerance = 0.04;
+    const fractions = [
+      { val: 0.125, text: "1/8" },
+      { val: 0.25, text: "1/4" },
+      { val: 0.333, text: "1/3" },
+      { val: 0.375, text: "3/8" },
+      { val: 0.5, text: "1/2" },
+      { val: 0.625, text: "5/8" },
+      { val: 0.666, text: "2/3" },
+      { val: 0.75, text: "3/4" },
+      { val: 0.875, text: "7/8" }
+    ];
+    for (let f of fractions) {
+      if (Math.abs(remainder - f.val) < tolerance) {
+        return whole > 0 ? ` (~ ${whole} ${f.text})` : ` (~ ${f.text})`;
+      }
+    }
+    return "";
+  };
+
   const densities = { 'Flour (AP)': 125, 'Sugar (White)': 200, 'Sugar (Brown)': 220, 'Butter': 227, 'Water / Liquid': 236, 'Milk': 245, 'Salt (Kosher)': 130, 'Salt (Table)': 273, 'Honey / Syrup': 340, 'Oil': 216 };
 
 
@@ -106,6 +132,13 @@ export default function CulinaryHub() {
   };
   const deleteRecipe = (id) => { if(window.confirm("Delete this recipe?")) setRecipes(recipes.filter(r => r.id !== id)); };
 
+  
+  const swapUnits = () => {
+    const temp = convFrom;
+    setConvFrom(convTo);
+    setConvTo(temp);
+  };
+
   const addScaleIng = () => setScaleIngs([...scaleIngs, { id: Date.now(), name: '', amt: 1, unit: 'unit', approx: '' }]);
   const updateScaleIng = (id, field, val) => setScaleIngs(scaleIngs.map(ing => ing.id === id ? { ...ing, [field]: val } : ing));
   const removeScaleIng = (id) => setScaleIngs(scaleIngs.filter(ing => ing.id !== id));
@@ -145,17 +178,17 @@ export default function CulinaryHub() {
                 <h3 style={{ margin: '0 0 15px 0', color: '#00ffff', textAlign: 'center' }}>⚖️ Master Converter</h3>
                 <p style={{ color: '#aaa', fontSize: '0.8rem', textAlign: 'center', marginBottom: '15px' }}>Accepts fractions (e.g., "1 3/4") and decimals.</p>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
-                  <div style={{gridColumn: 'span 2'}}><label style={{display:'block', color:'#aaa', fontSize:'0.8rem', fontWeight:'bold', marginBottom:'5px'}}>Amount</label><input type="text" value={convAmt} onChange={e=>setConvAmt(e.target.value)} style={{...inputStyle, fontSize: '1.2rem', textAlign: 'center'}} /></div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "8px", alignItems: "end", marginBottom: "15px" }}>
                   <div>
-                    <label style={{display:'block', color:'#aaa', fontSize:'0.8rem', fontWeight:'bold', marginBottom:'5px'}}>From</label>
+                    <label style={{display:"block", color:"#aaa", fontSize:"0.8rem", fontWeight:"bold", marginBottom:"5px"}}>From</label>
                     <select value={convFrom} onChange={e=>setConvFrom(e.target.value)} style={inputStyle}>
                       <optgroup label="Volume">{Object.keys(volUnits).map(k=><option key={k}>{k}</option>)}</optgroup>
                       <optgroup label="Mass / Weight">{Object.keys(massUnits).map(k=><option key={k}>{k}</option>)}</optgroup>
                     </select>
                   </div>
+                  <button onClick={swapUnits} title="Swap Units" style={{ background: "#222", border: "1px solid #444", color: "#00ffff", padding: "10px 12px", borderRadius: "8px", fontSize: "1.2rem", cursor: "pointer", height: "46px" }}>⇄</button>
                   <div>
-                    <label style={{display:'block', color:'#10b981', fontSize:'0.8rem', fontWeight:'bold', marginBottom:'5px'}}>To</label>
+                    <label style={{display:"block", color:"#10b981", fontSize:"0.8rem", fontWeight:"bold", marginBottom:"5px"}}>To</label>
                     <select value={convTo} onChange={e=>setConvTo(e.target.value)} style={inputStyle}>
                       <optgroup label="Volume">{Object.keys(volUnits).map(k=><option key={k}>{k}</option>)}</optgroup>
                       <optgroup label="Mass / Weight">{Object.keys(massUnits).map(k=><option key={k}>{k}</option>)}</optgroup>
@@ -172,7 +205,7 @@ export default function CulinaryHub() {
 
                 <div style={{ background: '#000', padding: '15px', borderRadius: '8px', textAlign: 'center', border: '1px solid #222' }}>
                   <span style={{ color: '#aaa' }}>Converted Result:</span>
-                  <strong style={{ display: 'block', color: '#10b981', fontSize: '2.5rem', marginTop: '5px' }}>{convResult.toFixed(2)} <span style={{fontSize:'1.2rem'}}>{convTo}</span></strong>
+                  <strong style={{ display: "block", color: "#10b981", fontSize: "2.3rem", marginTop: "5px" }}>{convResult.toFixed(2)} <span style={{fontSize:"1.2rem"}}>{convTo}</span><span style={{color: "#f59e0b", fontSize: "1.2rem", display: "block", marginTop: "4px"}}>{toKitchenFraction(convResult)}</span></strong>
                 </div>
               </div>
             )}
