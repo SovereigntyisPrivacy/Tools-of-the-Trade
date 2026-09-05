@@ -140,12 +140,12 @@ export default function Dashboard() {
               <strong>5. Safety & Medical Information:</strong> Technical calculators and reference databases (including survival, pharmacology, and ballistics parameters) are strictly for educational reference. The developer assumes no liability for physical injury, legal repercussions, or medical incidents resulting from the use of this data.<br/><br/>
               <strong>6. User Responsibility:</strong> By bypassing this screen, you acknowledge that you are solely responsible for compliance with your local, state, and federal laws regarding cryptography, data routing, and physical applications.
             </p>
-</p>
 <p style={{ marginBottom: '15px', color: '#ccc', lineHeight: '1.5', fontSize: '0.9rem' }}>
   <strong style={{ color: '#fff' }}>7. Don't Trust, Verify:</strong> This application is proudly fully open-source (GPL-3.0). The codebase is publicly available for independent auditing to mathematically prove the absence of telemetry, trackers, or backdoors. Do not take our word for it—compile it yourself.
 </p>
 <p style={{ marginBottom: '25px', color: '#ccc', lineHeight: '1.5', fontSize: '0.9rem' }}>
   <strong style={{ color: '#fff' }}>8. Forensic Capabilities:</strong> This suite includes active data-destruction protocols (Panic Wipes) designed to overwrite storage sectors with zero-bytes. The developer cannot recover data you choose to incinerate. You are the sole custodian of your information.
+</p>
             <button onClick={handleAcceptEula} style={{ width: '100%', background: '#06b6d4', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', marginTop: '15px', fontSize: '1.1rem', boxShadow: '0 4px 10px rgba(6, 182, 212, 0.3)' }}>I Agree & Understand</button>
           </div>
         </div>
