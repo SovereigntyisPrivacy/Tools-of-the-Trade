@@ -28,6 +28,8 @@ export default function Settings() {
   { id: 'scanner', name: 'AI Visual Scanner' }, { id: 'pharmacology', name: 'Pharmacology DB' },
   { id: 'firearms', name: 'Firearms & Armory' }, { id: 'mechanics', name: 'Mechanics & Engines' },
   { id: 'electronics', name: 'Electronics & Wiring' }, { id: 'education', name: 'Education Archive' }
+];
+
 const navigate = useNavigate();
 
   const [devMode, setDevMode] = useState(() => localStorage.getItem('fleet_dev_mode') === 'true');
