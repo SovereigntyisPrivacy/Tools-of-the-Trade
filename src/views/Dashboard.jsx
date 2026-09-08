@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCalendar } from '../core/CalendarContext';
 
 export default function Dashboard() {
+  const [dashTab, setDashTab] = useState('Utilities');
   const [hiddenModules, setHiddenModules] = useState(() => JSON.parse(localStorage.getItem('tot_hidden_modules')) || []);
   const [devTaps, setDevTaps] = useState(0);
 
