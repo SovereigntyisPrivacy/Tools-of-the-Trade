@@ -182,6 +182,7 @@ function App() {
                 <Route path="/firstaid" element={<FirstAidHub />} />
                 <Route path="/mindset" element={<MindsetTracker />} />
                 <Route path="/opsec" element={<OpsecManual />} />
+        <Route path="/firearms" element={<FirearmsDatabase />} />
       </Routes>
             </Suspense>
           </Router>
