@@ -5,7 +5,7 @@ export default function OpsecManual() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Hardware & OS');
 
-  const tabs = ['Hardware & OS', 'Networks & Comms', 'Financial Anonymity', 'Cryptography', 'Physical & Evasion'];
+  const tabs = ['Hardware & OS', 'Networks & Comms', 'Financial Anonymity', 'Cryptography', 'Physical & Evasion', 'Crisis & Cover'];
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -116,22 +116,80 @@ export default function OpsecManual() {
               
               <h4 style={{ color: '#fff', marginBottom: '5px' }}>Physical Access is Root Access</h4>
               <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
-                Also known as the "Evil Maid" attack. If an adversary has uninterrupted physical access to your hardware, your software encryption is void. They can clone drives, install hardware keyloggers, or inject malicious payloads via rogue USBs (Rubber Duckies) in seconds. Never leave operational hardware unattended in unsecured locations. Apply tamper-evident seals to hardware seams.
+                If an adversary has uninterrupted physical access to your hardware, software encryption is void. They can clone drives or inject malicious payloads (Rubber Duckies) in seconds. Never leave operational hardware unattended. Apply tamper-evident seals to hardware seams.
               </p>
               
-              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>RF Discipline & Location Evasion</h4>
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>RF Evasion & Ghosting</h4>
               <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
-                Your device is a localized radio beacon. Cellular modems constantly ping towers to triangulate your exact physical coordinates, while Wi-Fi and Bluetooth radios passively log the MAC addresses of everything you walk past. "Airplane Mode" is often a software illusion that fails to cut baseband power. To truly drop off the physical grid, devices must be powered down, battery-pulled if possible, and placed inside a mathematically proven Faraday bag.
+                Your device is a localized radio beacon. "Airplane Mode" is a software illusion that fails to cut baseband power. To truly drop off the physical grid, devices must be powered down, battery-pulled if possible, and placed inside a mathematically proven Faraday bag. For active misdirection, leave a powered-on decoy device on public transit moving away from your actual vector.
               </p>
               
-              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Supply Chain Interdiction</h4>
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Surveillance Detection Routes (SDR)</h4>
               <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
-                Assume Big Tech hardware is compromised upon manufacture. Adversaries take this further by intercepting hardware shipments in transit to physically implant micro-transmitters or modified firmware directly onto motherboards. Source operational hardware anonymously, purchase with physical cash or XMR, and flash all firmware immediately upon acquisition.
+                Never travel directly to a secure location (safehouse, cache, or meeting). Utilize an SDR. Force followers into actions that reveal their presence: make three consecutive right turns, use stairs instead of escalators, or pause at reflective glass to check your six. If followed, do not accelerate—remain calm, proceed to a crowded public area, and execute a lateral exit.
               </p>
               
-              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Side-Channel & Acoustic Attacks</h4>
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>The "Gray Man" Principle</h4>
               <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
-                Advanced surveillance does not need to hack your code. Hidden microphones can record the acoustic signature of your keystrokes to mathematically recreate your passwords. Thermal cameras can read the lingering heat signature left on a keypad after you enter a PIN. Always shield your inputs physically, utilize randomized touchscreen layouts if available, and never underestimate passive data collection.
+                True evasion is not hiding in the shadows; it is hiding in plain sight. Do not wear tactical gear, camouflage, or political identifiers. Dress to the exact baseline of the environment you are in. Move at the average speed of the crowd. Become immediately forgettable to witnesses and behavioral profiling algorithms.
+              </p>
+
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Cover, Concealment & FLIR Evasion</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                <strong>Concealment</strong> hides you from eyesight (shadows, brush). <strong>Cover</strong> stops ballistics (engine blocks, packed earth). Against aerial FLIR (Forward Looking Infrared), standard camouflage is useless. To mask a thermal signature, you must block heat radiation. Thick concrete, standard glass (IR largely reflects off glass), or a rigged Mylar space blanket spaced <em>away</em> from your body (so heat doesn't conduct directly to the outer layer) are your primary defenses against thermal optics.
+              </p>
+            </div>
+          </div>
+        );
+      case 'Crisis & Cover':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            
+            {/* BALLISTICS & COVER */}
+            <div style={{ background: '#111', borderRadius: '12px', borderLeft: '4px solid #f97316', padding: '20px' }}>
+              <h3 style={{ color: '#f97316', marginTop: 0, textTransform: 'uppercase' }}>Ballistics & Real-World Cover</h3>
+              <p style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
+                Hollywood conditioning is fatal. <strong>Concealment</strong> hides you from eyesight; <strong>Cover</strong> stops kinetic energy. Do not confuse the two.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px' }}>The NIJ Armor Scale</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                <strong>Soft Armor (Level II & IIIA):</strong> Kevlar/Aramid fibers catch handgun rounds (up to .44 Mag) like a microscopic net. They WILL NOT stop rifle rounds.<br/><br/>
+                <strong>Hard Armor (Level III & IV):</strong> Ceramic plates shatter high-velocity rifle bullets, absorbing the energy. Steel plates (AR500) deflect bullets but create lethal spalling (shrapnel) unless coated in heavy anti-spall layers.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Effective Environmental Cover</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                <strong>Vehicles:</strong> Car doors, seats, and trunks offer zero ballistic protection. A 9mm will punch straight through both doors. The ONLY reliable cover on a civilian vehicle is the engine block or the wheel axles.<br/><br/>
+                <strong>Structures:</strong> Standard residential drywall and timber framing will not stop a 5.56 NATO round. Solid brick, reinforced concrete, or 18+ inches of densely packed earth/sandbags are required to reliably trap high-velocity projectiles.
+              </p>
+            </div>
+
+            {/* THE ANTI-GUIDE */}
+            <div style={{ background: '#111', borderRadius: '12px', borderLeft: '4px solid #ef4444', padding: '20px' }}>
+              <h3 style={{ color: '#ef4444', marginTop: 0, textTransform: 'uppercase' }}>The Crisis Anti-Guide: What NOT To Do</h3>
+              <p style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
+                Avoid these fatal behavioral traps during a sudden kinetic event or mass panic:
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px' }}>1. Do Not Succumb to Normalcy Bias</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                The brain will try to rationalize danger as a false alarm (e.g., "Those sound like fireworks"). Do not wait for others to react. If the baseline of your environment shatters, act immediately. Hesitation kills.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>2. Do Not Follow the Herd Blindly</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                In a panic, crowds default to the entrance they came in through. This creates fatal bottlenecks and trampling hazards. Always locate secondary service exits, kitchen doors, or loading docks the moment you enter a building. Move laterally to the crowd.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>3. Do Not Trap Yourself in Fatal Funnels</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                During an active threat, do not hide in public bathrooms, closets, or dead-end hallways. If a room does not have a secondary exit or a ground-floor window you can breach, it is a fatal trap.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>4. Do Not Rely on Cellular Grids</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                During a mass-casualty event, localized cell towers will instantly jam due to network overload. Do not freeze because you cannot call for instructions. Execute your pre-planned offline rally points immediately.
               </p>
             </div>
           </div>
