@@ -1,4 +1,3 @@
-import EducationArchive from './views/EducationArchive';
 import OpsecManual from './views/OpsecManual';
 import React, { useState, useEffect, Component, lazy, Suspense } from 'react';
 import LiveWallpaper from './core/LiveWallpaper';
@@ -185,7 +184,6 @@ function App() {
                 <Route path="/opsec" element={<OpsecManual />} />
         <Route path="/firearms" element={<FirearmsDatabase />} />
         <Route path="/electronics" element={<ElectronicsDatabase />} />
-        <Route path="/education" element={<EducationArchive />} />
       </Routes>
             </Suspense>
           </Router>

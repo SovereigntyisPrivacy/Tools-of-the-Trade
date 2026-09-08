@@ -81,8 +81,7 @@ export default function Dashboard() {
     { id: 'pharmacology', name: 'Pharmacology DB', path: '/pharmacology', icon: '💊', badge: 'WIP', badgeColor: '#f59e0b' },
     { id: 'firearms', name: 'Firearms & Armory', path: '/firearms', icon: '🔫', badge: 'NEW', badgeColor: '#ef4444' },
     { id: 'mechanics', name: 'Mechanics & Engines', path: '/mechanics', icon: '⚙️', badge: 'WIP', badgeColor: '#f59e0b' },
-    { id: 'electronics', name: 'Electronics & Wiring', path: '/electronics', icon: '🔌', badge: 'NEW', badgeColor: '#3b82f6' },
-    { id: 'education', name: 'Education Archive', path: '/education', icon: '🏫', badge: 'WIP', badgeColor: '#f59e0b' }
+    { id: 'electronics', name: 'Electronics & Wiring', path: '/electronics', icon: '🔌', badge: 'NEW', badgeColor: '#3b82f6' }
   ];
 
   return (
@@ -106,6 +105,12 @@ export default function Dashboard() {
           <button onClick={(e) => { e.stopPropagation(); setShowLegal(true); }} style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold' }}>📜 Manifesto & Legal</button>
         </div>
       </header>
+
+      {/* DASHBOARD TABS */}
+      <div style={{ display: 'flex', gap: '10px', padding: '15px 20px 5px 20px', zIndex: 10, position: 'relative' }}>
+        <button onClick={() => setDashTab('Utilities')} style={{ flex: 1, padding: '12px', background: dashTab === 'Utilities' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(0,0,0,0.5)', color: dashTab === 'Utilities' ? '#3b82f6' : '#888', border: dashTab === 'Utilities' ? '1px solid #3b82f6' : '1px solid #333', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.2s' }}>Operational Tools</button>
+        <button onClick={() => setDashTab('Archives')} style={{ flex: 1, padding: '12px', background: dashTab === 'Archives' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(0,0,0,0.5)', color: dashTab === 'Archives' ? '#a855f7' : '#888', border: dashTab === 'Archives' ? '1px solid #a855f7' : '1px solid #333', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', backdropFilter: 'blur(10px)', transition: 'all 0.2s' }}>Knowledge Archives</button>
+      </div>
 
       <div className="grid-container" style={{ marginTop: '40px' }}>
         {tools.filter(tool => !hiddenModules.includes(tool.id)).map((tool) => (
