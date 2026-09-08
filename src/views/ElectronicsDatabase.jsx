@@ -127,9 +127,9 @@ export default function ElectronicsDatabase() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             style={{
-              background: activeTab === tab.id ? \`rgba(\${hexToRgb(tab.color)}, 0.15)\` : '#111',
+              background: activeTab === tab.id ? `rgba(${hexToRgb(tab.color)}, 0.15)` : '#111',
               color: activeTab === tab.id ? tab.color : '#888',
-              border: activeTab === tab.id ? \`1px solid \${tab.color}\` : '1px solid #333',
+              border: activeTab === tab.id ? `1px solid ${tab.color}` : '1px solid #333',
               padding: '8px 16px',
               borderRadius: '20px',
               fontWeight: 'bold',
@@ -147,14 +147,14 @@ export default function ElectronicsDatabase() {
         {activeSection && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', borderBottom: '1px solid #333', paddingBottom: '15px' }}>
-              <span style={{ fontSize: '2.5rem', background: '#111', padding: '10px', borderRadius: '50%', border: \`1px solid \${activeSection.color}\` }}>{activeSection.icon}</span>
+              <span style={{ fontSize: '2.5rem', background: '#111', padding: '10px', borderRadius: '50%', border: `1px solid ${activeSection.color}` }}>{activeSection.icon}</span>
               <div>
                 <h2 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.3em', textTransform: 'uppercase' }}>{activeSection.title}</h2>
               </div>
             </div>
 
             {activeSection.sections.map((sec, idx) => (
-              <div key={idx} style={{ background: '#111', borderRadius: '8px', padding: '15px', borderLeft: \`4px solid \${activeSection.color}\` }}>
+              <div key={idx} style={{ background: '#111', borderRadius: '8px', padding: '15px', borderLeft: `4px solid ${activeSection.color}` }}>
                 <h4 style={{ color: activeSection.color, marginTop: 0, textTransform: 'uppercase', marginBottom: '8px' }}>{sec.heading}</h4>
                 <p style={{ color: '#ccc', margin: 0, lineHeight: '1.6', fontSize: '0.95em', whiteSpace: 'pre-line' }}>{sec.content}</p>
               </div>
@@ -168,5 +168,5 @@ export default function ElectronicsDatabase() {
 
 function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? \`\${parseInt(result[1], 16)}, \${parseInt(result[2], 16)}, \${parseInt(result[3], 16)}\` : '255, 255, 255';
+  return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '255, 255, 255';
 }
