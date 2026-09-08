@@ -183,6 +183,7 @@ function App() {
                 <Route path="/mindset" element={<MindsetTracker />} />
                 <Route path="/opsec" element={<OpsecManual />} />
         <Route path="/firearms" element={<FirearmsDatabase />} />
+        <Route path="/electronics" element={<ElectronicsDatabase />} />
       </Routes>
             </Suspense>
           </Router>
