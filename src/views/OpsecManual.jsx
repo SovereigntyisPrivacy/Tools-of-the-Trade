@@ -1,64 +1,146 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const OPSEC_GUIDE = [
-  {
-    id: 'pillar-1',
-    title: 'I. Threat Modeling',
-    icon: '🎯',
-    color: '#ef4444',
-    content: 'OpSec begins with identifying your adversary. You cannot protect against everything simultaneously without crippling your utility. Define your threat model:\n\n• Who is the adversary? (Corporate trackers, local LE, nation-state?)\n• What are they after? (Location data, financial ledgers, comms?)\n• What are their capabilities?\n\nDesign your security posture around the most likely threat, not the most extreme cinematic scenario.'
-  },
-  {
-    id: 'pillar-2',
-    title: 'II. Mobile Device Hardening',
-    icon: '📱',
-    color: '#3b82f6',
-    content: 'Your mobile device is a localized surveillance node. Mitigate this baseline exposure:\n\n• Biometrics are NOT protected by the 5th Amendment. Use strong alphanumeric passcodes (8+ characters) in high-risk zones.\n• Disable cloud backups for sensitive data. Cloud servers hold decryption keys.\n• Compartmentalization: Do not mix operational profiles. Use separate hardware or strict software profiles (like Qubes or GrapheneOS work profiles) for secure tasks.'
-  },
-  {
-    id: 'pillar-3',
-    title: 'III. Tactical Communications',
-    icon: '📡',
-    color: '#a855f7',
-    content: 'Never trust cellular carrier networks (SMS/MMS) or unencrypted social platforms. They are heavily logged and retained.\n\n• E2EE Protocols: Utilize Signal or Session for internet-based routing.\n• Mesh Networking: In denied environments (no cell service), utilize 900MHz LoRa mesh networks (e.g., Meshtastic) for decentralized, off-grid text routing up to 10+ miles.\n• Metadata is often more dangerous than the payload itself. Who you talk to, and when, paints a complete picture.'
-  },
-  {
-    id: 'pillar-4',
-    title: 'IV. Data Custody & Destruction',
-    icon: '🔥',
-    color: '#f59e0b',
-    content: 'If you do not hold the physical storage, you do not own the data.\n\n• Air-Gapping: Keep high-value ledgers, master passwords, and crypto seed phrases entirely offline.\n• Panic Protocols: Utilize cryptographic wiping (overwriting sectors with zero-bytes) for sensitive local vaults. Deleting a file normally only removes the filesystem pointer; the data remains forensically recoverable until overwritten.'
-  }
-];
 
 export default function OpsecManual() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('Hardware & OS');
+
+  const tabs = ['Hardware & OS', 'Networks & Comms', 'Financial Anonymity', 'Cryptography'];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'Hardware & OS':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            
+            <div style={{ background: '#111', borderRadius: '12px', borderLeft: '4px solid #ef4444', padding: '20px' }}>
+              <h3 style={{ color: '#ef4444', marginTop: 0, textTransform: 'uppercase' }}>Physical & OS Isolation</h3>
+              <p style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
+                True sovereignty begins at the bare metal. If the operating system is compromised, all downstream cryptography is void. Security is achieved through strict compartmentalization and physical control.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px' }}>Mobile Hardening</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Migrate away from OEM Android builds to de-googled environments like GrapheneOS. For local development and system-level modifications, utilize tools like Shizuku paired with Termux to execute elevated commands locally without exposing the device to full root vulnerabilities. Disable all biometrics in high-risk zones; alphanumeric passcodes fall under 5th Amendment protections.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Workstation Compartmentalization</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Never mix daily web browsing with sovereign development or secure storage. Utilize OS-level isolation. Qubes OS acts as the gold standard for security by compartmentalizing tasks into isolated virtual machines. For raw local AI processing or stable development environments, Pop!_OS offers robust bare-metal Linux performance.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Off-Grid Hardware Resiliency</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Running continuous 24/7 cycles for background nodes or heavy local processing requires flawless physical infrastructure. High-capacity solar setups (e.g., EcoFlow Delta Pro Ultra configurations) must be paired with aggressive ambient heat ventilation—especially in extreme desert climates where ambient temperatures can instantly induce thermal throttling and hardware degradation.
+              </p>
+            </div>
+          </div>
+        );
+      case 'Networks & Comms':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ background: '#111', borderRadius: '12px', borderLeft: '4px solid #a855f7', padding: '20px' }}>
+              <h3 style={{ color: '#a855f7', marginTop: 0, textTransform: 'uppercase' }}>Decentralized Infrastructure</h3>
+              <p style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
+                Clear-net ISP infrastructure routes and logs all standard DNS requests and unencrypted traffic. Sovereign communications require deliberate routing through zero-trust architectures.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px' }}>The Sovereign Network & ZHTP</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                To bypass centralized choke points, route communications through decentralized network ecosystems utilizing privacy-focused protocols like ZHTP. Operating local background nodes enforces a zero-trust model where metadata is stripped or obfuscated, making traffic analysis mathematically unfeasible for passive observers.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Mesh Networking & Local Comms</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                When macro-infrastructure fails or is actively monitored, fall back to localized mesh networks. 900MHz LoRa nodes allow for off-grid, encrypted text routing entirely independent of cell towers or satellite uplinks.
+              </p>
+            </div>
+          </div>
+        );
+      case 'Financial Anonymity':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ background: '#111', borderRadius: '12px', borderLeft: '4px solid #f59e0b', padding: '20px' }}>
+              <h3 style={{ color: '#f59e0b', marginTop: 0, textTransform: 'uppercase' }}>Sovereign Finance</h3>
+              <p style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
+                Traditional fiat networks (KYC/AML) map every transaction to a persistent government identity. Financial sovereignty breaks this chain through physical assets and opaque digital ledgers.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px' }}>Monero (XMR) & Self-Custody</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Bitcoin's ledger is completely transparent and easily traceable by chain-analysis firms. For genuine financial anonymity, utilize Monero (XMR), which enforces mandatory ring signatures, ring confidential transactions (RingCT), and stealth addresses. Manage your XMR locally via open-source self-custody tools like Cake Wallet. Never leave funds on a centralized exchange.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Decentralized Web Ecosystems</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Avoid traditional ad-tech surveillance grids by utilizing privacy-focused browsers (like Brave) that block trackers natively. This allows participation in decentralized micro-economies without compromising your identity profile or hardware fingerprint.
+              </p>
+            </div>
+          </div>
+        );
+      case 'Cryptography':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ background: '#111', borderRadius: '12px', borderLeft: '4px solid #10b981', padding: '20px' }}>
+              <h3 style={{ color: '#10b981', marginTop: 0, textTransform: 'uppercase' }}>Cryptography & Data Custody</h3>
+              <p style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
+                Cryptography is the ultimate equalizer. When implemented correctly, it allows an individual to possess data that a nation-state cannot access.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px' }}>Asymmetric vs Symmetric Encryption</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                <strong>Symmetric (AES-256):</strong> Used for local data vaults. The same key locks and unlocks the data. If the key is lost, the data is mathematically destroyed forever.<br/><br/>
+                <strong>Asymmetric (PGP / ECC Curve25519):</strong> Used for communications. You distribute your Public Key to the world so they can encrypt messages to you, but only your offline Private Key can decrypt them. Guard your Private Key with your life.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>The "Delete" Illusion & Panic Wipes</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Standard OS deletion does not erase data; it merely removes the filesystem pointer, leaving the actual file intact for forensic recovery. Because modern solid-state drives (SSDs) use wear-leveling algorithms, true data destruction requires active forensic wiping protocols that overwrite the storage sectors with zero-bytes.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Key Management</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Digital security relies entirely on offline physical security. Never store seed phrases or master passwords in a cloud-connected password manager. Utilize physical, fireproof analog backups (stamped steel plates or notebooks in a safe) for your root cryptographic keys.
+              </p>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="view-wrapper pb-safe" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', marginRight: '15px' }}>← Hub</button>
-        <h2 style={{ margin: 0, color: '#3b82f6', fontSize: '1.2em', textTransform: 'uppercase', letterSpacing: '1px' }}>OpSec Field Manual</h2>
+        <h2 style={{ margin: 0, color: '#3b82f6', fontSize: '1.2em', textTransform: 'uppercase', letterSpacing: '1px' }}>OpSec Encyclopedia</h2>
       </header>
 
-      <div style={{ padding: '20px', overflowY: 'auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-          <h1 style={{ color: '#fff', margin: '0 0 10px 0', fontSize: '2em' }}>OPERATIONAL SECURITY</h1>
-          <p style={{ color: '#888', margin: 0, fontSize: '0.9em', fontStyle: 'italic' }}>Standard operating procedures for digital survival.</p>
-        </div>
-
-        {OPSEC_GUIDE.map((section) => (
-          <div key={section.id} style={{ background: '#111', borderRadius: '12px', border: '1px solid #333', borderTop: `4px solid ${section.color}`, padding: '20px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
-              <span style={{ fontSize: '2em' }}>{section.icon}</span>
-              <h3 style={{ color: section.color, margin: 0, fontSize: '1.2em', textTransform: 'uppercase' }}>{section.title}</h3>
-            </div>
-            <div style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em', whiteSpace: 'pre-line' }}>
-              {section.content}
-            </div>
-          </div>
+      <div style={{ padding: '10px 15px', overflowX: 'auto', display: 'flex', gap: '10px', borderBottom: '1px solid #222', scrollbarWidth: 'none' }}>
+        {tabs.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              background: activeTab === tab ? 'rgba(59, 130, 246, 0.15)' : '#111',
+              color: activeTab === tab ? '#3b82f6' : '#888',
+              border: activeTab === tab ? '1px solid #3b82f6' : '1px solid #333',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              fontWeight: 'bold',
+              whiteSpace: 'nowrap',
+              fontSize: '0.9em',
+              cursor: 'pointer'
+            }}
+          >
+            {tab}
+          </button>
         ))}
+      </div>
+
+      <div style={{ padding: '20px', overflowY: 'auto' }}>
+        {renderTabContent()}
       </div>
     </div>
   );
