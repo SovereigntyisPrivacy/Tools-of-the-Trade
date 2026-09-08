@@ -1,3 +1,4 @@
+import OpsecManual from './views/OpsecManual';
 import React, { useState, useEffect, Component, lazy, Suspense } from 'react';
 import LiveWallpaper from './core/LiveWallpaper';
 
@@ -123,7 +124,8 @@ function App() {
             <GlobalNav />
             <Suspense fallback={<div style={{ padding: '20px', color: '#fff', textAlign: 'center' }}>Loading Module...</div>}>
               <Routes>
-        <Route path="/botany" element={<BotanyDatabase />} />
+        <Route path="/botany" element={<BotanyDatabase />
+        <Route path="/opsec" element={<OpsecManual />} />} />
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/settings" element={<Settings />} />
 

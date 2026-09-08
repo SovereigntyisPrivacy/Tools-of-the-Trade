@@ -80,6 +80,10 @@ export default function Dashboard() {
 
   return (
     <div className="view-wrapper pb-safe">
+      {/* OPSEC MANUAL BUTTON */}
+      <div style={{ position: 'absolute', top: '15px', left: '15px', zIndex: 10 }}>
+        <button onClick={() => navigate('/opsec')} style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid #333', borderRadius: '8px', padding: '8px 12px', fontSize: '1.2em', cursor: 'pointer' }}>🛡️</button>
+      </div>
       <header className="header" style={{ position: 'relative', paddingTop: '40px', paddingBottom: '20px', textAlign: 'center' }}>
         <div onClick={() => navigate('/worldclock')} style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', cursor: 'pointer', zIndex: 10 }}>
           <span style={{ color: clockConfig.color, fontSize: '1.2rem', textShadow: `0 0 10px ${clockConfig.color}`, fontWeight: 'bold' }}>
