@@ -75,7 +75,13 @@ export default function Dashboard() {
     { id: "firstaid", name: "Trauma & CPR", path: "/firstaid", icon: "🚑", badge: "SAFE", badgeColor: "#ef4444" },
     { id: "library", name: "Survival Library", path: "/schematics/library", icon: "🏕️", badge: "CORE", badgeColor: "#10b981" },
     { id: "mindset", name: "Mindset Tracker", path: "/mindset", icon: "🧠", badge: "NEW", badgeColor: "#a855f7" },
-    { id: 'botany', name: 'Botany & Foraging', path: '/botany', icon: '🌿', badge: 'NEW', badgeColor: '#00cc66' }
+    { id: 'botany', name: 'Botany & Foraging', path: '/botany', icon: '🌿', badge: 'NEW', badgeColor: '#00cc66' },
+    { id: 'scanner', name: 'AI Visual Scanner', path: '/scanner', icon: '👁️', badge: 'BYOK', badgeColor: '#3b82f6' },
+    { id: 'pharmacology', name: 'Pharmacology DB', path: '/pharmacology', icon: '💊', badge: 'WIP', badgeColor: '#f59e0b' },
+    { id: 'firearms', name: 'Firearms & Armory', path: '/firearms', icon: '🔫', badge: 'NEW', badgeColor: '#ef4444' },
+    { id: 'mechanics', name: 'Mechanics & Engines', path: '/mechanics', icon: '⚙️', badge: 'WIP', badgeColor: '#f59e0b' },
+    { id: 'electronics', name: 'Electronics & Wiring', path: '/electronics', icon: '🔌', badge: 'NEW', badgeColor: '#3b82f6' },
+    { id: 'education', name: 'Education Archive', path: '/education', icon: '🏫', badge: 'WIP', badgeColor: '#f59e0b' }
   ];
 
   return (
