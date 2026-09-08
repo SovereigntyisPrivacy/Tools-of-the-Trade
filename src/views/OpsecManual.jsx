@@ -5,7 +5,7 @@ export default function OpsecManual() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Hardware & OS');
 
-  const tabs = ['Hardware & OS', 'Networks & Comms', 'Financial Anonymity', 'Cryptography', 'Physical & Evasion', 'Crisis & Cover'];
+  const tabs = ['Hardware & OS', 'Networks & Comms', 'Financial Anonymity', 'Cryptography', 'Physical & Digital', 'Evasion & Camouflage', 'Crisis & Cover'];
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -105,26 +105,47 @@ export default function OpsecManual() {
             </div>
           </div>
         );
-      case 'Physical & Evasion':
+      case 'Physical & Digital':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ background: '#111', borderRadius: '12px', borderLeft: '4px solid #ef4444', padding: '20px' }}>
-              <h3 style={{ color: '#ef4444', marginTop: 0, textTransform: 'uppercase' }}>Physical Security & Evasion</h3>
+              <h3 style={{ color: '#ef4444', marginTop: 0, textTransform: 'uppercase' }}>Physical & Digital Intersection</h3>
               <p style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
                 The firewall between the digital and physical world is a myth. Digital surveillance dictates physical location, and physical access destroys digital encryption.
               </p>
               
               <h4 style={{ color: '#fff', marginBottom: '5px' }}>Physical Access is Root Access</h4>
               <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
-                If an adversary has uninterrupted physical access to your hardware, software encryption is void. They can clone drives or inject malicious payloads (Rubber Duckies) in seconds. Never leave operational hardware unattended. Apply tamper-evident seals to hardware seams.
+                Also known as the "Evil Maid" attack. If an adversary has uninterrupted physical access to your hardware, your software encryption is void. They can clone drives, install hardware keyloggers, or inject malicious payloads via rogue USBs (Rubber Duckies) in seconds. Never leave operational hardware unattended in unsecured locations. Apply tamper-evident seals to hardware seams.
               </p>
               
-              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>RF Evasion & Ghosting</h4>
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>RF Discipline & Location Evasion</h4>
               <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
-                Your device is a localized radio beacon. "Airplane Mode" is a software illusion that fails to cut baseband power. To truly drop off the physical grid, devices must be powered down, battery-pulled if possible, and placed inside a mathematically proven Faraday bag. For active misdirection, leave a powered-on decoy device on public transit moving away from your actual vector.
+                Your device is a localized radio beacon. Cellular modems constantly ping towers to triangulate your exact physical coordinates, while Wi-Fi and Bluetooth radios passively log the MAC addresses of everything you walk past. "Airplane Mode" is often a software illusion that fails to cut baseband power. To truly drop off the physical grid, devices must be powered down, battery-pulled if possible, and placed inside a mathematically proven Faraday bag.
               </p>
               
-              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Surveillance Detection Routes (SDR)</h4>
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Supply Chain Interdiction</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Assume Big Tech hardware is compromised upon manufacture. Adversaries take this further by intercepting hardware shipments in transit to physically implant micro-transmitters or modified firmware directly onto motherboards. Source operational hardware anonymously, purchase with physical cash or XMR, and flash all firmware immediately upon acquisition.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Side-Channel & Acoustic Attacks</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Advanced surveillance does not need to hack your code. Hidden microphones can record the acoustic signature of your keystrokes to mathematically recreate your passwords. Thermal cameras can read the lingering heat signature left on a keypad after you enter a PIN. Always shield your inputs physically, utilize randomized touchscreen layouts if available, and never underestimate passive data collection.
+              </p>
+            </div>
+          </div>
+        );
+      case 'Evasion & Camouflage':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ background: '#111', borderRadius: '12px', borderLeft: '4px solid #8b5cf6', padding: '20px' }}>
+              <h3 style={{ color: '#8b5cf6', marginTop: 0, textTransform: 'uppercase' }}>Evasion & Camouflage</h3>
+              <p style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
+                When digital perimeters fall, physical evasion is your only fail-safe. True camouflage is behavioral, not just visual.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px' }}>Surveillance Detection Routes (SDR)</h4>
               <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
                 Never travel directly to a secure location (safehouse, cache, or meeting). Utilize an SDR. Force followers into actions that reveal their presence: make three consecutive right turns, use stairs instead of escalators, or pause at reflective glass to check your six. If followed, do not accelerate—remain calm, proceed to a crowded public area, and execute a lateral exit.
               </p>
@@ -134,9 +155,14 @@ export default function OpsecManual() {
                 True evasion is not hiding in the shadows; it is hiding in plain sight. Do not wear tactical gear, camouflage, or political identifiers. Dress to the exact baseline of the environment you are in. Move at the average speed of the crowd. Become immediately forgettable to witnesses and behavioral profiling algorithms.
               </p>
 
-              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Cover, Concealment & FLIR Evasion</h4>
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Concealment vs. FLIR Evasion</h4>
               <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
-                <strong>Concealment</strong> hides you from eyesight (shadows, brush). <strong>Cover</strong> stops ballistics (engine blocks, packed earth). Against aerial FLIR (Forward Looking Infrared), standard camouflage is useless. To mask a thermal signature, you must block heat radiation. Thick concrete, standard glass (IR largely reflects off glass), or a rigged Mylar space blanket spaced <em>away</em> from your body (so heat doesn't conduct directly to the outer layer) are your primary defenses against thermal optics.
+                Against aerial FLIR (Forward Looking Infrared), standard visual camouflage is useless. To mask a thermal signature, you must block heat radiation. Thick concrete, standard glass (IR largely reflects off glass), or a rigged Mylar space blanket spaced <em>away</em> from your body (so heat doesn't conduct directly to the outer layer) are your primary defenses against thermal optics.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Decoys and Misdirection</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                If you must burn a digital identity while physically moving, utilize a decoy. Leave a powered-on, transmitting device on a bus or train moving away from your actual escape vector. Authorities will deploy resources tracking the digital ghost while you move offline in the opposite direction.
               </p>
             </div>
           </div>
