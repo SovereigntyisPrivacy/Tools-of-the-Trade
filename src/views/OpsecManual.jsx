@@ -5,7 +5,7 @@ export default function OpsecManual() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Hardware & OS');
 
-  const tabs = ['Hardware & OS', 'Networks & Comms', 'Financial Anonymity', 'Cryptography'];
+  const tabs = ['Hardware & OS', 'Networks & Comms', 'Financial Anonymity', 'Cryptography', 'Physical & Evasion'];
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -101,6 +101,37 @@ export default function OpsecManual() {
               <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Key Management</h4>
               <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
                 Digital security relies entirely on offline physical security. Never store seed phrases or master passwords in a cloud-connected password manager. Utilize physical, fireproof analog backups (stamped steel plates or notebooks in a safe) for your root cryptographic keys.
+              </p>
+            </div>
+          </div>
+        );
+      case 'Physical & Evasion':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ background: '#111', borderRadius: '12px', borderLeft: '4px solid #ef4444', padding: '20px' }}>
+              <h3 style={{ color: '#ef4444', marginTop: 0, textTransform: 'uppercase' }}>Physical Security & Evasion</h3>
+              <p style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>
+                The firewall between the digital and physical world is a myth. Digital surveillance dictates physical location, and physical access destroys digital encryption.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px' }}>Physical Access is Root Access</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Also known as the "Evil Maid" attack. If an adversary has uninterrupted physical access to your hardware, your software encryption is void. They can clone drives, install hardware keyloggers, or inject malicious payloads via rogue USBs (Rubber Duckies) in seconds. Never leave operational hardware unattended in unsecured locations. Apply tamper-evident seals to hardware seams.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>RF Discipline & Location Evasion</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Your device is a localized radio beacon. Cellular modems constantly ping towers to triangulate your exact physical coordinates, while Wi-Fi and Bluetooth radios passively log the MAC addresses of everything you walk past. "Airplane Mode" is often a software illusion that fails to cut baseband power. To truly drop off the physical grid, devices must be powered down, battery-pulled if possible, and placed inside a mathematically proven Faraday bag.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Supply Chain Interdiction</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Assume Big Tech hardware is compromised upon manufacture. Adversaries take this further by intercepting hardware shipments in transit to physically implant micro-transmitters or modified firmware directly onto motherboards. Source operational hardware anonymously, purchase with physical cash or XMR, and flash all firmware immediately upon acquisition.
+              </p>
+              
+              <h4 style={{ color: '#fff', marginBottom: '5px', marginTop: '15px' }}>Side-Channel & Acoustic Attacks</h4>
+              <p style={{ color: '#aaa', lineHeight: '1.5', fontSize: '0.9em', margin: 0 }}>
+                Advanced surveillance does not need to hack your code. Hidden microphones can record the acoustic signature of your keystrokes to mathematically recreate your passwords. Thermal cameras can read the lingering heat signature left on a keypad after you enter a PIN. Always shield your inputs physically, utilize randomized touchscreen layouts if available, and never underestimate passive data collection.
               </p>
             </div>
           </div>
