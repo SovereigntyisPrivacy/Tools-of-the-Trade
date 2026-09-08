@@ -124,8 +124,7 @@ function App() {
             <GlobalNav />
             <Suspense fallback={<div style={{ padding: '20px', color: '#fff', textAlign: 'center' }}>Loading Module...</div>}>
               <Routes>
-        <Route path="/botany" element={<BotanyDatabase />
-        <Route path="/opsec" element={<OpsecManual />} />} />
+        <Route path="/botany" element={<BotanyDatabase />} />
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/settings" element={<Settings />} />
 
@@ -182,7 +181,8 @@ function App() {
                 <Route path="/cipher" element={<CipherKeygen />} />
                 <Route path="/firstaid" element={<FirstAidHub />} />
                 <Route path="/mindset" element={<MindsetTracker />} />
-              </Routes>
+                <Route path="/opsec" element={<OpsecManual />} />
+      </Routes>
             </Suspense>
           </Router>
         </CalendarProvider>
