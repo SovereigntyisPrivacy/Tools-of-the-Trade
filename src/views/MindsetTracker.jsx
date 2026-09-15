@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Share } from '@capacitor/share';
 
 const GRIT_QUOTES = [
   "The brick walls are there for a reason. They give us a chance to show how badly we want something. - Randy Pausch",
@@ -97,7 +98,6 @@ export default function MindsetTracker() {
   const deletePhysical = (id) => setPtLogs(ptLogs.filter(l => l.id !== id));
 
   const exportLogs = async () => {
-    // 1. Grab all unsent logs and tag them with their type
     const unsentMind = logs.filter(l => !l.exported).map(l => ({ ...l, logType: 'MINDSET' }));
     const unsentPhys = ptLogs.filter(l => !l.exported).map(l => ({ ...l, logType: 'PHYSICAL' }));
 
@@ -106,10 +106,8 @@ export default function MindsetTracker() {
       return;
     }
 
-    // 2. Combine them and sort chronologically (oldest to newest for reading flow)
     const combinedLogs = [...unsentMind, ...unsentPhys].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // 3. Group by Day
     const groupedLogs = {};
     combinedLogs.forEach(log => {
       const d = new Date(log.date);
@@ -120,7 +118,6 @@ export default function MindsetTracker() {
       groupedLogs[dateStr].push({ ...log, timeStr });
     });
 
-    // 4. Build the text output
     let textData = "=== SOVEREIGN HEALTH & RECOVERY EXPORT ===\n";
     textData += `Generated: ${new Date().toLocaleString()}\n\n`;
 
@@ -146,20 +143,15 @@ export default function MindsetTracker() {
       });
     }
 
-    // 5. Trigger Native Android Share Menu
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Health Export ${new Date().toLocaleDateString()}`,
-          text: textData
-        });
-      } else {
-        // Fallback if share API is somehow blocked
-        await navigator.clipboard.writeText(textData);
-        alert("Logs copied to clipboard!");
-      }
+      // Trigger Native Android Share Intent
+      await Share.share({
+        title: `Health Export ${new Date().toLocaleDateString()}`,
+        text: textData,
+        dialogTitle: 'Share Logs To...'
+      });
       
-      // 6. Mark them all as exported only AFTER share is triggered
+      // Mark as exported ONLY after successful native share
       setLogs(logs.map(l => ({ ...l, exported: true })));
       setPtLogs(ptLogs.map(l => ({ ...l, exported: true })));
       
@@ -171,20 +163,17 @@ export default function MindsetTracker() {
   return (
     <div className="view-wrapper pb-safe" style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* HEADER */}
       <header className="header" style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center' }}>
         <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', marginRight: '15px' }}>← Hub</button>
         <h2 style={{ margin: 0, color: '#10b981', fontSize: '1.2em', textTransform: 'uppercase', letterSpacing: '1px' }}>Mind & Body Tracker</h2>
       </header>
 
-      {/* QUOTE BLOCK */}
       <div style={{ padding: '15px' }}>
         <div style={{ background: '#111', borderRadius: '12px', borderLeft: '4px solid #a855f7', padding: '15px', fontStyle: 'italic', color: '#ccc', textAlign: 'center', fontSize: '0.95em' }}>
           "{quote}"
         </div>
       </div>
 
-      {/* TABS */}
       <div style={{ display: 'flex', gap: '10px', padding: '0 15px 15px 15px', borderBottom: '1px solid #222' }}>
         <button onClick={() => setActiveTab('Mindset')} style={{ flex: 1, padding: '10px', background: activeTab === 'Mindset' ? '#a855f7' : '#222', color: activeTab === 'Mindset' ? '#fff' : '#888', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Mindset</button>
         <button onClick={() => setActiveTab('Pain')} style={{ flex: 1, padding: '10px', background: activeTab === 'Pain' ? '#06b6d4' : '#222', color: activeTab === 'Pain' ? '#fff' : '#888', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Pain & PT</button>
@@ -196,7 +185,6 @@ export default function MindsetTracker() {
         {/* MINDSET TAB */}
         {activeTab === 'Mindset' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
             <div style={{ background: '#111', borderRadius: '12px', padding: '20px' }}>
               <h4 style={{ color: '#a855f7', marginTop: 0, textAlign: 'center', textTransform: 'uppercase' }}>Overall State of Mind</h4>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px' }}>
@@ -208,19 +196,16 @@ export default function MindsetTracker() {
 
             <div style={{ background: '#111', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <h4 style={{ color: '#a855f7', margin: 0, textAlign: 'center', textTransform: 'uppercase' }}>Diagnostic Metrics</h4>
-              
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', marginBottom: '10px' }}><span>Physical Energy</span> <span style={{ color: '#06b6d4' }}>{energy}/5</span></div>
                 <input type="range" min="1" max="5" value={energy} onChange={e => setEnergy(Number(e.target.value))} style={{ width: '100%', accentColor: '#06b6d4' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555', fontSize: '0.8em', marginTop: '5px' }}><span>Exhausted</span><span>Peak</span></div>
               </div>
-
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', marginBottom: '10px' }}><span>Stress / Anxiety</span> <span style={{ color: '#ef4444' }}>{stress}/5</span></div>
                 <input type="range" min="1" max="5" value={stress} onChange={e => setStress(Number(e.target.value))} style={{ width: '100%', accentColor: '#ef4444' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555', fontSize: '0.8em', marginTop: '5px' }}><span>Calm</span><span>Overwhelmed</span></div>
               </div>
-
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', marginBottom: '10px' }}><span>Mental Focus</span> <span style={{ color: '#10b981' }}>{focus}/5</span></div>
                 <input type="range" min="1" max="5" value={focus} onChange={e => setFocus(Number(e.target.value))} style={{ width: '100%', accentColor: '#10b981' }} />
@@ -240,7 +225,6 @@ export default function MindsetTracker() {
         {/* PAIN & PT TAB */}
         {activeTab === 'Pain' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
             <div style={{ background: '#111', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ textAlign: 'center' }}>
                 <h4 style={{ color: '#06b6d4', margin: '0 0 10px 0', textTransform: 'uppercase' }}>Physical Therapy & Pain Log</h4>
@@ -310,7 +294,6 @@ export default function MindsetTracker() {
                     </div>
                     {log.notes && <p style={{ color: '#888', margin: '10px 0 0 0', fontSize: '0.9em', fontStyle: 'italic' }}>"{log.notes}"</p>}
                     
-                    {/* EXPLICIT STATUS BADGES */}
                     {log.exported ? (
                       <span style={{ position: 'absolute', bottom: '10px', right: '10px', color: '#666', fontSize: '0.7em', fontWeight: 'bold', textTransform: 'uppercase' }}>✓ Sent</span>
                     ) : (
@@ -342,7 +325,6 @@ export default function MindsetTracker() {
                     </div>
                     {n && <p style={{ color: '#888', margin: '10px 0 0 0', fontSize: '0.9em', fontStyle: 'italic' }}>"{n}"</p>}
                     
-                    {/* EXPLICIT STATUS BADGES */}
                     {log.exported ? (
                       <span style={{ position: 'absolute', bottom: '10px', right: '10px', color: '#666', fontSize: '0.7em', fontWeight: 'bold', textTransform: 'uppercase' }}>✓ Sent</span>
                     ) : (

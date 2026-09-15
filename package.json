@@ -19,6 +19,7 @@
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/local-notifications": "^8.3.1",
     "@capacitor/preferences": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
     "@capawesome/capacitor-torch": "^8.0.1",
     "@google/genai": "^2.18.0",
     "cropperjs": "^1.6.2",
