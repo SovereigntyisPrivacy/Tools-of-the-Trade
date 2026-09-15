@@ -114,7 +114,16 @@ export default function Dashboard() {
       </div>
 
       <div className="grid-container" style={{ marginTop: '40px' }}>
-        {tools.filter(tool => !hiddenModules.includes(tool.id)).map((tool) => (
+        {tools.filter(tool => {
+  if (hiddenModules.includes(tool.id)) return false;
+  
+  // Define the core encyclopedias & databases
+  const archiveKeywords = ['Civics', 'Lens', 'Trauma', 'Survival', 'Botany', 'Pharmacology', 'Firearms', 'Mechanics', 'Electronics', 'Education'];
+  const isArchive = archiveKeywords.some(kw => tool.name && tool.name.includes(kw));
+  
+  // Route to the correct tab
+  return dashTab === 'Utilities' ? !isArchive : isArchive;
+}).map((tool) => (
           <button key={tool.id} className="tool-card" style={{ position: 'relative' }} onClick={() => navigate(tool.path)}>
             {tool.badge && (
               <div style={{
