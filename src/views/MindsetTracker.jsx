@@ -96,7 +96,7 @@ export default function MindsetTracker() {
   const deleteMindset = (id) => setLogs(logs.filter(l => l.id !== id));
   const deletePhysical = (id) => setPtLogs(ptLogs.filter(l => l.id !== id));
 
-  const exportLogs = () => {
+  const exportLogs = async () => {
     // 1. Grab all unsent logs and tag them with their type
     const unsentMind = logs.filter(l => !l.exported).map(l => ({ ...l, logType: 'MINDSET' }));
     const unsentPhys = ptLogs.filter(l => !l.exported).map(l => ({ ...l, logType: 'PHYSICAL' }));
@@ -120,7 +120,7 @@ export default function MindsetTracker() {
       groupedLogs[dateStr].push({ ...log, timeStr });
     });
 
-    // 4. Build the text file
+    // 4. Build the text output
     let textData = "=== SOVEREIGN HEALTH & RECOVERY EXPORT ===\n";
     textData += `Generated: ${new Date().toLocaleString()}\n\n`;
 
@@ -146,18 +146,26 @@ export default function MindsetTracker() {
       });
     }
 
-    // 5. Download the file
-    const blob = new Blob([textData], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Health_Export_${new Date().toISOString().slice(0,10)}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    // 6. Mark them all as exported so they don't send again
-    setLogs(logs.map(l => ({ ...l, exported: true })));
-    setPtLogs(ptLogs.map(l => ({ ...l, exported: true })));
+    // 5. Trigger Native Android Share Menu
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Health Export ${new Date().toLocaleDateString()}`,
+          text: textData
+        });
+      } else {
+        // Fallback if share API is somehow blocked
+        await navigator.clipboard.writeText(textData);
+        alert("Logs copied to clipboard!");
+      }
+      
+      // 6. Mark them all as exported only AFTER share is triggered
+      setLogs(logs.map(l => ({ ...l, exported: true })));
+      setPtLogs(ptLogs.map(l => ({ ...l, exported: true })));
+      
+    } catch (error) {
+      console.log("Share canceled or failed", error);
+    }
   };
 
   return (
@@ -277,8 +285,8 @@ export default function MindsetTracker() {
         {activeTab === 'History' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            <button onClick={exportLogs} style={{ background: 'transparent', color: '#10b981', border: '1px solid #10b981', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', width: '100%' }}>
-              EXPORT UNSENT LOGS (.txt)
+            <button onClick={exportLogs} style={{ background: '#111', color: '#10b981', border: '1px solid #10b981', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', width: '100%' }}>
+              EXPORT UNSENT LOGS
             </button>
 
             <h4 style={{ color: '#10b981', textAlign: 'center', textTransform: 'uppercase', margin: '10px 0 0 0' }}>Mindset Logs</h4>
@@ -289,7 +297,7 @@ export default function MindsetTracker() {
                 const st = log.stress || 3;
                 const fo = log.focus || 3;
                 return (
-                  <div key={log.id} style={{ background: '#111', padding: '15px', borderRadius: '12px', borderLeft: log.exported ? '4px solid #555' : '4px solid #a855f7', position: 'relative' }}>
+                  <div key={log.id} style={{ background: '#111', padding: '15px', borderRadius: '12px', borderLeft: log.exported ? '4px solid #444' : '4px solid #a855f7', position: 'relative' }}>
                     <button onClick={() => deleteMindset(log.id)} style={{ position: 'absolute', top: '10px', right: '10px', background: 'transparent', border: 'none', color: '#ef4444', fontWeight: 'bold' }}>X</button>
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                       <span style={{ fontSize: '2em' }}>{e}</span>
@@ -301,7 +309,13 @@ export default function MindsetTracker() {
                       </div>
                     </div>
                     {log.notes && <p style={{ color: '#888', margin: '10px 0 0 0', fontSize: '0.9em', fontStyle: 'italic' }}>"{log.notes}"</p>}
-                    {!log.exported && <span style={{ position: 'absolute', bottom: '10px', right: '10px', color: '#a855f7', fontSize: '0.7em', fontWeight: 'bold', textTransform: 'uppercase' }}>New</span>}
+                    
+                    {/* EXPLICIT STATUS BADGES */}
+                    {log.exported ? (
+                      <span style={{ position: 'absolute', bottom: '10px', right: '10px', color: '#666', fontSize: '0.7em', fontWeight: 'bold', textTransform: 'uppercase' }}>✓ Sent</span>
+                    ) : (
+                      <span style={{ position: 'absolute', bottom: '10px', right: '10px', color: '#a855f7', fontSize: '0.7em', fontWeight: 'bold', textTransform: 'uppercase' }}>New</span>
+                    )}
                   </div>
                 )
               })
@@ -316,7 +330,7 @@ export default function MindsetTracker() {
                 const pt = log.didPT || log.ptCompleted;
                 const n = log.notes || log.ptNotes || '';
                 return (
-                  <div key={log.id} style={{ background: '#111', padding: '15px', borderRadius: '12px', borderLeft: log.exported ? '4px solid #555' : '4px solid #06b6d4', position: 'relative' }}>
+                  <div key={log.id} style={{ background: '#111', padding: '15px', borderRadius: '12px', borderLeft: log.exported ? '4px solid #444' : '4px solid #06b6d4', position: 'relative' }}>
                     <button onClick={() => deletePhysical(log.id)} style={{ position: 'absolute', top: '10px', right: '10px', background: 'transparent', border: 'none', color: '#ef4444', fontWeight: 'bold' }}>X</button>
                     <h5 style={{ margin: '0 0 5px 0', color: '#fff' }}>{a}</h5>
                     <p style={{ margin: '0 0 10px 0', fontSize: '0.85em', color: '#888' }}>{log.date}</p>
@@ -327,7 +341,13 @@ export default function MindsetTracker() {
                       {pt ? '✓ PT Completed' : '✗ Skipped PT'}
                     </div>
                     {n && <p style={{ color: '#888', margin: '10px 0 0 0', fontSize: '0.9em', fontStyle: 'italic' }}>"{n}"</p>}
-                    {!log.exported && <span style={{ position: 'absolute', bottom: '10px', right: '10px', color: '#06b6d4', fontSize: '0.7em', fontWeight: 'bold', textTransform: 'uppercase' }}>New</span>}
+                    
+                    {/* EXPLICIT STATUS BADGES */}
+                    {log.exported ? (
+                      <span style={{ position: 'absolute', bottom: '10px', right: '10px', color: '#666', fontSize: '0.7em', fontWeight: 'bold', textTransform: 'uppercase' }}>✓ Sent</span>
+                    ) : (
+                      <span style={{ position: 'absolute', bottom: '10px', right: '10px', color: '#06b6d4', fontSize: '0.7em', fontWeight: 'bold', textTransform: 'uppercase' }}>New</span>
+                    )}
                   </div>
                 )
               })
