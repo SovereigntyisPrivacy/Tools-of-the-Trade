@@ -97,39 +97,56 @@ export default function MindsetTracker() {
   const deletePhysical = (id) => setPtLogs(ptLogs.filter(l => l.id !== id));
 
   const exportLogs = () => {
-    const unsentMind = logs.filter(l => !l.exported);
-    const unsentPhys = ptLogs.filter(l => !l.exported);
+    // 1. Grab all unsent logs and tag them with their type
+    const unsentMind = logs.filter(l => !l.exported).map(l => ({ ...l, logType: 'MINDSET' }));
+    const unsentPhys = ptLogs.filter(l => !l.exported).map(l => ({ ...l, logType: 'PHYSICAL' }));
 
     if (unsentMind.length === 0 && unsentPhys.length === 0) {
       alert("No new logs to export. All previous logs have been sent.");
       return;
     }
 
-    let textData = "=== SOVEREIGN HEALTH EXPORT ===\n";
+    // 2. Combine them and sort chronologically (oldest to newest for reading flow)
+    const combinedLogs = [...unsentMind, ...unsentPhys].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // 3. Group by Day
+    const groupedLogs = {};
+    combinedLogs.forEach(log => {
+      const d = new Date(log.date);
+      const dateStr = d.toLocaleDateString();
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      if (!groupedLogs[dateStr]) groupedLogs[dateStr] = [];
+      groupedLogs[dateStr].push({ ...log, timeStr });
+    });
+
+    // 4. Build the text file
+    let textData = "=== SOVEREIGN HEALTH & RECOVERY EXPORT ===\n";
     textData += `Generated: ${new Date().toLocaleString()}\n\n`;
-    
-    if (unsentMind.length > 0) {
-      textData += "--- MINDSET LOGS ---\n";
-      unsentMind.forEach(l => {
-        const e = l.emoji || l.selectedEmoji || '😐';
-        const en = l.energy || 3;
-        const st = l.stress || 3;
-        const fo = l.focus || 3;
-        textData += `[${l.date}]\nState: ${e} | Energy: ${en}/5 | Stress: ${st}/5 | Focus: ${fo}/5\nNotes: ${l.notes || 'None'}\n\n`;
+
+    for (const [date, dayLogs] of Object.entries(groupedLogs)) {
+      textData += `========== ${date} ==========\n\n`;
+      
+      dayLogs.forEach(l => {
+        textData += `[${l.timeStr}] - ${l.logType} LOG\n`;
+        
+        if (l.logType === 'MINDSET') {
+          const e = l.emoji || l.selectedEmoji || '😐';
+          const en = l.energy || 3;
+          const st = l.stress || 3;
+          const fo = l.focus || 3;
+          textData += `State: ${e} | Energy: ${en}/5 | Stress: ${st}/5 | Focus: ${fo}/5\nNotes: ${l.notes || 'None'}\n\n`;
+        } else {
+          const a = l.area || l.bodyArea || 'Unknown';
+          const p = l.pain || l.painLevel || 0;
+          const s = l.stiffness || 0;
+          const pt = l.didPT || l.ptCompleted ? 'Yes' : 'No';
+          textData += `Target: ${a} | Pain: ${p}/10 | Stiffness: ${s}/10 | PT Completed: ${pt}\nNotes: ${l.notes || l.ptNotes || 'None'}\n\n`;
+        }
       });
     }
 
-    if (unsentPhys.length > 0) {
-      textData += "--- PHYSICAL THERAPY & PAIN LOGS ---\n";
-      unsentPhys.forEach(l => {
-        const a = l.area || l.bodyArea || 'Unknown';
-        const p = l.pain || l.painLevel || 0;
-        const s = l.stiffness || 0;
-        const pt = l.didPT || l.ptCompleted ? 'Yes' : 'No';
-        textData += `[${l.date}]\nArea: ${a} | Pain: ${p}/10 | Stiffness: ${s}/10 | PT Completed: ${pt}\nNotes: ${l.notes || l.ptNotes || 'None'}\n\n`;
-      });
-    }
-
+    // 5. Download the file
     const blob = new Blob([textData], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -138,6 +155,7 @@ export default function MindsetTracker() {
     a.click();
     URL.revokeObjectURL(url);
 
+    // 6. Mark them all as exported so they don't send again
     setLogs(logs.map(l => ({ ...l, exported: true })));
     setPtLogs(ptLogs.map(l => ({ ...l, exported: true })));
   };
