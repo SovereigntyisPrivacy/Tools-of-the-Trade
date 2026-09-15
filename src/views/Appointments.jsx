@@ -1,5 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LocalNotifications } from '@capacitor/local-notifications';
+
+const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
+
+// MASSIVELY EXPANDED PRESET LIST
+const BRING_OPTIONS = [
+  'Birth Certificate',
+  'Cash',
+  'Checkbook',
+  'Credit/Debit Card',
+  'Driver\'s License',
+  'Insurance Card',
+  'Laptop',
+  'Medical Records',
+  'Medication List',
+  'Notepad & Pen',
+  'Passport',
+  'Payment / Copay',
+  'Proof of Address',
+  'SS Card',
+  'State ID',
+  'Tool Kit',
+  'Vehicle Title / Reg',
+  'Vitals Log',
+  'Water & Snacks'
+];
 
 export default function Appointments() {
   const navigate = useNavigate();
@@ -12,10 +38,12 @@ export default function Appointments() {
   const [category, setCategory] = useState('General');
   
   // Expanded Detail States
-  const [location, setLocation] = useState('');
+  const [streetCity, setStreetCity] = useState('');
+  const [usState, setUsState] = useState('AZ');
   const [meetingWith, setMeetingWith] = useState('');
   const [bookedBy, setBookedBy] = useState('');
-  const [bringAlong, setBringAlong] = useState('');
+  const [bringItems, setBringItems] = useState([]);
+  const [customBring, setCustomBring] = useState('');
   const [price, setPrice] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -36,8 +64,24 @@ export default function Appointments() {
     { id: 'Travel', color: '#3b82f6' }
   ];
 
-  const addAppointment = () => {
-    if (!title || !date) return;
+  const addBringItem = (item) => {
+    if (item && !bringItems.includes(item)) {
+      setBringItems([...bringItems, item]);
+    }
+    setCustomBring('');
+  };
+
+  const removeBringItem = (item) => {
+    setBringItems(bringItems.filter(i => i !== item));
+  };
+
+  const addAppointment = async () => {
+    if (!title || !date) {
+      alert("Title and Date are required.");
+      return;
+    }
+    
+    const fullLocation = streetCity ? `${streetCity}, ${usState}` : '';
     
     const newAppt = {
       id: Date.now().toString(),
@@ -45,22 +89,61 @@ export default function Appointments() {
       date,
       time,
       category,
-      location,
+      location: fullLocation,
       meetingWith,
       bookedBy,
-      bringAlong,
+      bringAlong: bringItems,
       price,
       notes,
       status: 'upcoming'
     };
+
+    // ALARM ENGINE: Double Notification Routing
+    if (time) {
+      try {
+        const apptDate = new Date(`${date}T${time}`);
+        const dayBefore = new Date(apptDate.getTime() - (24 * 60 * 60 * 1000));
+        const now = new Date();
+        const notifs = [];
+        const baseId = Math.floor(Math.random() * 100000);
+
+        // 24 Hour Reminder
+        if (dayBefore > now) {
+          notifs.push({
+            title: `Reminder: ${title} Tomorrow`,
+            body: `You have an appointment at ${time}.`,
+            id: baseId,
+            schedule: { at: dayBefore }
+          });
+        }
+
+        // Exact Time Alarm
+        if (apptDate > now) {
+          notifs.push({
+            title: `Appointment Now: ${title}`,
+            body: fullLocation ? `Location: ${fullLocation}` : `It is time for your appointment.`,
+            id: baseId + 1,
+            schedule: { at: apptDate }
+          });
+        }
+
+        if (notifs.length > 0) {
+          await LocalNotifications.requestPermissions();
+          await LocalNotifications.schedule({ notifications: notifs });
+          console.log("Alarms successfully routed to OS.");
+        }
+      } catch (err) {
+        console.error('Notification push failed:', err);
+      }
+    }
     
-    // Sort by date automatically
     const updated = [...appointments, newAppt].sort((a, b) => new Date(a.date) - new Date(b.date));
     setAppointments(updated);
     
     // Reset form
     setTitle(''); setDate(''); setTime(''); setCategory('General');
-    setLocation(''); setMeetingWith(''); setBookedBy(''); setBringAlong(''); setPrice(''); setNotes('');
+    setStreetCity(''); setUsState('AZ'); setMeetingWith(''); setBookedBy(''); 
+    setBringItems([]); setCustomBring(''); setPrice(''); setNotes('');
   };
 
   const markCompleted = (id) => {
@@ -73,10 +156,15 @@ export default function Appointments() {
     setAppointments(appointments.filter(appt => appt.id !== id));
   };
 
+  const formatPrice = (p) => {
+    if (!p) return '';
+    const num = parseFloat(p);
+    return isNaN(num) ? p : `$${num.toFixed(2)}`;
+  };
+
   const upcoming = appointments.filter(a => a.status === 'upcoming');
   const past = appointments.filter(a => a.status === 'completed');
 
-  // Reusable styling for the new inputs
   const inputStyle = { padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.6)', color: '#fff', width: '100%', boxSizing: 'border-box' };
 
   return (
@@ -123,17 +211,43 @@ export default function Appointments() {
                 ))}
               </div>
               
-              <input type="text" placeholder="Location / Address" value={location} onChange={e => setLocation(e.target.value)} style={inputStyle} />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input type="text" placeholder="Address / City" value={streetCity} onChange={e => setStreetCity(e.target.value)} style={{ ...inputStyle, flex: 3 }} />
+                <select value={usState} onChange={e => setUsState(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                  {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
               
               <div style={{ display: 'flex', gap: '10px' }}>
                 <input type="text" placeholder="Meeting With (Optional)" value={meetingWith} onChange={e => setMeetingWith(e.target.value)} style={inputStyle} />
                 <input type="text" placeholder="Booked By (Optional)" value={bookedBy} onChange={e => setBookedBy(e.target.value)} style={inputStyle} />
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" placeholder="Bring Along (Optional)" value={bringAlong} onChange={e => setBringAlong(e.target.value)} style={inputStyle} />
-                <input type="text" placeholder="Price/Cost (Optional)" value={price} onChange={e => setPrice(e.target.value)} style={inputStyle} />
+              {/* Dynamic Bring Along Tag System */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <span style={{ fontSize: '0.85em', color: '#aaa', fontWeight: 'bold' }}>Items to Bring:</span>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <select onChange={e => { if(e.target.value) addBringItem(e.target.value); e.target.value=''; }} style={{...inputStyle, flex: 1}}>
+                    <option value="">+ Add Preset...</option>
+                    {BRING_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                  <div style={{ display: 'flex', flex: 1, gap: '5px' }}>
+                    <input type="text" placeholder="Custom..." value={customBring} onChange={e => setCustomBring(e.target.value)} style={{...inputStyle, flex: 1}} onKeyDown={e => e.key === 'Enter' && addBringItem(customBring)} />
+                    <button onClick={() => addBringItem(customBring)} style={{ background: '#10b981', color: '#000', border: 'none', borderRadius: '8px', padding: '0 12px', fontWeight: 'bold' }}>+</button>
+                  </div>
+                </div>
+                {bringItems.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                    {bringItems.map(item => (
+                      <span key={item} onClick={() => removeBringItem(item)} style={{ background: 'rgba(59, 130, 246, 0.2)', border: '1px solid #3b82f6', borderRadius: '15px', padding: '4px 10px', fontSize: '0.8em', color: '#fff', cursor: 'pointer' }}>
+                        {item} ✕
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              <input type="text" placeholder="Price/Cost (e.g., 20 or Free)" value={price} onChange={e => setPrice(e.target.value)} style={inputStyle} />
 
               <textarea placeholder="Additional Notes..." value={notes} onChange={e => setNotes(e.target.value)} rows="3" style={{ ...inputStyle, resize: 'none' }} />
               
@@ -156,13 +270,16 @@ export default function Appointments() {
                       <span style={{ color: catColor, fontSize: '0.75em', fontWeight: 'bold', textTransform: 'uppercase', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px' }}>{appt.category}</span>
                     </div>
                     
-                    {/* Conditionally rendered extra details */}
                     <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.9em', color: '#ddd' }}>
                       {appt.location && <div>📍 <strong>Location:</strong> {appt.location}</div>}
                       {appt.meetingWith && <div>🤝 <strong>Meeting:</strong> {appt.meetingWith}</div>}
                       {appt.bookedBy && <div>👤 <strong>Booked By:</strong> {appt.bookedBy}</div>}
-                      {appt.bringAlong && <div>🎒 <strong>Bring:</strong> {appt.bringAlong}</div>}
-                      {appt.price && <div>💰 <strong>Cost:</strong> {appt.price}</div>}
+                      
+                      {appt.bringAlong && appt.bringAlong.length > 0 && (
+                        <div>🎒 <strong>Bring:</strong> {Array.isArray(appt.bringAlong) ? appt.bringAlong.join(', ') : appt.bringAlong}</div>
+                      )}
+                      
+                      {appt.price && <div>💰 <strong>Cost:</strong> {formatPrice(appt.price)}</div>}
                       {appt.notes && <div style={{ color: '#aaa', fontStyle: 'italic', marginTop: '4px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>"{appt.notes}"</div>}
                     </div>
 
