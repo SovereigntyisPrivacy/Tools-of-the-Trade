@@ -4,7 +4,6 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 
 const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
 
-// MASSIVELY EXPANDED PRESET LIST
 const BRING_OPTIONS = [
   'Birth Certificate',
   'Cash',
@@ -37,9 +36,15 @@ export default function Appointments() {
   const [time, setTime] = useState('');
   const [category, setCategory] = useState('General');
   
-  // Expanded Detail States
-  const [streetCity, setStreetCity] = useState('');
+  // Fully Separated Contact & Location
+  const [streetAddress, setStreetAddress] = useState('');
+  const [city, setCity] = useState('');
   const [usState, setUsState] = useState('AZ');
+  const [zipCode, setZipCode] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  
+  // Details
   const [meetingWith, setMeetingWith] = useState('');
   const [bookedBy, setBookedBy] = useState('');
   const [bringItems, setBringItems] = useState([]);
@@ -75,13 +80,22 @@ export default function Appointments() {
     setBringItems(bringItems.filter(i => i !== item));
   };
 
+  const copyToClipboard = (text) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      alert('Copied to clipboard!');
+    }
+  };
+
   const addAppointment = async () => {
     if (!title || !date) {
       alert("Title and Date are required.");
       return;
     }
     
-    const fullLocation = streetCity ? `${streetCity}, ${usState}` : '';
+    // Build structured location string
+    const locParts = [streetAddress, city, usState, zipCode].filter(Boolean);
+    const fullLocation = locParts.length > 0 ? locParts.join(', ') : '';
     
     const newAppt = {
       id: Date.now().toString(),
@@ -90,6 +104,8 @@ export default function Appointments() {
       time,
       category,
       location: fullLocation,
+      phone,
+      email,
       meetingWith,
       bookedBy,
       bringAlong: bringItems,
@@ -98,7 +114,6 @@ export default function Appointments() {
       status: 'upcoming'
     };
 
-    // ALARM ENGINE: Double Notification Routing
     if (time) {
       try {
         const apptDate = new Date(`${date}T${time}`);
@@ -107,7 +122,6 @@ export default function Appointments() {
         const notifs = [];
         const baseId = Math.floor(Math.random() * 100000);
 
-        // 24 Hour Reminder
         if (dayBefore > now) {
           notifs.push({
             title: `Reminder: ${title} Tomorrow`,
@@ -117,7 +131,6 @@ export default function Appointments() {
           });
         }
 
-        // Exact Time Alarm
         if (apptDate > now) {
           notifs.push({
             title: `Appointment Now: ${title}`,
@@ -130,7 +143,6 @@ export default function Appointments() {
         if (notifs.length > 0) {
           await LocalNotifications.requestPermissions();
           await LocalNotifications.schedule({ notifications: notifs });
-          console.log("Alarms successfully routed to OS.");
         }
       } catch (err) {
         console.error('Notification push failed:', err);
@@ -140,9 +152,9 @@ export default function Appointments() {
     const updated = [...appointments, newAppt].sort((a, b) => new Date(a.date) - new Date(b.date));
     setAppointments(updated);
     
-    // Reset form
     setTitle(''); setDate(''); setTime(''); setCategory('General');
-    setStreetCity(''); setUsState('AZ'); setMeetingWith(''); setBookedBy(''); 
+    setStreetAddress(''); setCity(''); setUsState('AZ'); setZipCode('');
+    setPhone(''); setEmail(''); setMeetingWith(''); setBookedBy(''); 
     setBringItems([]); setCustomBring(''); setPrice(''); setNotes('');
   };
 
@@ -170,13 +182,11 @@ export default function Appointments() {
   return (
     <div className="view-wrapper pb-safe" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* HEADER */}
       <header className="header" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '15px', display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(5px)' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', marginRight: '15px' }}>← Hub</button>
         <h2 style={{ margin: 0, color: '#3b82f6', fontSize: '1.2em', textTransform: 'uppercase', letterSpacing: '1px', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>Appointments</h2>
       </header>
 
-      {/* TABS */}
       <div style={{ display: 'flex', gap: '10px', padding: '15px', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.4)' }}>
         <button 
           onClick={() => setActiveTab('Upcoming')}
@@ -195,7 +205,6 @@ export default function Appointments() {
         {activeTab === 'Upcoming' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            {/* CREATION BLOCK */}
             <div style={{ background: 'rgba(17, 17, 17, 0.7)', padding: '15px', borderRadius: '12px', border: '1px dashed #555', display: 'flex', flexDirection: 'column', gap: '10px', backdropFilter: 'blur(5px)' }}>
               
               <input type="text" placeholder="Title (e.g., Oil Change, Dentist)*" value={title} onChange={e => setTitle(e.target.value)} style={inputStyle} />
@@ -207,15 +216,24 @@ export default function Appointments() {
               
               <div style={{ display: 'flex', gap: '5px', overflowX: 'auto', paddingBottom: '5px' }}>
                 {categories.map(c => (
-                  <button key={c.id} onClick={() => setCategory(c.id)} style={{ padding: '8px 12px', borderRadius: '20px', border: category === c.id ? `1px solid ${c.color}` : '1px solid rgba(255,255,255,0.2)', background: category === c.id ? `rgba(255,255,255,0.15)` : 'rgba(0,0,0,0.5)', color: category === c.id ? c.color : '#888', fontSize: '0.85em', fontWeight: 'bold' }}>{c.id}</button>
+                  <button key={c.id} onClick={() => setCategory(c.id)} style={{ padding: '8px 12px', borderRadius: '20px', border: category === c.id ? `1px solid ${c.color}` : '1px solid rgba(255,255,255,0.2)', background: category === c.id ? `rgba(255,255,255,0.15)` : 'rgba(0,0,0,0.5)', color: category === c.id ? c.color : '#888', fontSize: '0.85em', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{c.id}</button>
                 ))}
               </div>
               
+              {/* Fully Separated Address Block */}
+              <input type="text" placeholder="Street Address" value={streetAddress} onChange={e => setStreetAddress(e.target.value)} style={inputStyle} />
               <div style={{ display: 'flex', gap: '10px' }}>
-                <input type="text" placeholder="Address / City" value={streetCity} onChange={e => setStreetCity(e.target.value)} style={{ ...inputStyle, flex: 3 }} />
-                <select value={usState} onChange={e => setUsState(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                <input type="text" placeholder="City" value={city} onChange={e => setCity(e.target.value)} style={{ ...inputStyle, flex: 2 }} />
+                <select value={usState} onChange={e => setUsState(e.target.value)} style={{ ...inputStyle, flex: 1, padding: '12px 5px' }}>
                   {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
+                <input type="text" placeholder="ZIP" value={zipCode} onChange={e => setZipCode(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+              </div>
+
+              {/* Native Hooked Contact Info */}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input type="tel" placeholder="Phone # (Optional)" value={phone} onChange={e => setPhone(e.target.value)} style={inputStyle} />
+                <input type="email" placeholder="Email (Optional)" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
               </div>
               
               <div style={{ display: 'flex', gap: '10px' }}>
@@ -223,7 +241,6 @@ export default function Appointments() {
                 <input type="text" placeholder="Booked By (Optional)" value={bookedBy} onChange={e => setBookedBy(e.target.value)} style={inputStyle} />
               </div>
 
-              {/* Dynamic Bring Along Tag System */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
                 <span style={{ fontSize: '0.85em', color: '#aaa', fontWeight: 'bold' }}>Items to Bring:</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -270,8 +287,33 @@ export default function Appointments() {
                       <span style={{ color: catColor, fontSize: '0.75em', fontWeight: 'bold', textTransform: 'uppercase', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px' }}>{appt.category}</span>
                     </div>
                     
-                    <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.9em', color: '#ddd' }}>
-                      {appt.location && <div>📍 <strong>Location:</strong> {appt.location}</div>}
+                    <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9em', color: '#ddd' }}>
+                      
+                      {/* NATIVE APP LINKS */}
+                      {appt.location && (
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
+                          <span>📍 <strong>Location:</strong></span>
+                          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                            <a href={`https://maps.google.com/?q=${encodeURIComponent(appt.location)}`} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', textDecoration: 'none', fontWeight: 'bold' }}>{appt.location}</a>
+                            <button onClick={() => copyToClipboard(appt.location)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', color: '#fff', cursor: 'pointer', padding: '2px 6px', fontSize: '0.85em' }}>📋 Copy</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {appt.phone && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span>📞 <strong>Phone:</strong></span>
+                          <a href={`tel:${appt.phone.replace(/[^0-9+]/g, '')}`} style={{ color: '#60a5fa', textDecoration: 'none', fontWeight: 'bold' }}>{appt.phone}</a>
+                        </div>
+                      )}
+
+                      {appt.email && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span>✉️ <strong>Email:</strong></span>
+                          <a href={`mailto:${appt.email}`} style={{ color: '#60a5fa', textDecoration: 'none', fontWeight: 'bold' }}>{appt.email}</a>
+                        </div>
+                      )}
+                      
                       {appt.meetingWith && <div>🤝 <strong>Meeting:</strong> {appt.meetingWith}</div>}
                       {appt.bookedBy && <div>👤 <strong>Booked By:</strong> {appt.bookedBy}</div>}
                       
