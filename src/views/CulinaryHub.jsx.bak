@@ -19,9 +19,6 @@ export default function CulinaryHub() {
   const [recipes, setRecipes] = useState(() => JSON.parse(localStorage.getItem('tot_recipes_v1')) || []);
   const [showRecBuilder, setShowRecBuilder] = useState(false);
   const [newRec, setNewRec] = useState({ title: '', ingredients: '', steps: '' });
-  const [recIngRows, setRecIngRows] = useState([{ amt: '', unit: '', name: '' }]);
-  const [recStepRows, setRecStepRows] = useState(['']);
-  const [recMode, setRecMode] = useState('rows');
   const [activeRecipeId, setActiveRecipeId] = useState(null);
 
   // --- EXISTING TOOL STATE ---
@@ -118,64 +115,13 @@ export default function CulinaryHub() {
   const multiplier = ((parseFloat(scaleTarget)||1) / (parseFloat(scaleOrig)||1));
 
   // --- RECIPE BUILDER LOGIC ---
-  const addIngRow = () => setRecIngRows([...recIngRows, { amt: '', unit: '', name: '' }]);
-  const updateIngRow = (idx, field, val) => {
-    const updated = [...recIngRows];
-    updated[idx][field] = val;
-    setRecIngRows(updated);
-  };
-  const removeIngRow = (idx) => {
-    if (recIngRows.length <= 1) {
-      setRecIngRows([{ amt: '', unit: '', name: '' }]);
-      return;
-    }
-    setRecIngRows(recIngRows.filter((_, i) => i !== idx));
-  };
-
-  const addStepRow = () => setRecStepRows([...recStepRows, '']);
-  const updateStepRow = (idx, val) => {
-    const updated = [...recStepRows];
-    updated[idx] = val;
-    setRecStepRows(updated);
-  };
-  const removeStepRow = (idx) => {
-    if (recStepRows.length <= 1) {
-      setRecStepRows(['']);
-      return;
-    }
-    setRecStepRows(recStepRows.filter((_, i) => i !== idx));
-  };
-
   const saveRecipe = () => {
-    if (!newRec.title || !newRec.title.trim()) return alert("Please enter a title.");
-    let ingArray = [];
-    let stepArray = [];
-
-    if (recMode === 'paste') {
-      ingArray = newRec.ingredients.split('\n').filter(i => i.trim() !== '').map(i => ({ text: i.trim(), done: false }));
-      stepArray = newRec.steps.split('\n').filter(s => s.trim() !== '').map(s => ({ text: s.trim(), done: false }));
-    } else {
-      ingArray = recIngRows
-        .filter(r => r.name.trim() !== '')
-        .map(r => {
-          const parts = [r.amt.trim(), r.unit.trim(), r.name.trim()].filter(Boolean);
-          return { text: parts.join(' '), done: false };
-        });
-      stepArray = recStepRows
-        .map(s => s.trim())
-        .filter(Boolean)
-        .map(s => ({ text: s, done: false }));
-    }
-
-    if (ingArray.length === 0) return alert("Please enter at least one ingredient.");
-
-    setRecipes([{ id: Date.now(), title: newRec.title.trim(), ings: ingArray, steps: stepArray }, ...recipes]);
-    setNewRec({ title: '', ingredients: '', steps: '' });
-    setRecIngRows([{ amt: '', unit: '', name: '' }]);
-    setRecStepRows(['']);
-    setShowRecBuilder(false);
+    if (!newRec.title) return alert("Please enter a title.");
+    const ingArray = newRec.ingredients.split('\n').filter(i => i.trim() !== '').map(i => ({ text: i, done: false }));
+    const stepArray = newRec.steps.split('\n').filter(s => s.trim() !== '').map(s => ({ text: s, done: false }));
+    setRecipes([{ id: Date.now(), title: newRec.title, ings: ingArray, steps: stepArray }, ...recipes]);
+    setNewRec({ title: '', ingredients: '', steps: '' }); setShowRecBuilder(false);
   };
-
   const toggleRecItem = (recId, type, idx) => {
     setRecipes(recipes.map(r => {
       if (r.id !== recId) return r;
@@ -338,139 +284,16 @@ export default function CulinaryHub() {
             <button onClick={() => setShowRecBuilder(!showRecBuilder)} style={btnStyle('transparent', '#10b981', {border: '1px dashed #10b981'})}>{showRecBuilder ? 'Cancel Builder' : '+ Add New Recipe'}</button>
             
             {showRecBuilder && (
-            <div style={{ ...cardStyle, border: '1px solid #10b981' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.95rem' }}>Create Recipe</span>
-                <button
-                  type="button"
-                  onClick={() => setRecMode(recMode === 'rows' ? 'paste' : 'rows')}
-                  style={{ background: 'transparent', border: '1px solid #f59e0b', color: '#f59e0b', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer' }}
-                >
-                  {recMode === 'rows' ? '📷 Paste / Camera Mode' : '📋 Row Builder Mode'}
-                </button>
+              <div style={{ ...cardStyle, border: '1px solid #10b981' }}>
+                <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '15px', fontStyle: 'italic', textAlign: 'center' }}>Pro Tip: Open your camera, copy text from a physical recipe book, and paste it directly into the boxes below!</p>
+                <input type="text" placeholder="Recipe Title" value={newRec.title} onChange={e=>setNewRec({...newRec, title: e.target.value})} style={{...inputStyle, marginBottom: '10px', fontSize: '1.2rem'}} />
+                <label style={{display:'block', color:'#00ffff', fontSize:'0.85rem', fontWeight:'bold', marginBottom:'5px'}}>Ingredients (Paste one per line)</label>
+                <textarea placeholder="2 cups flour&#10;1 tsp salt" value={newRec.ingredients} onChange={e=>setNewRec({...newRec, ingredients: e.target.value})} style={{...inputStyle, height: '100px', marginBottom: '15px'}} />
+                <label style={{display:'block', color:'#f59e0b', fontSize:'0.85rem', fontWeight:'bold', marginBottom:'5px'}}>Steps (Paste one per line)</label>
+                <textarea placeholder="Mix dry ingredients.&#10;Add wet ingredients." value={newRec.steps} onChange={e=>setNewRec({...newRec, steps: e.target.value})} style={{...inputStyle, height: '100px', marginBottom: '15px'}} />
+                <button onClick={saveRecipe} style={btnStyle('#10b981', '#000')}>💾 Save to Recipe Book</button>
               </div>
-
-              <input
-                type="text"
-                placeholder="Recipe Title"
-                value={newRec.title}
-                onChange={e => setNewRec({ ...newRec, title: e.target.value })}
-                style={{ ...inputStyle, marginBottom: '15px', fontSize: '1.1rem' }}
-              />
-
-              {recMode === 'paste' ? (
-                <>
-                  <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '12px', fontStyle: 'italic', textAlign: 'center' }}>
-                    Pro Tip: Open your camera, copy text from a physical recipe book, and paste it directly into the boxes below!
-                  </p>
-                  <label style={{ display: 'block', color: '#00ffff', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>
-                    Ingredients (Paste one per line)
-                  </label>
-                  <textarea
-                    placeholder="2 cups flour&#10;1 tsp salt"
-                    value={newRec.ingredients}
-                    onChange={e => setNewRec({ ...newRec, ingredients: e.target.value })}
-                    style={{ ...inputStyle, height: '100px', marginBottom: '15px' }}
-                  />
-                  <label style={{ display: 'block', color: '#f59e0b', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>
-                    Steps (Paste one per line)
-                  </label>
-                  <textarea
-                    placeholder="Mix dry ingredients.&#10;Add wet ingredients."
-                    value={newRec.steps}
-                    onChange={e => setNewRec({ ...newRec, steps: e.target.value })}
-                    style={{ ...inputStyle, height: '100px', marginBottom: '15px' }}
-                  />
-                </>
-              ) : (
-                <>
-                  <label style={{ display: 'block', color: '#00ffff', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px' }}>
-                    Ingredients
-                  </label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-                    {recIngRows.map((row, idx) => (
-                      <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <input
-                          type="text"
-                          placeholder="Qty"
-                          value={row.amt}
-                          onChange={e => updateIngRow(idx, 'amt', e.target.value)}
-                          style={{ ...inputStyle, width: '60px', padding: '8px', textAlign: 'center', flexShrink: 0 }}
-                        />
-                        <select
-                          value={row.unit}
-                          onChange={e => updateIngRow(idx, 'unit', e.target.value)}
-                          style={{ ...inputStyle, width: '80px', padding: '8px', flexShrink: 0, color: row.unit ? '#fff' : '#888' }}
-                        >
-                          <option value="">unit</option>
-                          {['tsp', 'tbsp', 'cup', 'fl oz', 'pt', 'qt', 'gal', 'g', 'oz', 'lb', 'pinch', 'clove', 'slice', 'can', 'pkg'].map(u => (
-                            <option key={u} value={u}>{u}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="text"
-                          placeholder="Ingredient name"
-                          value={row.name}
-                          onChange={e => updateIngRow(idx, 'name', e.target.value)}
-                          style={{ ...inputStyle, padding: '8px', flex: 1 }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeIngRow(idx)}
-                          style={{ background: '#220000', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '6px', padding: '8px 10px', cursor: 'pointer', flexShrink: 0 }}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={addIngRow}
-                    style={{ background: 'transparent', border: '1px dashed #00ffff', color: '#00ffff', padding: '8px', borderRadius: '6px', cursor: 'pointer', width: '100%', marginBottom: '15px', fontWeight: 'bold', fontSize: '0.85rem' }}
-                  >
-                    + Add Ingredient
-                  </button>
-
-                  <label style={{ display: 'block', color: '#f59e0b', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px' }}>
-                    Steps
-                  </label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-                    {recStepRows.map((step, idx) => (
-                      <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <span style={{ color: '#f59e0b', fontWeight: 'bold', width: '22px', textAlign: 'right', flexShrink: 0 }}>
-                          {idx + 1}.
-                        </span>
-                        <input
-                          type="text"
-                          placeholder={'Step ' + (idx + 1)}
-                          value={step}
-                          onChange={e => updateStepRow(idx, e.target.value)}
-                          style={{ ...inputStyle, padding: '8px', flex: 1 }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeStepRow(idx)}
-                          style={{ background: '#220000', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '6px', padding: '8px 10px', cursor: 'pointer', flexShrink: 0 }}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={addStepRow}
-                    style={{ background: 'transparent', border: '1px dashed #f59e0b', color: '#f59e0b', padding: '8px', borderRadius: '6px', cursor: 'pointer', width: '100%', marginBottom: '15px', fontWeight: 'bold', fontSize: '0.85rem' }}
-                  >
-                    + Add Step
-                  </button>
-                </>
-              )}
-
-              <button onClick={saveRecipe} style={btnStyle('#10b981', '#000')}>💾 Save to Recipe Book</button>
-            </div>
-          )}
+            )}
 
             {recipes.map(rec => (
               <div key={rec.id} style={{ ...cardStyle, borderTop: activeRecipeId === rec.id ? '4px solid #10b981' : '1px solid #333' }}>
