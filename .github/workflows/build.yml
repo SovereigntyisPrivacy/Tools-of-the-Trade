@@ -1,0 +1,92 @@
+name: Android Build & Sign
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies, Generate Icons, and Build Web
+        run: |
+          npm install
+          npm install @capacitor/assets --no-save
+          npx @capacitor/assets generate --android
+          npm run build
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Grant Execute Permission for Gradle
+        run: cd android && chmod +x gradlew
+
+      - name: Build Release APK and AAB
+        run: |
+          cd android
+          ./gradlew assembleRelease
+          ./gradlew bundleRelease
+
+      - name: Sign Release APK
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+          BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+          
+          # Sign APK
+          APK_IN=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          $BUILD_TOOLS/zipalign -v -p 4 "$APK_IN" android/app/build/outputs/apk/release/aligned.apk
+          $BUILD_TOOLS/apksigner sign --ks android/app/release.keystore \
+            --ks-key-alias "${{ secrets.KEYSTORE_ALIAS }}" \
+            --ks-pass "pass:${{ secrets.KEYSTORE_PASSWORD }}" \
+            --key-pass "pass:${{ secrets.KEYSTORE_PASSWORD }}" \
+            --out android/app/build/outputs/apk/release/ToolsOfTheTrade-Signed.apk \
+            android/app/build/outputs/apk/release/aligned.apk
+
+      - name: Upload Signed APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ToolsOfTheTrade-Signed-APK
+          path: android/app/build/outputs/apk/release/ToolsOfTheTrade-Signed.apk
+
+      - name: Upload Release AAB (For Google Play)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ToolsOfTheTrade-Release-AAB
+          path: android/app/build/outputs/bundle/release/*.aab
+
+      - name: Build Release Bundle
+        run: cd android && ./gradlew bundleRelease
+
+      - name: Sign AAB
+        uses: r0adkll/sign-android-release@v1
+        id: sign_aab
+        with:
+          releaseDirectory: android/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
+          alias: ${{ secrets.KEYSTORE_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEYSTORE_PASSWORD }}
+
+      - name: Rename AAB
+        run: mv ${{steps.sign_aab.outputs.signedReleaseFile}} ToolsoftheTrade.aab
+
+      - name: Upload Signed AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ToolsoftheTrade-Signed-Bundle
+          path: ToolsoftheTrade.aab
