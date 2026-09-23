@@ -132,17 +132,7 @@ export default function MindsetTracker() {
           const en = l.energy || 3;
           const st = l.stress || 3;
           const fo = l.focus || 3;
-          const stateMap = {
-            '😫': 'Exhausted / Severe Distress',
-            '🙁': 'Down / Suboptimal',
-            '😐': 'Neutral / Baseline',
-            '🙂': 'Good / Stable',
-            '🤩': 'Great / High Spirits',
-            '🚀': 'Peak / Thriving'
-          };
-          const clinicalState = stateMap[e] || 'Neutral / Baseline';
-          
-          textData += `Overall State: ${clinicalState}\nPhysical Energy: ${en}/5 | Stress / Anxiety: ${st}/5 | Mental Focus: ${fo}/5\nNotes: ${l.notes || 'None'}\n\n`;
+          textData += `State: ${e} | Energy: ${en}/5 | Stress: ${st}/5 | Focus: ${fo}/5\nNotes: ${l.notes || 'None'}\n\n`;
         } else {
           const a = l.area || l.bodyArea || 'Unknown';
           const p = l.pain || l.painLevel || 0;
