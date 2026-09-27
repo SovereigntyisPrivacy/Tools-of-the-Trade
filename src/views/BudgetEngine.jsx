@@ -8,7 +8,7 @@ const freqOptions = ["Weekly", "Bi-Weekly", "Monthly", "Bi-Monthly", "Quarterly"
 export default function BudgetEngine() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
-  
+
   const [showLedger, setShowLedger] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showBillForm, setShowBillForm] = useState(false);
@@ -119,6 +119,27 @@ export default function BudgetEngine() {
     setActiveTab('archive');
   };
 
+  // 🚨 EZ RESET PROTOCOL 🚨
+  const handleEzReset = () => {
+    if(window.confirm("Are you sure you want to archive this budget and start completely fresh? All current bills and incomes will be cleared.")) {
+      const now = new Date();
+      const snap = {
+        id: `hist_${Date.now()}`,
+        date: now.toLocaleDateString(),
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        pool: totalCashPool,
+        liability: totalLiability,
+        available: availableCash,
+        report: generateReport()
+      };
+      setHistory([snap, ...history]); // Save the backup
+      setIncomes([]); // Nuke incomes
+      setBills([]); // Nuke bills
+      alert("Budget archived and completely reset! You are ready to start fresh.");
+      setActiveTab('archive');
+    }
+  };
+
   // --- RENDERERS ---
   const renderDashboard = () => {
     const unassignedBills = sortedBills.filter(b => !b.routeTo);
@@ -142,11 +163,11 @@ export default function BudgetEngine() {
             <h2 style={{ color: '#10b981', margin: 0 }}>${availableCash.toFixed(2)}</h2>
           </div>
         </div>
-        
+
         <button onClick={() => setShowLedger(!showLedger)} style={{ width: '100%', background: showLedger ? '#222' : '#3b82f6', color: '#fff', border: showLedger ? '1px solid #444' : 'none', padding: '15px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '20px', transition: '0.2s' }}>
           {showLedger ? 'Hide Envelope Ledger' : 'Preview Envelope Ledger'}
         </button>
-        
+
         {showLedger && (
           <div style={{ background: 'rgba(0,0,0,0.6)', borderRadius: '12px', padding: '15px', border: '1px solid #333', marginBottom: '20px' }}>
             {sortedIncomes.length === 0 && <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic', margin: '10px 0' }}>No ledgers established.</p>}
@@ -220,7 +241,7 @@ export default function BudgetEngine() {
           </div>
           <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '0 0 5px 0' }}>Cycle: {bill.frequency}</p>
           {bill.note && <p style={{ color: '#888', fontSize: '0.85rem', margin: '0 0 10px 0', fontStyle: 'italic' }}>"{bill.note}"</p>}
-          
+
           <div style={{ background: '#000', padding: '10px', borderRadius: '8px', marginTop: '10px', border: '1px solid #333' }}>
             <span style={{ color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '5px', textTransform: 'uppercase' }}>Route To Ledger:</span>
             <select value={bill.routeTo} onChange={(e) => updateBillRoute(bill.id, e.target.value)} style={{ background: '#111', color: '#10b981', border: '1px solid #444', padding: '10px', borderRadius: '6px', width: '100%', fontSize: '0.9rem' }}>
@@ -235,7 +256,7 @@ export default function BudgetEngine() {
           </div>
         </div>
       ))}
-      
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '25px 0' }}>
         <button onClick={() => { setShowIncomeForm(!showIncomeForm); setShowBillForm(false); }} style={{ background: showIncomeForm ? '#222' : '#10b981', color: showIncomeForm ? '#fff' : '#000', border: showIncomeForm ? '1px solid #444' : 'none', padding: '15px', borderRadius: '10px', fontWeight: 'bold' }}>{showIncomeForm ? 'Cancel' : '+ Add Income'}</button>
         <button onClick={() => { setShowBillForm(!showBillForm); setShowIncomeForm(false); }} style={{ background: showBillForm ? '#222' : '#ef4444', color: '#fff', border: showBillForm ? '1px solid #444' : 'none', padding: '15px', borderRadius: '10px', fontWeight: 'bold' }}>{showBillForm ? 'Cancel' : '+ Add Bill'}</button>
@@ -292,7 +313,7 @@ export default function BudgetEngine() {
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'manage' && renderManage()}
-        
+
         {activeTab === 'archive' && (
           <div style={{ marginTop: '20px' }}>
             <h3 style={{ color: '#f59e0b', textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px', letterSpacing: '1px' }}>Historical Snapshots</h3>
@@ -324,13 +345,18 @@ export default function BudgetEngine() {
         {activeTab === 'export' && (
           <div style={{ marginTop: '20px', textAlign: 'center' }}>
             <h3 style={{ color: '#3b82f6', textTransform: 'uppercase', marginBottom: '15px', letterSpacing: '1px' }}>Export / Archive</h3>
-            
+
+            {/* 🔥 NEW EZ RESET BUTTON 🔥 */}
+            <button onClick={handleEzReset} style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '2px solid #ef4444', padding: '15px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', width: '100%', marginBottom: '20px', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.2)' }}>
+              🚨 EZ RESET ALL & ARCHIVE 🚨
+            </button>
+
             <button onClick={saveSnapshot} style={{ background: '#f59e0b', color: '#000', border: 'none', padding: '15px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', width: '100%', marginBottom: '20px' }}>
               💾 Save Budget Snapshot
             </button>
-            
+
             <div style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid #333', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', fontFamily: 'monospace', textAlign: 'left', whiteSpace: 'pre-wrap', marginBottom: '20px', lineHeight: '1.5' }}>{generateReport()}</div>
-            
+
             <button onClick={handleShareExport} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', width: '100%' }}>
               📤 Email / Export Text
             </button>
