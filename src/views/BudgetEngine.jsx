@@ -5,7 +5,6 @@ export default function BudgetEngine() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // --- STATE ---
   const [incomes, setIncomes] = useState(() => JSON.parse(localStorage.getItem('tot_incomes')) || []);
   const [bills, setBills] = useState(() => JSON.parse(localStorage.getItem('tot_bills')) || []);
   const [archives, setArchives] = useState(() => JSON.parse(localStorage.getItem('tot_budgetArchives')) || []);
@@ -17,11 +16,9 @@ export default function BudgetEngine() {
   const [viewingArchive, setViewingArchive] = useState(null);
   const [openAccordion, setOpenAccordion] = useState(null);
   
-  // Accordion Toggles for Dashboard
   const [showEnvelopeLedger, setShowEnvelopeLedger] = useState(false);
   const [showQuickSpendAccordion, setShowQuickSpendAccordion] = useState(false);
 
-  // Forms
   const [incName, setIncName] = useState('');
   const [incAmount, setIncAmount] = useState('');
   const [incDate, setIncDate] = useState('');
@@ -38,7 +35,6 @@ export default function BudgetEngine() {
   const [quickAmount, setQuickAmount] = useState('');
   const [quickLinkedInc, setQuickLinkedInc] = useState('None');
 
-  // --- PERSISTENCE ---
   useEffect(() => {
     localStorage.setItem('tot_incomes', JSON.stringify(incomes));
     localStorage.setItem('tot_bills', JSON.stringify(bills));
@@ -46,7 +42,6 @@ export default function BudgetEngine() {
     localStorage.setItem('tot_budgetArchives', JSON.stringify(archives));
   }, [incomes, bills, quickSpends, archives]);
 
-  // --- DASHBOARD CALCULATIONS (Restored 4-Card Math) ---
   const totalPool = incomes.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
   const totalLiability = bills.filter(b => !b.isPaid).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
   const totalPaidBills = bills.filter(b => b.isPaid).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
@@ -63,7 +58,6 @@ export default function BudgetEngine() {
 
   const toggleAccordion = (index) => setOpenAccordion(openAccordion === index ? null : index);
 
-  // --- ACTIONS ---
   const handlePhotoCapture = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -72,29 +66,27 @@ export default function BudgetEngine() {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 500;
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const MAX_WIDTH = 500; const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize;
+        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         setBillPhoto(canvas.toDataURL('image/jpeg', 0.5));
       };
       img.src = event.target.result;
     };
-    reader.readAsDataURL(file);
-    e.target.value = null;
+    reader.readAsDataURL(file); e.target.value = null;
   };
 
   const addIncome = () => {
-    if (!incName || !incAmount) return alert("Name and Amount are required.");
-    setIncomes([...incomes, { id: Date.now(), name: incName, amount: parseFloat(incAmount), date: incDate, frequency: incFreq, isSynced: false }]);
+    const amt = parseFloat(incAmount);
+    if (!incName || isNaN(amt)) return alert("Name and valid Amount are required.");
+    setIncomes([...incomes, { id: Date.now(), name: incName, amount: amt, date: incDate, frequency: incFreq, isSynced: false }]);
     setIncName(''); setIncAmount(''); setIncDate(''); setIncFreq('None'); setShowIncomeModal(false);
   };
 
   const addBill = () => {
-    if (!billName || !billAmount) return alert("Name and Amount are required.");
-    setBills([...bills, { id: Date.now(), name: billName, amount: parseFloat(billAmount), dueDate: billDate, frequency: billFreq, linkedIncomeId: billLinkedInc, isPaid: false, datePaid: null, photo: billPhoto, isSynced: false }]);
+    const amt = parseFloat(billAmount);
+    if (!billName || isNaN(amt)) return alert("Name and valid Amount are required.");
+    setBills([...bills, { id: Date.now(), name: billName, amount: amt, dueDate: billDate, frequency: billFreq, linkedIncomeId: billLinkedInc, isPaid: false, datePaid: null, photo: billPhoto, isSynced: false }]);
     setBillName(''); setBillAmount(''); setBillDate(''); setBillFreq('None'); setBillLinkedInc('None'); setBillPhoto(null); setShowBillModal(false);
   };
 
@@ -103,11 +95,8 @@ export default function BudgetEngine() {
     const desc = presetDesc !== null ? presetDesc : quickDesc.trim();
     if (!amt || isNaN(amt) || amt <= 0) return alert("Enter a valid amount.");
     if (!desc) return alert("Enter an item note (e.g., Gas, Red Bull).");
-    const newSpend = {
-      id: Date.now(), name: desc, amount: amt, date: new Date().toLocaleDateString(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), linkedIncomeId: quickLinkedInc
-    };
-    setQuickSpends([newSpend, ...quickSpends]); setQuickDesc(''); setQuickAmount('');
+    setQuickSpends([{ id: Date.now(), name: desc, amount: amt, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), linkedIncomeId: quickLinkedInc }, ...quickSpends]);
+    setQuickDesc(''); setQuickAmount('');
   };
 
   const deleteItem = (id, type) => {
@@ -118,10 +107,7 @@ export default function BudgetEngine() {
   };
 
   const deleteQuickSpend = (id) => setQuickSpends(quickSpends.filter(item => item.id !== id));
-
-  const togglePaidStatus = (id) => {
-    setBills(bills.map(b => b.id === id ? { ...b, isPaid: !b.isPaid, datePaid: !b.isPaid ? new Date().toLocaleDateString() : null } : b));
-  };
+  const togglePaidStatus = (id) => setBills(bills.map(b => b.id === id ? { ...b, isPaid: !b.isPaid, datePaid: !b.isPaid ? new Date().toLocaleDateString() : null } : b));
 
   const syncToCalendar = (item, type) => {
     const targetDate = item.date || item.dueDate;
@@ -145,16 +131,16 @@ export default function BudgetEngine() {
   const getCSVString = () => {
     let csv = "Type,Name,Amount,Date/Due,Frequency,Routed Paycheck,Status,Date Paid\n";
     let totalIn = 0; let totalOut = 0;
-    incomes.forEach(i => { csv += `"Income","${i.name}","$${Number(i.amount).toFixed(2)}","${i.date}","${i.frequency}","N/A","N/A","N/A"\n`; totalIn += Number(i.amount); });
+    incomes.forEach(i => { csv += `"Income","${i.name}","$${(Number(i.amount) || 0).toFixed(2)}","${i.date}","${i.frequency}","N/A","N/A","N/A"\n`; totalIn += (Number(i.amount) || 0); });
     bills.forEach(b => {
       const linkedName = incomes.find(inc => inc.id == b.linkedIncomeId)?.name || 'None';
-      csv += `"Bill","${b.name}","$${Number(b.amount).toFixed(2)}","${b.dueDate}","${b.frequency}","${linkedName}","${b.isPaid ? 'PAID' : 'UNPAID'}","${b.datePaid || 'N/A'}"\n`;
-      totalOut += Number(b.amount);
+      csv += `"Bill","${b.name}","$${(Number(b.amount) || 0).toFixed(2)}","${b.dueDate}","${b.frequency}","${linkedName}","${b.isPaid ? 'PAID' : 'UNPAID'}","${b.datePaid || 'N/A'}"\n`;
+      totalOut += (Number(b.amount) || 0);
     });
     quickSpends.forEach(s => {
       const linkedName = incomes.find(inc => inc.id == s.linkedIncomeId)?.name || 'General Pool';
-      csv += `"Pocket Spend","${s.name}","$${Number(s.amount).toFixed(2)}","${s.date} ${s.time}","Incidentals","${linkedName}","PAID","${s.date}"\n`;
-      totalOut += Number(s.amount);
+      csv += `"Pocket Spend","${s.name}","$${(Number(s.amount) || 0).toFixed(2)}","${s.date} ${s.time}","Incidentals","${linkedName}","PAID","${s.date}"\n`;
+      totalOut += (Number(s.amount) || 0);
     });
     csv += `\n"TOTALS","Pool:","$${totalIn.toFixed(2)}","Used:","$${totalOut.toFixed(2)}","Unassigned:","$${(totalIn - totalOut).toFixed(2)}",""\n`;
     return csv;
@@ -201,26 +187,25 @@ export default function BudgetEngine() {
           <>
             <div style={{ ...cardStyle, textAlign: 'center', border: '1px solid #a855f7', marginTop: '10px' }}>
               <div style={{ color: '#a855f7', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Total Cash Pool</div>
-              <div style={{ color: '#10b981', fontSize: '2em', fontWeight: 'bold' }}>${Number(totalPool || 0).toFixed(2)}</div>
+              <div style={{ color: '#10b981', fontSize: '2em', fontWeight: 'bold' }}>${(Number(totalPool) || 0).toFixed(2)}</div>
             </div>
 
             <div style={{ ...cardStyle, textAlign: 'center', border: '1px solid #ef4444' }}>
               <div style={{ color: '#ef4444', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Total Liability</div>
-              <div style={{ color: '#10b981', fontSize: '1.5em', fontWeight: 'bold' }}>${Number(totalLiability || 0).toFixed(2)}</div>
+              <div style={{ color: '#10b981', fontSize: '1.5em', fontWeight: 'bold' }}>${(Number(totalLiability) || 0).toFixed(2)}</div>
             </div>
 
             <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
               <div style={{ flex: 1, ...cardStyle, textAlign: 'center', border: '1px solid #f59e0b', margin: 0 }}>
                 <div style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '5px' }}>Used Cash</div>
-                <div style={{ color: '#10b981', fontSize: '1.4em', fontWeight: 'bold' }}>${Number(usedCash || 0).toFixed(2)}</div>
+                <div style={{ color: '#10b981', fontSize: '1.4em', fontWeight: 'bold' }}>${(Number(usedCash) || 0).toFixed(2)}</div>
               </div>
               <div style={{ flex: 1, ...cardStyle, textAlign: 'center', border: '1px solid #10b981', margin: 0 }}>
                 <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '5px' }}>Available</div>
-                <div style={{ color: '#10b981', fontSize: '1.4em', fontWeight: 'bold' }}>${Number(unassignedCash || 0).toFixed(2)}</div>
+                <div style={{ color: '#10b981', fontSize: '1.4em', fontWeight: 'bold' }}>${(Number(unassignedCash) || 0).toFixed(2)}</div>
               </div>
             </div>
 
-            {/* ENVELOPE LEDGER ACCORDION */}
             <button onClick={() => setShowEnvelopeLedger(!showEnvelopeLedger)} style={{ ...btnStyle(showEnvelopeLedger ? '#333' : '#3b82f6', '#fff'), marginBottom: '15px' }}>
               {showEnvelopeLedger ? 'Hide Envelope Ledger' : 'Preview Envelope Ledger'}
             </button>
@@ -237,20 +222,20 @@ export default function BudgetEngine() {
                     <div key={inc.id} style={{ ...cardStyle, border: '1px solid #333', padding: '15px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '10px' }}>
                         <span style={{ color: '#10b981', fontWeight: 'bold' }}>{inc.name} <span style={{ color: '#888', fontWeight: 'normal' }}>({inc.date})</span></span>
-                        <span style={{ color: '#fff', fontWeight: 'bold' }}>${Number(inc.amount || 0).toFixed(2)}</span>
+                        <span style={{ color: '#fff', fontWeight: 'bold' }}>${(Number(inc.amount) || 0).toFixed(2)}</span>
                       </div>
                       {incBills.map(b => (
                         <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '0.9em', marginBottom: '8px', borderLeft: '2px solid #ef4444', paddingLeft: '8px' }}>
-                          <span>{b.name}</span> <span style={{ color: '#ef4444' }}>-${Number(b.amount || 0).toFixed(2)}</span>
+                          <span>{b.name}</span> <span style={{ color: '#ef4444' }}>-${(Number(b.amount) || 0).toFixed(2)}</span>
                         </div>
                       ))}
                       {incSpends.map(s => (
                         <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '0.9em', marginBottom: '8px', borderLeft: '2px solid #f59e0b', paddingLeft: '8px' }}>
-                          <span>{s.name} (Quick)</span> <span style={{ color: '#ef4444' }}>-${Number(s.amount || 0).toFixed(2)}</span>
+                          <span>{s.name} (Quick)</span> <span style={{ color: '#ef4444' }}>-${(Number(s.amount) || 0).toFixed(2)}</span>
                         </div>
                       ))}
                       <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', borderTop: '1px dashed #333', paddingTop: '10px', marginTop: '5px' }}>
-                        <span>Remaining:</span> <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>${remaining.toFixed(2)}</span>
+                        <span>Remaining:</span> <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>${(Number(remaining) || 0).toFixed(2)}</span>
                       </div>
                     </div>
                   )
@@ -258,7 +243,6 @@ export default function BudgetEngine() {
               </div>
             )}
 
-            {/* QUICK POCKET BURN ACCORDION */}
             <button onClick={() => setShowQuickSpendAccordion(!showQuickSpendAccordion)} style={{ ...btnStyle('transparent', showQuickSpendAccordion ? '#fff' : '#f59e0b'), border: '1px dashed #f59e0b', marginBottom: '15px' }}>
               ⚡ {showQuickSpendAccordion ? 'Close Quick Burn' : 'Quick Pocket Burn'}
             </button>
@@ -267,7 +251,7 @@ export default function BudgetEngine() {
               <div style={{ ...cardStyle, border: '1px solid #f59e0b' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <span style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '0.9em', letterSpacing: '1px', textTransform: 'uppercase' }}>Quick Logger</span>
-                  <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.95em' }}>-${totalQuickSpend.toFixed(2)}</span>
+                  <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.95em' }}>-${(Number(totalQuickSpend) || 0).toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                   <input type="text" placeholder="Item" value={quickDesc} onChange={(e) => setQuickDesc(e.target.value)} style={{ ...inputStyle, flex: 2, marginBottom: 0, padding: '10px', fontSize: '0.9em' }} />
@@ -292,11 +276,9 @@ export default function BudgetEngine() {
                   <div style={{ maxHeight: '140px', overflowY: 'auto', borderTop: '1px dashed #333', paddingTop: '8px' }}>
                     {quickSpends.map(spend => (
                       <div key={spend.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #1a1a1a', fontSize: '0.85em' }}>
-                        <div>
-                          <span style={{ color: '#fff', fontWeight: 'bold' }}>{spend.name}</span> <span style={{ color: '#666', fontSize: '0.8em', marginLeft: '6px' }}>{spend.time}</span>
-                        </div>
+                        <div><span style={{ color: '#fff', fontWeight: 'bold' }}>{spend.name}</span> <span style={{ color: '#666', fontSize: '0.8em', marginLeft: '6px' }}>{spend.time}</span></div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ color: '#ef4444', fontWeight: 'bold' }}>-${Number(spend.amount).toFixed(2)}</span>
+                          <span style={{ color: '#ef4444', fontWeight: 'bold' }}>-${(Number(spend.amount) || 0).toFixed(2)}</span>
                           <button onClick={() => deleteQuickSpend(spend.id)} style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '1em', cursor: 'pointer', padding: '0 4px' }}>×</button>
                         </div>
                       </div>
@@ -305,11 +287,6 @@ export default function BudgetEngine() {
                 )}
               </div>
             )}
-
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button onClick={() => setShowIncomeModal(true)} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Add Income</button>
-              <button onClick={() => setShowBillModal(true)} style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Add Bill</button>
-            </div>
           </>
         )}
         {activeTab === 'Ledger' && (
@@ -322,7 +299,7 @@ export default function BudgetEngine() {
                     <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.2em' }}>{inc.name}</h3>
                     <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', color: '#10b981' }}>Cycle: {inc.frequency}</span>
                   </div>
-                  <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2em' }}>${Number(inc.amount).toFixed(2)}</div>
+                  <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2em' }}>${(Number(inc.amount) || 0).toFixed(2)}</div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ccc', fontSize: '0.9em', borderTop: '1px dashed #333', paddingTop: '10px' }}>
                   <span>{inc.date || 'No Date'}</span>
@@ -347,7 +324,7 @@ export default function BudgetEngine() {
                         {linkedInc && <span style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', color: '#3b82f6' }}>Routed: {linkedInc.name}</span>}
                       </div>
                     </div>
-                    <div style={{ color: bill.isPaid ? '#10b981' : '#ef4444', fontWeight: 'bold', fontSize: '1.2em' }}>${Number(bill.amount).toFixed(2)}</div>
+                    <div style={{ color: bill.isPaid ? '#10b981' : '#ef4444', fontWeight: 'bold', fontSize: '1.2em' }}>${(Number(bill.amount) || 0).toFixed(2)}</div>
                   </div>
                   {bill.photo && (
                     <div style={{ marginBottom: '10px', border: '1px solid #333', padding: '5px', borderRadius: '6px', display: 'inline-block' }}>
@@ -375,9 +352,13 @@ export default function BudgetEngine() {
                 </div>
               );
             })}
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button onClick={() => setShowIncomeModal(true)} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Add Income</button>
+              <button onClick={() => setShowBillModal(true)} style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Add Bill</button>
+            </div>
           </>
         )}
-
         {activeTab === 'history' && (
           <>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', marginTop: '10px' }}>
@@ -389,8 +370,8 @@ export default function BudgetEngine() {
               <div key={arc.id} style={{ ...cardStyle, borderLeft: '4px solid #f59e0b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <strong style={{ color: '#fff', display: 'block', marginBottom: '5px' }}>{arc.date}</strong>
-                  <span style={{ color: '#10b981', marginRight: '10px', fontSize: '0.9em' }}>Pool: ${Number(arc.totalPool).toFixed(2)}</span>
-                  <span style={{ color: '#ef4444', fontSize: '0.9em' }}>Used: ${Number(arc.usedCash).toFixed(2)}</span>
+                  <span style={{ color: '#10b981', marginRight: '10px', fontSize: '0.9em' }}>Pool: ${(Number(arc.totalPool) || 0).toFixed(2)}</span>
+                  <span style={{ color: '#ef4444', fontSize: '0.9em' }}>Used: ${(Number(arc.usedCash) || 0).toFixed(2)}</span>
                 </div>
                 <button onClick={() => setViewingArchive(arc)} style={{ background: '#222', border: '1px solid #f59e0b', color: '#f59e0b', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>View Full Ledger</button>
               </div>
@@ -413,6 +394,7 @@ export default function BudgetEngine() {
             ))}
           </div>
         )}
+
         {showIncomeModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, padding: '20px', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #10b981', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -477,13 +459,13 @@ export default function BudgetEngine() {
               <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>Incomes</h4>
               {viewingArchive.incomes.length === 0 ? <p style={{ fontStyle: 'italic', fontSize: '0.9em' }}>None</p> : viewingArchive.incomes.map(i => (
                 <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
-                  <span>{i.name}</span> <span style={{ color: '#10b981' }}>${Number(i.amount).toFixed(2)}</span>
+                  <span>{i.name}</span> <span style={{ color: '#10b981' }}>${(Number(i.amount) || 0).toFixed(2)}</span>
                 </div>
               ))}
               <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Bills</h4>
               {viewingArchive.bills.length === 0 ? <p style={{ fontStyle: 'italic', fontSize: '0.9em' }}>None</p> : viewingArchive.bills.map(b => (
                 <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
-                  <span>{b.name} {b.isPaid ? '(PAID)' : '(UNPAID)'}</span> <span style={{ color: '#ef4444' }}>${Number(b.amount).toFixed(2)}</span>
+                  <span>{b.name} {b.isPaid ? '(PAID)' : '(UNPAID)'}</span> <span style={{ color: '#ef4444' }}>${(Number(b.amount) || 0).toFixed(2)}</span>
                 </div>
               ))}
               {viewingArchive.quickSpends && viewingArchive.quickSpends.length > 0 && (
@@ -491,14 +473,14 @@ export default function BudgetEngine() {
                   <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Pocket Spends</h4>
                   {viewingArchive.quickSpends.map(q => (
                     <div key={q.id} style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
-                      <span>{q.name}</span> <span style={{ color: '#f59e0b' }}>${Number(q.amount).toFixed(2)}</span>
+                      <span>{q.name}</span> <span style={{ color: '#f59e0b' }}>${(Number(q.amount) || 0).toFixed(2)}</span>
                     </div>
                   ))}
                 </>
               )}
               <div style={{ borderTop: '2px solid #000', marginTop: '20px', paddingTop: '15px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}><span>TOTAL POOL:</span> <span style={{ color: '#10b981' }}>${Number(viewingArchive.totalPool).toFixed(2)}</span></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}><span>TOTAL USED:</span> <span style={{ color: '#ef4444' }}>${Number(viewingArchive.usedCash).toFixed(2)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}><span>TOTAL POOL:</span> <span style={{ color: '#10b981' }}>${(Number(viewingArchive.totalPool) || 0).toFixed(2)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}><span>TOTAL USED:</span> <span style={{ color: '#ef4444' }}>${(Number(viewingArchive.usedCash) || 0).toFixed(2)}</span></div>
               </div>
             </div>
           </div>
