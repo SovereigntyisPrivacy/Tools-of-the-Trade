@@ -1,365 +1,489 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const glassCard = { background: 'rgba(17, 17, 17, 0.7)', backdropFilter: 'blur(10px)', borderRadius: '12px', padding: '20px', marginBottom: '15px', border: '1px solid #333' };
-const inputStyle = { background: '#000', color: '#fff', border: '1px solid #444', padding: '12px', borderRadius: '8px', width: '100%', marginBottom: '15px', fontSize: '1rem' };
-const freqOptions = ["Weekly", "Bi-Weekly", "Monthly", "Bi-Monthly", "Quarterly", "Bi-Yearly", "Yearly"];
-
 export default function BudgetEngine() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const [showLedger, setShowLedger] = useState(false);
-  const [showIncomeForm, setShowIncomeForm] = useState(false);
-  const [showBillForm, setShowBillForm] = useState(false);
-
-  // --- DATABASES ---
+  // --- STATE ---
   const [incomes, setIncomes] = useState(() => JSON.parse(localStorage.getItem('tot_incomes')) || []);
   const [bills, setBills] = useState(() => JSON.parse(localStorage.getItem('tot_bills')) || []);
-  const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('tot_budget_history')) || []);
-  const [expandedHistory, setExpandedHistory] = useState(null);
+  const [archives, setArchives] = useState(() => JSON.parse(localStorage.getItem('tot_budgetArchives')) || []);
+  const [quickSpends, setQuickSpends] = useState(() => JSON.parse(localStorage.getItem('tot_quickSpends')) || []);
 
-  // --- FORM STATES ---
-  const [incomeName, setIncomeName] = useState(''); const [incomeAmount, setIncomeAmount] = useState(''); const [incomeDate, setIncomeDate] = useState(() => new Date().toISOString().substring(0, 10)); const [incomeFrequency, setIncomeFrequency] = useState('Bi-Weekly'); const [incomeNote, setIncomeNote] = useState('');
-  const [billName, setBillName] = useState(''); const [billCost, setBillCost] = useState(''); const [billDue, setBillDue] = useState(() => new Date().toISOString().substring(0, 10)); const [billFrequency, setBillFrequency] = useState('Monthly'); const [billNote, setBillNote] = useState('');
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [viewingArchive, setViewingArchive] = useState(null);
+  const [openAccordion, setOpenAccordion] = useState(null);
 
-  useEffect(() => { localStorage.setItem('tot_incomes', JSON.stringify(incomes)); }, [incomes]);
-  useEffect(() => { localStorage.setItem('tot_bills', JSON.stringify(bills)); }, [bills]);
-  useEffect(() => { localStorage.setItem('tot_budget_history', JSON.stringify(history)); }, [history]);
+  // Forms
+  const [incName, setIncName] = useState('');
+  const [incAmount, setIncAmount] = useState('');
+  const [incDate, setIncDate] = useState('');
+  const [incFreq, setIncFreq] = useState('None');
 
-  const sortedIncomes = [...incomes].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const sortedBills = [...bills].sort((a, b) => new Date(a.due) - new Date(b.due));
+  const [billName, setBillName] = useState('');
+  const [billAmount, setBillAmount] = useState('');
+  const [billDate, setBillDate] = useState('');
+  const [billFreq, setBillFreq] = useState('None');
+  const [billLinkedInc, setBillLinkedInc] = useState('None');
+  const [billPhoto, setBillPhoto] = useState(null);
 
-  // --- PERFECTED MATH ---
-  const totalCashPool = incomes.reduce((acc, inc) => acc + inc.amount, 0);
-  const totalLiability = bills.filter(b => !b.routeTo && !b.isPaid).reduce((acc, b) => acc + b.cost, 0);
-  const usedCash = bills.filter(b => b.routeTo || b.isPaid).reduce((acc, b) => acc + b.cost, 0);
-  const availableCash = totalCashPool - usedCash - totalLiability;
+  const [quickDesc, setQuickDesc] = useState('');
+  const [quickAmount, setQuickAmount] = useState('');
+  const [quickLinkedInc, setQuickLinkedInc] = useState('None');
 
-  // --- ACTIONS ---
-  const handleAddIncome = () => {
-    if (!incomeName || !incomeAmount) return;
-    setIncomes([...incomes, { id: `inc_${Date.now()}`, name: incomeName, amount: parseFloat(incomeAmount), date: incomeDate, frequency: incomeFrequency, note: incomeNote }]);
-    setIncomeName(''); setIncomeAmount(''); setIncomeNote(''); setShowIncomeForm(false);
-  };
+  // --- PERSISTENCE ---
+  useEffect(() => {
+    localStorage.setItem('tot_incomes', JSON.stringify(incomes));
+    localStorage.setItem('tot_bills', JSON.stringify(bills));
+    localStorage.setItem('tot_quickSpends', JSON.stringify(quickSpends));
+    localStorage.setItem('tot_budgetArchives', JSON.stringify(archives));
+  }, [incomes, bills, quickSpends, archives]);
 
-  const handleAddBill = () => {
-    if (!billName || !billCost) return;
-    setBills([...bills, { id: `bill_${Date.now()}`, name: billName, cost: parseFloat(billCost), due: billDue, frequency: billFrequency, routeTo: '', note: billNote }]);
-    setBillName(''); setBillCost(''); setBillNote(''); setShowBillForm(false);
-  };
+  // --- DASHBOARD CALCULATIONS ---
+  const totalPool = incomes.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+  const totalBills = bills.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+  const totalQuickSpend = quickSpends.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
 
-  const deleteIncome = (id) => {
-    if (bills.some(b => b.routeTo === id)) return alert("Cannot delete an income that has bills routed to it. Unassign them first.");
-    setIncomes(incomes.filter(i => i.id !== id));
-  };
-  const deleteBill = (id) => setBills(bills.filter(b => b.id !== id));
-  const updateBillRoute = (billId, incomeId) => setBills(bills.map(b => b.id === billId ? { ...b, routeTo: incomeId } : b));
+  const usedCash = totalBills + totalQuickSpend;
+  const unassignedCash = totalPool - usedCash;
 
-  const advanceCycle = (currentDate, freq) => {
-    const d = new Date(currentDate + 'T12:00:00Z');
-    if (freq === 'Weekly') d.setUTCDate(d.getUTCDate() + 7);
-    else if (freq === 'Bi-Weekly') d.setUTCDate(d.getUTCDate() + 14);
-    else if (freq === 'Monthly') d.setUTCMonth(d.getUTCMonth() + 1);
-    else if (freq === 'Bi-Monthly') d.setUTCMonth(d.getUTCMonth() + 2);
-    else if (freq === 'Quarterly') d.setUTCMonth(d.getUTCMonth() + 3);
-    else if (freq === 'Bi-Yearly') d.setUTCMonth(d.getUTCMonth() + 6);
-    else if (freq === 'Yearly') d.setUTCFullYear(d.getUTCFullYear() + 1);
-    return d.toISOString().substring(0, 10);
-  };
+  const guideData = [
+    { title: "Zero-Based Budgeting", content: "Your Total Unassigned Cash should always be exactly $0.00. Every single dollar you earn needs a job before the month begins. If you have $200 left over, create a 'Savings' bill to zero it out." },
+    { title: "Paycheck Routing", content: "If all bills are due on the 1st, but you get paid on the 15th and 30th, you will overdraft. Use the dropdown in the Ledger to link specific bills to specific paychecks." },
+    { title: "Calendar Syncing", content: "Set a frequency (Weekly, Bi-Weekly, Monthly) when adding an income or bill, then tap 'Sync'. This writes the event directly to the Master Calendar." }
+  ];
 
-  const handleAdvanceIncome = (id) => {
-    if(window.confirm("Advance this deposit to the next pay cycle?")) setIncomes(incomes.map(i => i.id === id ? { ...i, date: advanceCycle(i.date, i.frequency) } : i));
-  };
-  const togglePaidStatus = (id) => setBills(bills.map(b => b.id === id ? { ...b, isPaid: !b.isPaid } : b));
-  const handleAdvanceBill = (id) => {
-    if(window.confirm("Pay bill and advance to next billing cycle?")) setBills(bills.map(b => b.id === id ? { ...b, due: advanceCycle(b.due, b.frequency), isPaid: false } : b));
-  };
+  const toggleAccordion = (index) => setOpenAccordion(openAccordion === index ? null : index);
 
-  const generateReport = () => {
-    let text = `=== DETAILED BUDGET LEDGER ===\nGenerated: ${new Date().toLocaleDateString()}\n\n`;
-    text += `GLOBAL CASH POOL: $${totalCashPool.toFixed(2)}\nTOTAL LIABILITY:  $${totalLiability.toFixed(2)}\nUSED CASH:        $${usedCash.toFixed(2)}\nAVAILABLE CASH:   $${availableCash.toFixed(2)}\n\n`;
-    text += `--- ENVELOPE LEDGER ---\n`;
-    sortedIncomes.forEach(i => {
-      text += `\n[${i.name}] (${i.date}) | +$${i.amount.toFixed(2)} | ${i.frequency}\n`;
-      if (i.note) text += `   Note: ${i.note}\n`;
-      const routed = sortedBills.filter(b => b.routeTo === i.id);
-      let rem = i.amount;
-      if (routed.length === 0) text += `   No bills assigned.\n`;
-      routed.forEach(b => { text += `   - ${b.name} (${b.due}): -$${b.cost.toFixed(2)}\n`; if(b.note) text += `      Note: ${b.note}\n`; rem -= b.cost; });
-      text += `   Remaining Cash: $${rem.toFixed(2)}\n`;
-    });
-    const unassigned = sortedBills.filter(b => !b.routeTo);
-    if (unassigned.length > 0) {
-      text += `\n--- UNASSIGNED LIABILITIES ---\n`;
-      unassigned.forEach(b => { text += ` - ${b.name} (${b.due}) [$${b.cost.toFixed(2)} | ${b.frequency}]\n`; if(b.note) text += `    Note: ${b.note}\n`; });
-    }
-    return text;
-  };
-
-  const handleShareExport = async () => {
-    const text = generateReport();
-    if (navigator.share) { try { await navigator.share({ title: 'Sovereign Budget', text }); return; } catch(e){} }
-    window.location.href = `mailto:?subject=Detailed Budget Ledger&body=${encodeURIComponent(text)}`;
-  };
-
-  const saveSnapshot = () => {
-    const now = new Date();
-    const snap = {
-      id: `hist_${Date.now()}`,
-      date: now.toLocaleDateString(),
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      pool: totalCashPool,
-      liability: totalLiability,
-      available: availableCash,
-      report: generateReport()
-    };
-    setHistory([snap, ...history]);
-    alert("Budget Snapshot Archived Successfully!");
-    setActiveTab('archive');
-  };
-
-  // 🚨 EZ RESET PROTOCOL 🚨
-  const handleEzReset = () => {
-    if(window.confirm("Are you sure you want to archive this budget and start completely fresh? All current bills and incomes will be cleared.")) {
-      const now = new Date();
-      const snap = {
-        id: `hist_${Date.now()}`,
-        date: now.toLocaleDateString(),
-        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        pool: totalCashPool,
-        liability: totalLiability,
-        available: availableCash,
-        report: generateReport()
+  // --- ACTIONS & IMAGE COMPRESSOR ---
+  const handlePhotoCapture = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 500;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setBillPhoto(canvas.toDataURL('image/jpeg', 0.5));
       };
-      setHistory([snap, ...history]); // Save the backup
-      setIncomes([]); // Nuke incomes
-      setBills([]); // Nuke bills
-      alert("Budget archived and completely reset! You are ready to start fresh.");
-      setActiveTab('archive');
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = null;
+  };
+
+  const addIncome = () => {
+    if (!incName || !incAmount) return alert("Name and Amount are required.");
+    setIncomes([...incomes, { id: Date.now(), name: incName, amount: parseFloat(incAmount), date: incDate, frequency: incFreq, isSynced: false }]);
+    setIncName(''); setIncAmount(''); setIncDate(''); setIncFreq('None'); setShowIncomeModal(false);
+  };
+
+  const addBill = () => {
+    if (!billName || !billAmount) return alert("Name and Amount are required.");
+    setBills([...bills, { id: Date.now(), name: billName, amount: parseFloat(billAmount), dueDate: billDate, frequency: billFreq, linkedIncomeId: billLinkedInc, isPaid: false, datePaid: null, photo: billPhoto, isSynced: false }]);
+    setBillName(''); setBillAmount(''); setBillDate(''); setBillFreq('None'); setBillLinkedInc('None'); setBillPhoto(null); setShowBillModal(false);
+  };
+
+  const addQuickSpend = (presetAmt = null, presetDesc = null) => {
+    const amt = presetAmt !== null ? parseFloat(presetAmt) : parseFloat(quickAmount);
+    const desc = presetDesc !== null ? presetDesc : quickDesc.trim();
+    if (!amt || isNaN(amt) || amt <= 0) return alert("Enter a valid amount.");
+    if (!desc) return alert("Enter an item note (e.g., Gas, Red Bull).");
+    const newSpend = {
+      id: Date.now(),
+      name: desc,
+      amount: amt,
+      date: new Date().toLocaleDateString(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      linkedIncomeId: quickLinkedInc
+    };
+    setQuickSpends([newSpend, ...quickSpends]);
+    setQuickDesc('');
+    setQuickAmount('');
+  };
+
+  const deleteItem = (id, type) => {
+    if (type === 'income') {
+      setIncomes(incomes.filter(i => i.id !== id));
+      setBills(bills.map(b => b.linkedIncomeId === id ? { ...b, linkedIncomeId: 'None' } : b));
+    } else {
+      setBills(bills.filter(b => b.id !== id));
     }
   };
 
-  // --- RENDERERS ---
-  const renderDashboard = () => {
-    const unassignedBills = sortedBills.filter(b => !b.routeTo);
-    return (
-      <div style={{ marginTop: '20px' }}>
-        <div style={{ ...glassCard, borderTop: '4px solid #a855f7', textAlign: 'center' }}>
-          <h4 style={{ color: '#a855f7', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Cash Pool</h4>
-          <h2 style={{ color: '#fff', margin: 0, fontSize: '2.5rem' }}>${totalCashPool.toFixed(2)}</h2>
-        </div>
-        <div style={{ ...glassCard, borderTop: '4px solid #ef4444', textAlign: 'center', padding: '15px' }}>
-          <h4 style={{ color: '#ef4444', margin: '0 0 5px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Liability</h4>
-          <h2 style={{ color: '#ef4444', margin: 0, fontSize: '1.8rem' }}>${totalLiability.toFixed(2)}</h2>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-          <div style={{ ...glassCard, borderTop: '4px solid #f59e0b', textAlign: 'center', margin: 0, padding: '15px' }}>
-            <h4 style={{ color: '#f59e0b', margin: '0 0 5px 0', fontSize: '0.85rem' }}>USED CASH</h4>
-            <h2 style={{ color: '#fff', margin: 0 }}>${usedCash.toFixed(2)}</h2>
-          </div>
-          <div style={{ ...glassCard, borderTop: '4px solid #10b981', textAlign: 'center', margin: 0, padding: '15px' }}>
-            <h4 style={{ color: '#10b981', margin: '0 0 5px 0', fontSize: '0.85rem' }}>AVAILABLE</h4>
-            <h2 style={{ color: '#10b981', margin: 0 }}>${availableCash.toFixed(2)}</h2>
-          </div>
-        </div>
+  const deleteQuickSpend = (id) => setQuickSpends(quickSpends.filter(item => item.id !== id));
 
-        <button onClick={() => setShowLedger(!showLedger)} style={{ width: '100%', background: showLedger ? '#222' : '#3b82f6', color: '#fff', border: showLedger ? '1px solid #444' : 'none', padding: '15px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '20px', transition: '0.2s' }}>
-          {showLedger ? 'Hide Envelope Ledger' : 'Preview Envelope Ledger'}
-        </button>
+  const togglePaidStatus = (id) => {
+    setBills(bills.map(b => b.id === id ? { ...b, isPaid: !b.isPaid, datePaid: !b.isPaid ? new Date().toLocaleDateString() : null } : b));
+  };
 
-        {showLedger && (
-          <div style={{ background: 'rgba(0,0,0,0.6)', borderRadius: '12px', padding: '15px', border: '1px solid #333', marginBottom: '20px' }}>
-            {sortedIncomes.length === 0 && <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic', margin: '10px 0' }}>No ledgers established.</p>}
-            {sortedIncomes.map(inc => {
-              const routedBills = sortedBills.filter(b => b.routeTo === inc.id);
-              const remaining = inc.amount - routedBills.reduce((sum, b) => sum + b.cost, 0);
-              return (
-                <div key={inc.id} style={{ marginBottom: '20px', borderBottom: '1px solid #222', paddingBottom: '15px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #10b981', paddingBottom: '8px', marginBottom: '12px' }}>
-                    <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>{inc.name} <span style={{fontSize:'0.8rem', color:'#888'}}>({inc.date})</span></span>
-                    <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>${inc.amount.toFixed(2)}</span>
-                  </div>
-                  {routedBills.length === 0 ? <p style={{ color: '#666', fontStyle: 'italic', fontSize: '0.9rem', margin: '5px 0' }}>No bills assigned to this check.</p> : (
-                    routedBills.map(b => (
-                      <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', paddingLeft: '10px', borderLeft: '2px solid #ef4444' }}>
-                        <span style={{ color: '#ccc', fontSize: '0.95rem' }}>{b.name}</span>
-                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>-${b.cost.toFixed(2)}</span>
+  // --- IN-APP CALENDAR WRAPPER SYNC ---
+  const syncToCalendar = (item, type) => {
+    const targetDate = item.date || item.dueDate;
+    if (!targetDate) return alert("Please set a date before syncing.");
+    if (type === 'income') setIncomes(incomes.map(i => i.id === item.id ? { ...i, isSynced: true } : i));
+    else setBills(bills.map(b => b.id === item.id ? { ...b, isSynced: true } : b));
+
+    const existingEvents = JSON.parse(localStorage.getItem('tot_calendar_events')) || [];
+    const newEvent = { id: `${type}_${item.id}`, title: type === 'income' ? `Payday: ${item.name}` : `Bill Due: ${item.name}`, date: targetDate, frequency: item.frequency, amount: item.amount, type: type, source: 'BudgetEngine' };
+    localStorage.setItem('tot_calendar_events', JSON.stringify([...existingEvents.filter(e => e.id !== newEvent.id), newEvent]));
+    alert(`${item.name} pushed to Master Calendar successfully!`);
+  };
+
+  // --- ARCHIVING & BULLETPROOF EXPORTS ---
+  const archiveBudget = () => {
+    if (totalPool === 0 && usedCash === 0) return alert("Nothing to archive.");
+    if (window.confirm("Archive this budget and wipe the current ledger clean for the next cycle?")) {
+      setArchives([{ id: Date.now(), date: new Date().toLocaleDateString(), totalPool, usedCash, unassignedCash, incomes, bills, quickSpends }, ...archives]);
+      setIncomes([]); setBills([]); setQuickSpends([]);
+    }
+  };
+
+  const getCSVString = () => {
+    let csv = "Type,Name,Amount,Date/Due,Frequency,Routed Paycheck,Status,Date Paid\n";
+    let totalIn = 0; let totalOut = 0;
+    incomes.forEach(i => { csv += `"Income","${i.name}","$${i.amount}","${i.date}","${i.frequency}","N/A","N/A","N/A"\n`; totalIn += i.amount; });
+    bills.forEach(b => {
+      const linkedName = incomes.find(inc => inc.id == b.linkedIncomeId)?.name || 'None';
+      csv += `"Bill","${b.name}","$${b.amount}","${b.dueDate}","${b.frequency}","${linkedName}","${b.isPaid ? 'PAID' : 'UNPAID'}","${b.datePaid || 'N/A'}"\n`;
+      totalOut += b.amount;
+    });
+    quickSpends.forEach(s => {
+      const linkedName = incomes.find(inc => inc.id == s.linkedIncomeId)?.name || 'General Pool';
+      csv += `"Pocket Spend","${s.name}","$${parseFloat(s.amount).toFixed(2)}","${s.date} ${s.time}","Incidentals","${linkedName}","PAID","${s.date}"\n`;
+      totalOut += s.amount;
+    });
+    csv += `\n"TOTALS","Pool:","$${totalIn.toFixed(2)}","Used:","$${totalOut.toFixed(2)}","Unassigned:","$${(totalIn - totalOut).toFixed(2)}",""\n`;
+    return csv;
+  };
+
+  const downloadCSVFile = () => {
+    const blob = new Blob([getCSVString()], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `budget_export_${Date.now()}.csv`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  };
+
+  const shareCSV = async () => {
+    try {
+      const file = new File([getCSVString()], `budget_export_${Date.now()}.csv`, { type: 'text/csv' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Budget Ledger', text: 'Attached is your Budget CSV Export' });
+      } else {
+        window.open(`mailto:?subject=Budget Export&body=${encodeURIComponent("Attached is the requested data:\n\n" + getCSVString())}`);
+      }
+    } catch (err) { console.error("Share failed", err); }
+  };
+
+  const copyCSVToClipboard = () => {
+    navigator.clipboard.writeText(getCSVString());
+    alert("CSV Data securely copied to your clipboard!");
+  };
+
+  const cardStyle = { background: 'rgba(17, 17, 17, 0.95)', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
+  const inputStyle = { background: '#000', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '6px', width: '100%', marginBottom: '15px', fontSize: '1em' };
+  const btnStyle = (bg, color) => ({ background: bg, color: color, border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', width: '100%', fontSize: '1em' });
+  return (
+    <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', color: '#fff' }}>
+      <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.8)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>← Hub</button>
+          <h2 style={{ margin: 0, color: '#10b981', fontSize: '1.2em' }}>Cashflow Engine</h2>
+        </div>
+      </header>
+
+      <div style={{ display: 'flex', padding: '15px', gap: '8px', background: 'rgba(0,0,0,0.6)', overflowX: 'auto' }}>
+        <button onClick={() => setActiveTab('dashboard')} style={{ flex: '0 0 auto', padding: '12px 18px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'dashboard' ? '#3b82f6' : '#222', color: activeTab === 'dashboard' ? '#fff' : '#888' }}>Dashboard</button>
+        <button onClick={() => setActiveTab('Ledger')} style={{ flex: '0 0 auto', padding: '12px 18px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'Ledger' ? '#a855f7' : '#222', color: activeTab === 'Ledger' ? '#fff' : '#888' }}>Manage</button>
+        <button onClick={() => setActiveTab('history')} style={{ flex: '0 0 auto', padding: '12px 18px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'history' ? '#f59e0b' : '#222', color: activeTab === 'history' ? '#fff' : '#888' }}>Archive</button>
+        <button onClick={() => setActiveTab('guides')} style={{ flex: '0 0 auto', padding: '12px 18px', borderRadius: '8px', border: 'none', fontWeight: 'bold', background: activeTab === 'guides' ? '#10b981' : '#222', color: activeTab === 'guides' ? '#000' : '#888' }}>Guides</button>
+      </div>
+
+      <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
+
+        {activeTab === 'dashboard' && (
+          <>
+            <div style={{ ...cardStyle, textAlign: 'center', border: '1px solid #a855f7', marginTop: '10px' }}>
+              <div style={{ color: '#a855f7', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Total Cash Pool</div>
+              <div style={{ color: '#fff', fontSize: '2.5em', fontWeight: 'bold' }}>${totalPool.toFixed(2)}</div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
+              <div style={{ flex: 1, ...cardStyle, textAlign: 'center', border: '1px solid #ef4444', margin: 0 }}>
+                <div style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '5px' }}>Used Cash</div>
+                <div style={{ color: '#fff', fontSize: '1.6em', fontWeight: 'bold' }}>${usedCash.toFixed(2)}</div>
+              </div>
+              <div style={{ flex: 1, ...cardStyle, textAlign: 'center', border: `1px solid ${unassignedCash < 0 ? '#ef4444' : '#10b981'}`, margin: 0 }}>
+                <div style={{ color: unassignedCash < 0 ? '#ef4444' : '#10b981', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '5px' }}>Available</div>
+                <div style={{ color: '#fff', fontSize: '1.6em', fontWeight: 'bold' }}>${unassignedCash.toFixed(2)}</div>
+              </div>
+            </div>
+
+            {/* --- QUICK POCKET BURN LOG --- */}
+            <div style={{ ...cardStyle, border: '1px solid #f59e0b', marginTop: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '0.9em', letterSpacing: '1px', textTransform: 'uppercase' }}>⚡ Quick Pocket Burn</span>
+                <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.95em' }}>-${totalQuickSpend.toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input type="text" placeholder="Item (Gas, Drinks)" value={quickDesc} onChange={(e) => setQuickDesc(e.target.value)} style={{ ...inputStyle, flex: 2, marginBottom: 0, padding: '10px', fontSize: '0.9em' }} />
+                <input type="number" placeholder="$" value={quickAmount} onChange={(e) => setQuickAmount(e.target.value)} style={{ ...inputStyle, flex: 1, marginBottom: 0, padding: '10px', fontSize: '0.9em' }} />
+                <button onClick={() => addQuickSpend()} style={{ ...btnStyle('#f59e0b', '#000'), width: 'auto', padding: '10px 16px', fontSize: '0.9em', flexShrink: 0 }}>Log</button>
+              </div>
+              {incomes.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <span style={{ color: '#888', fontSize: '0.75em' }}>From Ledger:</span>
+                  <select value={quickLinkedInc} onChange={(e) => setQuickLinkedInc(e.target.value)} style={{ background: '#000', color: '#10b981', border: '1px solid #333', borderRadius: '4px', padding: '4px 8px', fontSize: '0.8em', flex: 1 }}>
+                    <option value="None">General Cash Pool</option>
+                    {incomes.map(inc => <option key={inc.id} value={inc.id}>{inc.name} (${inc.amount})</option>)}
+                  </select>
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+                <button onClick={() => addQuickSpend(5, 'Energy Drink / Snack')} style={{ flex: 1, background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', padding: '6px', fontSize: '0.75em', fontWeight: 'bold' }}>+$5 Snack</button>
+                <button onClick={() => addQuickSpend(10, 'Fast Food / Lunch')} style={{ flex: 1, background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', padding: '6px', fontSize: '0.75em', fontWeight: 'bold' }}>+$10 Food</button>
+                <button onClick={() => addQuickSpend(25, 'Gas')} style={{ flex: 1, background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', padding: '6px', fontSize: '0.75em', fontWeight: 'bold' }}>+$25 Gas</button>
+              </div>
+              {quickSpends.length > 0 ? (
+                <div style={{ maxHeight: '140px', overflowY: 'auto', borderTop: '1px dashed #333', paddingTop: '8px' }}>
+                  {quickSpends.map(spend => (
+                    <div key={spend.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #1a1a1a', fontSize: '0.85em' }}>
+                      <div>
+                        <span style={{ color: '#fff', fontWeight: 'bold' }}>{spend.name}</span>
+                        <span style={{ color: '#666', fontSize: '0.8em', marginLeft: '6px' }}>{spend.time}</span>
                       </div>
-                    ))
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>-${parseFloat(spend.amount).toFixed(2)}</span>
+                        <button onClick={() => deleteQuickSpend(spend.id)} style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '1em', cursor: 'pointer', padding: '0 4px' }}>×</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : <div style={{ textAlign: 'center', color: '#555', fontSize: '0.8em', fontStyle: 'italic', paddingTop: '4px' }}>No cash spent outside bills this cycle.</div>}
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button onClick={() => setShowIncomeModal(true)} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Add Income</button>
+              <button onClick={() => setShowBillModal(true)} style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Add Bill</button>
+            </div>
+          </>
+        )}
+        {activeTab === 'Ledger' && (
+          <>
+            <h3 style={{ color: '#a855f7', textAlign: 'center', textTransform: 'uppercase', margin: '20px 0 15px 0' }}>Manage Income</h3>
+            {incomes.length === 0 ? <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No income sources added.</p> : incomes.map(inc => (
+              <div key={inc.id} style={{ ...cardStyle, borderLeft: '4px solid #10b981' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.2em' }}>{inc.name}</h3>
+                    <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', color: '#10b981' }}>Cycle: {inc.frequency}</span>
+                  </div>
+                  <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2em' }}>${inc.amount.toFixed(2)}</div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ccc', fontSize: '0.9em', borderTop: '1px dashed #333', paddingTop: '10px' }}>
+                  <span>{inc.date || 'No Date'}</span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => syncToCalendar(inc, 'income')} style={{ background: inc.isSynced ? '#222' : '#a855f7', color: inc.isSynced ? '#a855f7' : '#fff', border: inc.isSynced ? '1px solid #a855f7' : 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}>{inc.isSynced ? 'Synced \u2713' : 'Advance \uD83D\uDCC5'}</button>
+                    <button onClick={() => deleteItem(inc.id, 'income')} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold', fontSize: '1.2em' }}>🗑️</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <h3 style={{ color: '#a855f7', textAlign: 'center', textTransform: 'uppercase', margin: '30px 0 15px 0' }}>Manage Bills</h3>
+            {bills.length === 0 ? <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No bills added.</p> : bills.map(bill => {
+              const linkedInc = incomes.find(i => i.id == bill.linkedIncomeId);
+              return (
+                <div key={bill.id} style={{ ...cardStyle, borderLeft: `4px solid ${bill.isPaid ? '#10b981' : '#ef4444'}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                    <div>
+                      <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.2em', textDecoration: bill.isPaid ? 'line-through' : 'none' }}>{bill.name}</h3>
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', color: '#ef4444' }}>Cycle: {bill.frequency}</span>
+                        {linkedInc && <span style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', color: '#3b82f6' }}>Routed: {linkedInc.name}</span>}
+                      </div>
+                    </div>
+                    <div style={{ color: bill.isPaid ? '#10b981' : '#ef4444', fontWeight: 'bold', fontSize: '1.2em' }}>${bill.amount.toFixed(2)}</div>
+                  </div>
+                  {bill.photo && (
+                    <div style={{ marginBottom: '10px', border: '1px solid #333', padding: '5px', borderRadius: '6px', display: 'inline-block' }}>
+                      <img src={bill.photo} alt="Receipt" style={{ height: '80px', borderRadius: '4px' }} />
+                    </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', background: '#111', padding: '8px', borderRadius: '6px' }}>
-                    <span style={{ color: '#888', fontSize: '0.95rem' }}>Remaining:</span>
-                    <span style={{ color: remaining < 0 ? '#ef4444' : '#06b6d4', fontWeight: 'bold' }}>${remaining.toFixed(2)}</span>
+                  <div style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ color: '#888', fontSize: '0.85em' }}>Route To Ledger:</span>
+                    <select value={bill.linkedIncomeId} onChange={(e) => setBills(bills.map(b => b.id === bill.id ? { ...b, linkedIncomeId: e.target.value } : b))} style={{ background: '#000', color: '#3b82f6', border: '1px solid #333', padding: '6px', borderRadius: '4px', flex: 1, fontSize: '0.9em' }}>
+                      <option value="None">None (Unassigned)</option>
+                      {incomes.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ccc', fontSize: '0.9em', borderTop: '1px dashed #333', paddingTop: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      <span>Due: {bill.dueDate || 'No Date'}</span>
+                      {bill.isPaid && <span style={{ color: '#10b981', fontWeight: 'bold' }}>✓ Paid on {bill.datePaid}</span>}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => togglePaidStatus(bill.id)} style={{ background: bill.isPaid ? '#3b82f6' : '#10b981', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}>{bill.isPaid ? 'Mark Unpaid' : 'Mark Paid \u2714'}</button>
+                      <button onClick={() => syncToCalendar(bill, 'bill')} style={{ background: bill.isSynced ? '#222' : '#a855f7', color: bill.isSynced ? '#a855f7' : '#fff', border: bill.isSynced ? '1px solid #a855f7' : 'none', padding: '6px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}>{bill.isSynced ? 'Synced \u2713' : 'Pay & Advance \uD83D\uDCC5'}</button>
+                      <button onClick={() => deleteItem(bill.id, 'bill')} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold', fontSize: '1.2em' }}>🗑️</button>
+                    </div>
                   </div>
                 </div>
               );
             })}
-            {unassignedBills.length > 0 && (
-              <div style={{ marginTop: '20px', borderTop: '2px dashed #ef4444', paddingTop: '15px' }}>
-                <h4 style={{ color: '#ef4444', textTransform: 'uppercase', margin: '0 0 15px 0' }}>⚠️ Unassigned Liabilities</h4>
-                {unassignedBills.map(b => (
-                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', paddingLeft: '10px' }}>
-                    <span style={{ color: '#aaa', fontSize: '0.95rem' }}>{b.name}</span>
-                    <span style={{ color: '#ef4444', fontWeight: 'bold' }}>${b.cost.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          </>
         )}
-      </div>
-    );
-  };
 
-  const renderManage = () => (
-    <div style={{ marginTop: '20px' }}>
-      <h3 style={{ color: '#10b981', textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px', letterSpacing: '1px' }}>Manage Income</h3>
-      {sortedIncomes.length === 0 && <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No incomes logged.</p>}
-      {sortedIncomes.map(inc => (
-        <div key={inc.id} style={{ ...glassCard, borderLeft: '4px solid #10b981', padding: '15px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h3 style={{ color: '#10b981', margin: 0, fontSize: '1.1rem' }}>{inc.name} <span style={{fontSize:'0.8rem', color:'#888'}}>({inc.date})</span></h3>
-            <h3 style={{ margin: 0, color: '#fff' }}>${inc.amount.toFixed(2)}</h3>
-          </div>
-          <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '0 0 5px 0' }}>Cycle: {inc.frequency}</p>
-          {inc.note && <p style={{ color: '#888', fontSize: '0.85rem', margin: '0 0 10px 0', fontStyle: 'italic' }}>"{inc.note}"</p>}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-            <button onClick={() => handleAdvanceIncome(inc.id)} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem' }}>Advance 📅</button>
-            <button onClick={() => deleteIncome(inc.id)} style={{ background: '#222', color: '#ef4444', border: '1px solid #333', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold' }}>🗑️</button>
-          </div>
-        </div>
-      ))}
-
-      <h3 style={{ color: '#ef4444', textTransform: 'uppercase', textAlign: 'center', marginTop: '35px', marginBottom: '15px', letterSpacing: '1px' }}>Manage Bills</h3>
-      {sortedBills.length === 0 && <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No liabilities logged.</p>}
-      {sortedBills.map(bill => (
-        <div key={bill.id} style={{ ...glassCard, borderLeft: '4px solid #ef4444', padding: '15px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h3 style={{ color: '#ef4444', margin: 0, fontSize: '1.1rem', textDecoration: bill.isPaid ? 'line-through' : 'none' }}>{bill.name} <span style={{fontSize:'0.8rem', color:'#888'}}>({bill.due})</span></h3>
-            <h3 style={{ margin: 0, color: '#fff', textDecoration: bill.isPaid ? 'line-through' : 'none' }}>${bill.cost.toFixed(2)}</h3>
-          </div>
-          <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '0 0 5px 0' }}>Cycle: {bill.frequency}</p>
-          {bill.note && <p style={{ color: '#888', fontSize: '0.85rem', margin: '0 0 10px 0', fontStyle: 'italic' }}>"{bill.note}"</p>}
-
-          <div style={{ background: '#000', padding: '10px', borderRadius: '8px', marginTop: '10px', border: '1px solid #333' }}>
-            <span style={{ color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '5px', textTransform: 'uppercase' }}>Route To Ledger:</span>
-            <select value={bill.routeTo} onChange={(e) => updateBillRoute(bill.id, e.target.value)} style={{ background: '#111', color: '#10b981', border: '1px solid #444', padding: '10px', borderRadius: '6px', width: '100%', fontSize: '0.9rem' }}>
-              <option value="">⚠️ Unassigned</option>
-              {sortedIncomes.map(inc => <option key={inc.id} value={inc.id}>{inc.name}</option>)}
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '15px' }}>
-            <button onClick={() => togglePaidStatus(bill.id)} style={{ background: bill.isPaid ? '#222' : '#3b82f6', color: '#fff', border: '1px solid #444', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem' }}>{bill.isPaid ? 'Unmark' : 'Mark Paid ✅'}</button>
-            <button onClick={() => handleAdvanceBill(bill.id)} style={{ background: '#10b981', color: '#000', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem' }}>Pay & Advance 📅</button>
-            <button onClick={() => deleteBill(bill.id)} style={{ background: '#222', color: '#ef4444', border: '1px solid #333', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold' }}>🗑️</button>
-          </div>
-        </div>
-      ))}
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '25px 0' }}>
-        <button onClick={() => { setShowIncomeForm(!showIncomeForm); setShowBillForm(false); }} style={{ background: showIncomeForm ? '#222' : '#10b981', color: showIncomeForm ? '#fff' : '#000', border: showIncomeForm ? '1px solid #444' : 'none', padding: '15px', borderRadius: '10px', fontWeight: 'bold' }}>{showIncomeForm ? 'Cancel' : '+ Add Income'}</button>
-        <button onClick={() => { setShowBillForm(!showBillForm); setShowIncomeForm(false); }} style={{ background: showBillForm ? '#222' : '#ef4444', color: '#fff', border: showBillForm ? '1px solid #444' : 'none', padding: '15px', borderRadius: '10px', fontWeight: 'bold' }}>{showBillForm ? 'Cancel' : '+ Add Bill'}</button>
-      </div>
-
-      {showIncomeForm && (
-        <div style={{ ...glassCard, borderTop: '4px solid #10b981' }}>
-          <h3 style={{ color: '#10b981', marginTop: 0, textTransform: 'uppercase' }}>Log Income</h3>
-          <input type="text" placeholder="Name (e.g. Day Job)" value={incomeName} onChange={e=>setIncomeName(e.target.value)} style={inputStyle} />
-          <input type="number" placeholder="Amount ($)" value={incomeAmount} onChange={e=>setIncomeAmount(e.target.value)} style={inputStyle} />
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <input type="date" value={incomeDate} onChange={e=>setIncomeDate(e.target.value)} style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />
-            <select value={incomeFrequency} onChange={e=>setIncomeFrequency(e.target.value)} style={{ ...inputStyle, marginBottom: 0, flex: 1 }}>
-              {freqOptions.map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-          </div>
-          <input type="text" placeholder="Notes..." value={incomeNote} onChange={e=>setIncomeNote(e.target.value)} style={inputStyle} />
-          <button onClick={handleAddIncome} style={{ width: '100%', background: '#10b981', color: '#000', padding: '15px', borderRadius: '8px', fontWeight: 'bold', border: 'none', fontSize: '1.1rem' }}>Save Income</button>
-        </div>
-      )}
-
-      {showBillForm && (
-        <div style={{ ...glassCard, borderTop: '4px solid #ef4444' }}>
-          <h3 style={{ color: '#ef4444', marginTop: 0, textTransform: 'uppercase' }}>Log Liability</h3>
-          <input type="text" placeholder="Name (e.g. Rent)" value={billName} onChange={e=>setBillName(e.target.value)} style={inputStyle} />
-          <input type="number" placeholder="Cost ($)" value={billCost} onChange={e=>setBillCost(e.target.value)} style={inputStyle} />
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <input type="date" value={billDue} onChange={e=>setBillDue(e.target.value)} style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />
-            <select value={billFrequency} onChange={e=>setBillFrequency(e.target.value)} style={{ ...inputStyle, marginBottom: 0, flex: 1 }}>
-              {freqOptions.map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-          </div>
-          <input type="text" placeholder="Notes..." value={billNote} onChange={e=>setBillNote(e.target.value)} style={inputStyle} />
-          <button onClick={handleAddBill} style={{ width: '100%', background: '#ef4444', color: '#fff', padding: '15px', borderRadius: '8px', fontWeight: 'bold', border: 'none', fontSize: '1.1rem' }}>Save Liability</button>
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="view-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'transparent', color: '#fff' }}>
-      <header style={{ borderBottom: '1px solid #222', padding: '15px', display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
-        <button onClick={() => navigate(-1)} style={{ background: '#222', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', marginRight: '15px' }}>← Hub</button>
-        <h2 style={{ margin: 0, color: '#06b6d4', fontSize: '1.2rem' }}>Cashflow Engine</h2>
-      </header>
-
-      <div style={{ display: 'flex', padding: '15px', gap: '8px', background: 'rgba(0,0,0,0.6)', overflowX: 'auto' }}>
-        <button onClick={() => setActiveTab('dashboard')} style={{ background: activeTab === 'dashboard' ? '#06b6d4' : '#222', color: activeTab === 'dashboard' ? '#000' : '#888', border: 'none', padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', flex: '0 0 auto' }}>Dashboard</button>
-        <button onClick={() => setActiveTab('manage')} style={{ background: activeTab === 'manage' ? '#a855f7' : '#222', color: activeTab === 'manage' ? '#fff' : '#888', border: 'none', padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', flex: '0 0 auto' }}>Manage</button>
-        <button onClick={() => setActiveTab('archive')} style={{ background: activeTab === 'archive' ? '#f59e0b' : '#222', color: activeTab === 'archive' ? '#000' : '#888', border: 'none', padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', flex: '0 0 auto' }}>Archive</button>
-        <button onClick={() => setActiveTab('export')} style={{ background: activeTab === 'export' ? '#3b82f6' : '#222', color: activeTab === 'export' ? '#fff' : '#888', border: 'none', padding: '10px 15px', borderRadius: '8px', fontWeight: 'bold', flex: '0 0 auto' }}>Export</button>
-      </div>
-
-      <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
-        {activeTab === 'dashboard' && renderDashboard()}
-        {activeTab === 'manage' && renderManage()}
-
-        {activeTab === 'archive' && (
-          <div style={{ marginTop: '20px' }}>
-            <h3 style={{ color: '#f59e0b', textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px', letterSpacing: '1px' }}>Historical Snapshots</h3>
-            {history.length === 0 ? <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No past budgets archived.</p> : (
-              history.map(snap => (
-                <div key={snap.id} style={{ ...glassCard, borderLeft: '4px solid #f59e0b', padding: '15px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <h3 style={{ margin: 0, color: '#f59e0b', fontSize: '1.1rem' }}>{snap.date} <span style={{fontSize:'0.8rem', color:'#888'}}>({snap.time})</span></h3>
-                    <button onClick={() => setHistory(history.filter(h => h.id !== snap.id))} style={{ background: 'transparent', color: '#ef4444', border: 'none', fontWeight: 'bold', fontSize: '1.2rem' }}>×</button>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#000', padding: '10px', borderRadius: '8px', border: '1px solid #333', marginBottom: '10px' }}>
-                    <div><span style={{ color: '#888', fontSize: '0.75rem', display: 'block' }}>POOL</span><span style={{ color: '#fff', fontWeight: 'bold' }}>${snap.pool.toFixed(2)}</span></div>
-                    <div><span style={{ color: '#888', fontSize: '0.75rem', display: 'block' }}>AVAILABLE</span><span style={{ color: '#10b981', fontWeight: 'bold' }}>${snap.available.toFixed(2)}</span></div>
-                  </div>
-                  <button onClick={() => setExpandedHistory(expandedHistory === snap.id ? null : snap.id)} style={{ width: '100%', background: '#222', color: '#f59e0b', border: '1px dashed #f59e0b', padding: '10px', borderRadius: '8px', fontWeight: 'bold' }}>
-                    {expandedHistory === snap.id ? 'Hide Full Ledger' : 'View Full Ledger'}
-                  </button>
-                  {expandedHistory === snap.id && (
-                    <div style={{ background: '#0a0a0a', color: '#ccc', padding: '15px', borderRadius: '8px', marginTop: '10px', fontSize: '0.85rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', border: '1px solid #333' }}>
-                      {snap.report}
-                    </div>
-                  )}
+        {activeTab === 'history' && (
+          <>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', marginTop: '10px' }}>
+              <button onClick={archiveBudget} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>💾 Archive Month</button>
+              <button onClick={() => setShowExportModal(true)} style={{ flex: 1, background: '#222', color: '#fff', border: '1px solid #3b82f6', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>📤 Export Logs</button>
+            </div>
+            <h3 style={{ color: '#f59e0b', textAlign: 'center', textTransform: 'uppercase', marginBottom: '15px' }}>Historical Snapshots</h3>
+            {archives.length === 0 ? <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No archives saved.</p> : archives.map((arc) => (
+              <div key={arc.id} style={{ ...cardStyle, borderLeft: '4px solid #f59e0b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <strong style={{ color: '#fff', display: 'block', marginBottom: '5px' }}>{arc.date}</strong>
+                  <span style={{ color: '#10b981', marginRight: '10px', fontSize: '0.9em' }}>Pool: ${arc.totalPool.toFixed(2)}</span>
+                  <span style={{ color: '#ef4444', fontSize: '0.9em' }}>Used: ${arc.usedCash.toFixed(2)}</span>
                 </div>
-              ))
-            )}
+                <button onClick={() => setViewingArchive(arc)} style={{ background: '#222', border: '1px solid #f59e0b', color: '#f59e0b', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>View Full Ledger</button>
+              </div>
+            ))}
+          </>
+        )}
+
+        {activeTab === 'guides' && (
+          <div style={{ paddingTop: '10px' }}>
+            <h3 style={{ color: '#10b981', textAlign: 'center', margin: '0 0 20px 0', textTransform: 'uppercase', background: 'rgba(0,0,0,0.7)', padding: '10px', borderRadius: '8px' }}>Budgeting Field Guide</h3>
+            {guideData.map((item, idx) => (
+              <div key={idx} style={{ background: 'rgba(17, 17, 17, 0.95)', borderRadius: '8px', border: '1px solid #222', marginBottom: '10px', overflow: 'hidden' }}>
+                <button onClick={() => toggleAccordion(idx)} style={{ width: '100%', background: 'transparent', color: openAccordion === idx ? '#10b981' : '#fff', border: 'none', padding: '15px', textAlign: 'left', fontWeight: 'bold', fontSize: '1.05em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {item.title} <span style={{ color: '#888' }}>{openAccordion === idx ? '▼' : '▶'}</span>
+                </button>
+                {openAccordion === idx && (
+                  <div style={{ padding: '0 15px 15px 15px', color: '#ccc', lineHeight: '1.6', fontSize: '0.95em' }}>{item.content}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {/* --- ADD INCOME MODAL --- */}
+        {showIncomeModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, padding: '20px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #10b981', paddingBottom: '15px', marginBottom: '20px' }}>
+              <h2 style={{ color: '#10b981', margin: 0, textTransform: 'uppercase' }}>Log Income</h2>
+              <button onClick={() => setShowIncomeModal(false)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
+            </div>
+            <input type="text" placeholder="Source Name (e.g. Circle K)" value={incName} onChange={(e) => setIncName(e.target.value)} style={inputStyle} />
+            <input type="number" placeholder="Amount ($)" value={incAmount} onChange={(e) => setIncAmount(e.target.value)} style={inputStyle} />
+            <input type="date" value={incDate} onChange={(e) => setIncDate(e.target.value)} style={inputStyle} />
+            <label style={{ color: '#a855f7', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Recurring Frequency</label>
+            <select value={incFreq} onChange={(e) => setIncFreq(e.target.value)} style={inputStyle}><option>None</option><option>Weekly</option><option>Bi-Weekly</option><option>Monthly</option></select>
+            <button onClick={addIncome} style={{ ...btnStyle('#10b981', '#000'), marginTop: '10px' }}>Save Income</button>
           </div>
         )}
 
-        {activeTab === 'export' && (
-          <div style={{ marginTop: '20px', textAlign: 'center' }}>
-            <h3 style={{ color: '#3b82f6', textTransform: 'uppercase', marginBottom: '15px', letterSpacing: '1px' }}>Export / Archive</h3>
+        {/* --- ADD BILL MODAL --- */}
+        {showBillModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, padding: '20px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ef4444', paddingBottom: '15px', marginBottom: '20px' }}>
+              <h2 style={{ color: '#ef4444', margin: 0, textTransform: 'uppercase' }}>Log Bill</h2>
+              <button onClick={() => setShowBillModal(false)} style={{ background: '#222', color: '#fff', border: '1px solid #555', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
+            </div>
+            <input type="text" placeholder="Bill Name (e.g. Rent)" value={billName} onChange={(e) => setBillName(e.target.value)} style={inputStyle} />
+            <input type="number" placeholder="Amount ($)" value={billAmount} onChange={(e) => setBillAmount(e.target.value)} style={inputStyle} />
+            <input type="date" value={billDate} onChange={(e) => setBillDate(e.target.value)} style={inputStyle} />
+            <label style={{ color: '#a855f7', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Recurring Frequency</label>
+            <select value={billFreq} onChange={(e) => setBillFreq(e.target.value)} style={inputStyle}><option>None</option><option>Weekly</option><option>Bi-Weekly</option><option>Monthly</option></select>
+            <label style={{ color: '#3b82f6', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Route to Paycheck</label>
+            <select value={billLinkedInc} onChange={(e) => setBillLinkedInc(e.target.value)} style={inputStyle}>
+              <option value="None">None (Unassigned)</option>
+              {incomes.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+            </select>
+            <label style={{ color: '#10b981', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Attach Receipt / Proof (Optional)</label>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              <label style={{ ...btnStyle('transparent', '#10b981'), border: '1px dashed #10b981', flex: 1, textAlign: 'center' }}>📸 Camera<input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePhotoCapture} /></label>
+              <label style={{ ...btnStyle('transparent', '#3b82f6'), border: '1px dashed #3b82f6', flex: 1, textAlign: 'center' }}>🖼️ Upload<input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoCapture} /></label>
+            </div>
+            {billPhoto && (<div style={{ textAlign: 'center', marginBottom: '15px' }}><img src={billPhoto} alt="Receipt Preview" style={{ height: '80px', borderRadius: '6px', border: '1px solid #10b981' }} /></div>)}
+            <button onClick={addBill} style={{ ...btnStyle('#ef4444', '#fff'), marginTop: '10px' }}>Save Bill</button>
+          </div>
+        )}
 
-            {/* 🔥 NEW EZ RESET BUTTON 🔥 */}
-            <button onClick={handleEzReset} style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '2px solid #ef4444', padding: '15px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', width: '100%', marginBottom: '20px', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.2)' }}>
-              🚨 EZ RESET ALL & ARCHIVE 🚨
-            </button>
+        {/* --- EXPORT MODAL --- */}
+        {showExportModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: '#111', padding: '25px', borderRadius: '12px', border: '1px solid #3b82f6', width: '100%' }}>
+              <h2 style={{ color: '#3b82f6', margin: '0 0 10px 0', textAlign: 'center', textTransform: 'uppercase' }}>Export Controls</h2>
+              <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '25px', fontSize: '0.9em' }}>Select how you want to export your encrypted budget data.</p>
+              <button onClick={downloadCSVFile} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '10px' }}>📥 Download Excel (.CSV)</button>
+              <button onClick={shareCSV} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '10px' }}>📧 Email / Share (.CSV)</button>
+              <button onClick={copyCSVToClipboard} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '25px' }}>📋 Copy Raw Data</button>
+              <button onClick={() => setShowExportModal(false)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px dashed #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
+            </div>
+          </div>
+        )}
 
-            <button onClick={saveSnapshot} style={{ background: '#f59e0b', color: '#000', border: 'none', padding: '15px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', width: '100%', marginBottom: '20px' }}>
-              💾 Save Budget Snapshot
-            </button>
+        {/* --- VIEW ARCHIVE MODAL --- */}
+        {viewingArchive && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100, padding: '15px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #f59e0b', paddingBottom: '10px', marginBottom: '15px' }}>
+              <h2 style={{ color: '#f59e0b', margin: 0, textTransform: 'uppercase' }}>Archived Ledger</h2>
+              <button onClick={() => setViewingArchive(null)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
+            </div>
+            <div style={{ background: '#111', padding: '20px', borderRadius: '8px' }}>
+              <h2 style={{ color: '#f59e0b', textAlign: 'center', margin: '0 0 5px 0', textTransform: 'uppercase' }}>Monthly Snapshot</h2>
+              <h4 style={{ textAlign: 'center', margin: '0 0 20px 0', color: '#666' }}>Archived: {viewingArchive.date}</h4>
 
-            <div style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid #333', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', fontFamily: 'monospace', textAlign: 'left', whiteSpace: 'pre-wrap', marginBottom: '20px', lineHeight: '1.5' }}>{generateReport()}</div>
+              <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>Incomes</h4>
+              {viewingArchive.incomes.length === 0 ? <p style={{ fontStyle: 'italic', fontSize: '0.9em' }}>None</p> : viewingArchive.incomes.map(i => (
+                <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
+                  <span>{i.name}</span> <span style={{ color: '#10b981' }}>${i.amount.toFixed(2)}</span>
+                </div>
+              ))}
 
-            <button onClick={handleShareExport} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', width: '100%' }}>
-              📤 Email / Export Text
-            </button>
+              <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Bills & Liabilities</h4>
+              {viewingArchive.bills.length === 0 ? <p style={{ fontStyle: 'italic', fontSize: '0.9em' }}>None</p> : viewingArchive.bills.map(b => (
+                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
+                  <span>{b.name} {b.isPaid ? '(PAID)' : '(UNPAID)'}</span> <span style={{ color: '#ef4444' }}>${b.amount.toFixed(2)}</span>
+                </div>
+              ))}
+
+              {viewingArchive.quickSpends && viewingArchive.quickSpends.length > 0 && (
+                <>
+                  <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Quick Pocket Spends</h4>
+                  {viewingArchive.quickSpends.map(q => (
+                    <div key={q.id} style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
+                      <span>{q.name}</span> <span style={{ color: '#f59e0b' }}>${parseFloat(q.amount).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              <div style={{ borderTop: '2px solid #000', marginTop: '20px', paddingTop: '15px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}>
+                  <span>TOTAL POOL:</span> <span style={{ color: '#10b981' }}>${viewingArchive.totalPool.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}>
+                  <span>TOTAL USED:</span> <span style={{ color: '#ef4444' }}>${viewingArchive.usedCash.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em' }}>
+                  <span>UNASSIGNED:</span> <span style={{ color: viewingArchive.unassignedCash < 0 ? '#ef4444' : '#10b981' }}>${viewingArchive.unassignedCash.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
