@@ -16,6 +16,10 @@ export default function BudgetEngine() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [viewingArchive, setViewingArchive] = useState(null);
   const [openAccordion, setOpenAccordion] = useState(null);
+  
+  // Accordion Toggles for Dashboard
+  const [showEnvelopeLedger, setShowEnvelopeLedger] = useState(false);
+  const [showQuickSpendAccordion, setShowQuickSpendAccordion] = useState(false);
 
   // Forms
   const [incName, setIncName] = useState('');
@@ -42,23 +46,24 @@ export default function BudgetEngine() {
     localStorage.setItem('tot_budgetArchives', JSON.stringify(archives));
   }, [incomes, bills, quickSpends, archives]);
 
-  // --- DASHBOARD CALCULATIONS ---
-  const totalPool = incomes.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
-  const totalBills = bills.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
-  const totalQuickSpend = quickSpends.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+  // --- DASHBOARD CALCULATIONS (Restored 4-Card Math) ---
+  const totalPool = incomes.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+  const totalLiability = bills.filter(b => !b.isPaid).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+  const totalPaidBills = bills.filter(b => b.isPaid).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+  const totalQuickSpend = quickSpends.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
 
-  const usedCash = totalBills + totalQuickSpend;
-  const unassignedCash = totalPool - usedCash;
+  const usedCash = totalPaidBills + totalQuickSpend;
+  const unassignedCash = totalPool - totalLiability - usedCash;
 
   const guideData = [
-    { title: "Zero-Based Budgeting", content: "Your Total Unassigned Cash should always be exactly $0.00. Every single dollar you earn needs a job before the month begins. If you have $200 left over, create a 'Savings' bill to zero it out." },
-    { title: "Paycheck Routing", content: "If all bills are due on the 1st, but you get paid on the 15th and 30th, you will overdraft. Use the dropdown in the Ledger to link specific bills to specific paychecks." },
-    { title: "Calendar Syncing", content: "Set a frequency (Weekly, Bi-Weekly, Monthly) when adding an income or bill, then tap 'Sync'. This writes the event directly to the Master Calendar." }
+    { title: "Zero-Based Budgeting", content: "Your Total Unassigned Cash should always be exactly $0.00." },
+    { title: "Paycheck Routing", content: "Use the dropdown in the Ledger to link specific bills to specific paychecks." },
+    { title: "Calendar Syncing", content: "Set a frequency when adding an income or bill, then tap 'Sync'." }
   ];
 
   const toggleAccordion = (index) => setOpenAccordion(openAccordion === index ? null : index);
 
-  // --- ACTIONS & IMAGE COMPRESSOR ---
+  // --- ACTIONS ---
   const handlePhotoCapture = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -99,25 +104,17 @@ export default function BudgetEngine() {
     if (!amt || isNaN(amt) || amt <= 0) return alert("Enter a valid amount.");
     if (!desc) return alert("Enter an item note (e.g., Gas, Red Bull).");
     const newSpend = {
-      id: Date.now(),
-      name: desc,
-      amount: amt,
-      date: new Date().toLocaleDateString(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      linkedIncomeId: quickLinkedInc
+      id: Date.now(), name: desc, amount: amt, date: new Date().toLocaleDateString(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), linkedIncomeId: quickLinkedInc
     };
-    setQuickSpends([newSpend, ...quickSpends]);
-    setQuickDesc('');
-    setQuickAmount('');
+    setQuickSpends([newSpend, ...quickSpends]); setQuickDesc(''); setQuickAmount('');
   };
 
   const deleteItem = (id, type) => {
     if (type === 'income') {
       setIncomes(incomes.filter(i => i.id !== id));
       setBills(bills.map(b => b.linkedIncomeId === id ? { ...b, linkedIncomeId: 'None' } : b));
-    } else {
-      setBills(bills.filter(b => b.id !== id));
-    }
+    } else { setBills(bills.filter(b => b.id !== id)); }
   };
 
   const deleteQuickSpend = (id) => setQuickSpends(quickSpends.filter(item => item.id !== id));
@@ -126,20 +123,17 @@ export default function BudgetEngine() {
     setBills(bills.map(b => b.id === id ? { ...b, isPaid: !b.isPaid, datePaid: !b.isPaid ? new Date().toLocaleDateString() : null } : b));
   };
 
-  // --- IN-APP CALENDAR WRAPPER SYNC ---
   const syncToCalendar = (item, type) => {
     const targetDate = item.date || item.dueDate;
     if (!targetDate) return alert("Please set a date before syncing.");
     if (type === 'income') setIncomes(incomes.map(i => i.id === item.id ? { ...i, isSynced: true } : i));
     else setBills(bills.map(b => b.id === item.id ? { ...b, isSynced: true } : b));
-
     const existingEvents = JSON.parse(localStorage.getItem('tot_calendar_events')) || [];
     const newEvent = { id: `${type}_${item.id}`, title: type === 'income' ? `Payday: ${item.name}` : `Bill Due: ${item.name}`, date: targetDate, frequency: item.frequency, amount: item.amount, type: type, source: 'BudgetEngine' };
     localStorage.setItem('tot_calendar_events', JSON.stringify([...existingEvents.filter(e => e.id !== newEvent.id), newEvent]));
     alert(`${item.name} pushed to Master Calendar successfully!`);
   };
 
-  // --- ARCHIVING & BULLETPROOF EXPORTS ---
   const archiveBudget = () => {
     if (totalPool === 0 && usedCash === 0) return alert("Nothing to archive.");
     if (window.confirm("Archive this budget and wipe the current ledger clean for the next cycle?")) {
@@ -151,16 +145,16 @@ export default function BudgetEngine() {
   const getCSVString = () => {
     let csv = "Type,Name,Amount,Date/Due,Frequency,Routed Paycheck,Status,Date Paid\n";
     let totalIn = 0; let totalOut = 0;
-    incomes.forEach(i => { csv += `"Income","${i.name}","$${i.amount}","${i.date}","${i.frequency}","N/A","N/A","N/A"\n`; totalIn += i.amount; });
+    incomes.forEach(i => { csv += `"Income","${i.name}","$${Number(i.amount).toFixed(2)}","${i.date}","${i.frequency}","N/A","N/A","N/A"\n`; totalIn += Number(i.amount); });
     bills.forEach(b => {
       const linkedName = incomes.find(inc => inc.id == b.linkedIncomeId)?.name || 'None';
-      csv += `"Bill","${b.name}","$${b.amount}","${b.dueDate}","${b.frequency}","${linkedName}","${b.isPaid ? 'PAID' : 'UNPAID'}","${b.datePaid || 'N/A'}"\n`;
-      totalOut += b.amount;
+      csv += `"Bill","${b.name}","$${Number(b.amount).toFixed(2)}","${b.dueDate}","${b.frequency}","${linkedName}","${b.isPaid ? 'PAID' : 'UNPAID'}","${b.datePaid || 'N/A'}"\n`;
+      totalOut += Number(b.amount);
     });
     quickSpends.forEach(s => {
       const linkedName = incomes.find(inc => inc.id == s.linkedIncomeId)?.name || 'General Pool';
-      csv += `"Pocket Spend","${s.name}","$${parseFloat(s.amount).toFixed(2)}","${s.date} ${s.time}","Incidentals","${linkedName}","PAID","${s.date}"\n`;
-      totalOut += s.amount;
+      csv += `"Pocket Spend","${s.name}","$${Number(s.amount).toFixed(2)}","${s.date} ${s.time}","Incidentals","${linkedName}","PAID","${s.date}"\n`;
+      totalOut += Number(s.amount);
     });
     csv += `\n"TOTALS","Pool:","$${totalIn.toFixed(2)}","Used:","$${totalOut.toFixed(2)}","Unassigned:","$${(totalIn - totalOut).toFixed(2)}",""\n`;
     return csv;
@@ -168,10 +162,8 @@ export default function BudgetEngine() {
 
   const downloadCSVFile = () => {
     const blob = new Blob([getCSVString()], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.setAttribute('download', `budget_export_${Date.now()}.csv`);
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    const link = document.createElement('a'); link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `budget_export_${Date.now()}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
   const shareCSV = async () => {
@@ -179,16 +171,11 @@ export default function BudgetEngine() {
       const file = new File([getCSVString()], `budget_export_${Date.now()}.csv`, { type: 'text/csv' });
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Budget Ledger', text: 'Attached is your Budget CSV Export' });
-      } else {
-        window.open(`mailto:?subject=Budget Export&body=${encodeURIComponent("Attached is the requested data:\n\n" + getCSVString())}`);
-      }
+      } else { window.open(`mailto:?subject=Budget Export&body=${encodeURIComponent("Attached is the requested data:\n\n" + getCSVString())}`); }
     } catch (err) { console.error("Share failed", err); }
   };
 
-  const copyCSVToClipboard = () => {
-    navigator.clipboard.writeText(getCSVString());
-    alert("CSV Data securely copied to your clipboard!");
-  };
+  const copyCSVToClipboard = () => { navigator.clipboard.writeText(getCSVString()); alert("CSV Data securely copied to your clipboard!"); };
 
   const cardStyle = { background: 'rgba(17, 17, 17, 0.95)', borderRadius: '12px', border: '1px solid #222', padding: '15px', marginBottom: '15px' };
   const inputStyle = { background: '#000', color: '#fff', border: '1px solid #333', padding: '12px', borderRadius: '6px', width: '100%', marginBottom: '15px', fontSize: '1em' };
@@ -210,69 +197,116 @@ export default function BudgetEngine() {
       </div>
 
       <div style={{ padding: '0 15px 100px 15px', overflowY: 'auto' }}>
-
         {activeTab === 'dashboard' && (
           <>
             <div style={{ ...cardStyle, textAlign: 'center', border: '1px solid #a855f7', marginTop: '10px' }}>
               <div style={{ color: '#a855f7', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Total Cash Pool</div>
-              <div style={{ color: '#fff', fontSize: '2.5em', fontWeight: 'bold' }}>${totalPool.toFixed(2)}</div>
+              <div style={{ color: '#10b981', fontSize: '2em', fontWeight: 'bold' }}>${Number(totalPool || 0).toFixed(2)}</div>
+            </div>
+
+            <div style={{ ...cardStyle, textAlign: 'center', border: '1px solid #ef4444' }}>
+              <div style={{ color: '#ef4444', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Total Liability</div>
+              <div style={{ color: '#10b981', fontSize: '1.5em', fontWeight: 'bold' }}>${Number(totalLiability || 0).toFixed(2)}</div>
             </div>
 
             <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
-              <div style={{ flex: 1, ...cardStyle, textAlign: 'center', border: '1px solid #ef4444', margin: 0 }}>
-                <div style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '5px' }}>Used Cash</div>
-                <div style={{ color: '#fff', fontSize: '1.6em', fontWeight: 'bold' }}>${usedCash.toFixed(2)}</div>
+              <div style={{ flex: 1, ...cardStyle, textAlign: 'center', border: '1px solid #f59e0b', margin: 0 }}>
+                <div style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '5px' }}>Used Cash</div>
+                <div style={{ color: '#10b981', fontSize: '1.4em', fontWeight: 'bold' }}>${Number(usedCash || 0).toFixed(2)}</div>
               </div>
-              <div style={{ flex: 1, ...cardStyle, textAlign: 'center', border: `1px solid ${unassignedCash < 0 ? '#ef4444' : '#10b981'}`, margin: 0 }}>
-                <div style={{ color: unassignedCash < 0 ? '#ef4444' : '#10b981', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '5px' }}>Available</div>
-                <div style={{ color: '#fff', fontSize: '1.6em', fontWeight: 'bold' }}>${unassignedCash.toFixed(2)}</div>
+              <div style={{ flex: 1, ...cardStyle, textAlign: 'center', border: '1px solid #10b981', margin: 0 }}>
+                <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.85em', textTransform: 'uppercase', marginBottom: '5px' }}>Available</div>
+                <div style={{ color: '#10b981', fontSize: '1.4em', fontWeight: 'bold' }}>${Number(unassignedCash || 0).toFixed(2)}</div>
               </div>
             </div>
 
-            {/* --- QUICK POCKET BURN LOG --- */}
-            <div style={{ ...cardStyle, border: '1px solid #f59e0b', marginTop: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '0.9em', letterSpacing: '1px', textTransform: 'uppercase' }}>⚡ Quick Pocket Burn</span>
-                <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.95em' }}>-${totalQuickSpend.toFixed(2)}</span>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                <input type="text" placeholder="Item (Gas, Drinks)" value={quickDesc} onChange={(e) => setQuickDesc(e.target.value)} style={{ ...inputStyle, flex: 2, marginBottom: 0, padding: '10px', fontSize: '0.9em' }} />
-                <input type="number" placeholder="$" value={quickAmount} onChange={(e) => setQuickAmount(e.target.value)} style={{ ...inputStyle, flex: 1, marginBottom: 0, padding: '10px', fontSize: '0.9em' }} />
-                <button onClick={() => addQuickSpend()} style={{ ...btnStyle('#f59e0b', '#000'), width: 'auto', padding: '10px 16px', fontSize: '0.9em', flexShrink: 0 }}>Log</button>
-              </div>
-              {incomes.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                  <span style={{ color: '#888', fontSize: '0.75em' }}>From Ledger:</span>
-                  <select value={quickLinkedInc} onChange={(e) => setQuickLinkedInc(e.target.value)} style={{ background: '#000', color: '#10b981', border: '1px solid #333', borderRadius: '4px', padding: '4px 8px', fontSize: '0.8em', flex: 1 }}>
-                    <option value="None">General Cash Pool</option>
-                    {incomes.map(inc => <option key={inc.id} value={inc.id}>{inc.name} (${inc.amount})</option>)}
-                  </select>
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
-                <button onClick={() => addQuickSpend(5, 'Energy Drink / Snack')} style={{ flex: 1, background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', padding: '6px', fontSize: '0.75em', fontWeight: 'bold' }}>+$5 Snack</button>
-                <button onClick={() => addQuickSpend(10, 'Fast Food / Lunch')} style={{ flex: 1, background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', padding: '6px', fontSize: '0.75em', fontWeight: 'bold' }}>+$10 Food</button>
-                <button onClick={() => addQuickSpend(25, 'Gas')} style={{ flex: 1, background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', padding: '6px', fontSize: '0.75em', fontWeight: 'bold' }}>+$25 Gas</button>
-              </div>
-              {quickSpends.length > 0 ? (
-                <div style={{ maxHeight: '140px', overflowY: 'auto', borderTop: '1px dashed #333', paddingTop: '8px' }}>
-                  {quickSpends.map(spend => (
-                    <div key={spend.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #1a1a1a', fontSize: '0.85em' }}>
-                      <div>
-                        <span style={{ color: '#fff', fontWeight: 'bold' }}>{spend.name}</span>
-                        <span style={{ color: '#666', fontSize: '0.8em', marginLeft: '6px' }}>{spend.time}</span>
+            {/* ENVELOPE LEDGER ACCORDION */}
+            <button onClick={() => setShowEnvelopeLedger(!showEnvelopeLedger)} style={{ ...btnStyle(showEnvelopeLedger ? '#333' : '#3b82f6', '#fff'), marginBottom: '15px' }}>
+              {showEnvelopeLedger ? 'Hide Envelope Ledger' : 'Preview Envelope Ledger'}
+            </button>
+
+            {showEnvelopeLedger && (
+              <div style={{ marginBottom: '20px' }}>
+                {incomes.map(inc => {
+                  const incBills = bills.filter(b => b.linkedIncomeId == inc.id);
+                  const incSpends = quickSpends.filter(s => s.linkedIncomeId == inc.id);
+                  const totalIncSpent = incBills.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0) + incSpends.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+                  const remaining = (Number(inc.amount) || 0) - totalIncSpent;
+
+                  return (
+                    <div key={inc.id} style={{ ...cardStyle, border: '1px solid #333', padding: '15px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '10px' }}>
+                        <span style={{ color: '#10b981', fontWeight: 'bold' }}>{inc.name} <span style={{ color: '#888', fontWeight: 'normal' }}>({inc.date})</span></span>
+                        <span style={{ color: '#fff', fontWeight: 'bold' }}>${Number(inc.amount || 0).toFixed(2)}</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>-${parseFloat(spend.amount).toFixed(2)}</span>
-                        <button onClick={() => deleteQuickSpend(spend.id)} style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '1em', cursor: 'pointer', padding: '0 4px' }}>×</button>
+                      {incBills.map(b => (
+                        <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '0.9em', marginBottom: '8px', borderLeft: '2px solid #ef4444', paddingLeft: '8px' }}>
+                          <span>{b.name}</span> <span style={{ color: '#ef4444' }}>-${Number(b.amount || 0).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      {incSpends.map(s => (
+                        <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '0.9em', marginBottom: '8px', borderLeft: '2px solid #f59e0b', paddingLeft: '8px' }}>
+                          <span>{s.name} (Quick)</span> <span style={{ color: '#ef4444' }}>-${Number(s.amount || 0).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', borderTop: '1px dashed #333', paddingTop: '10px', marginTop: '5px' }}>
+                        <span>Remaining:</span> <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>${remaining.toFixed(2)}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : <div style={{ textAlign: 'center', color: '#555', fontSize: '0.8em', fontStyle: 'italic', paddingTop: '4px' }}>No cash spent outside bills this cycle.</div>}
-            </div>
+                  )
+                })}
+              </div>
+            )}
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+            {/* QUICK POCKET BURN ACCORDION */}
+            <button onClick={() => setShowQuickSpendAccordion(!showQuickSpendAccordion)} style={{ ...btnStyle('transparent', showQuickSpendAccordion ? '#fff' : '#f59e0b'), border: '1px dashed #f59e0b', marginBottom: '15px' }}>
+              ⚡ {showQuickSpendAccordion ? 'Close Quick Burn' : 'Quick Pocket Burn'}
+            </button>
+
+            {showQuickSpendAccordion && (
+              <div style={{ ...cardStyle, border: '1px solid #f59e0b' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '0.9em', letterSpacing: '1px', textTransform: 'uppercase' }}>Quick Logger</span>
+                  <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.95em' }}>-${totalQuickSpend.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <input type="text" placeholder="Item" value={quickDesc} onChange={(e) => setQuickDesc(e.target.value)} style={{ ...inputStyle, flex: 2, marginBottom: 0, padding: '10px', fontSize: '0.9em' }} />
+                  <input type="number" placeholder="$" value={quickAmount} onChange={(e) => setQuickAmount(e.target.value)} style={{ ...inputStyle, flex: 1, marginBottom: 0, padding: '10px', fontSize: '0.9em' }} />
+                  <button onClick={() => addQuickSpend()} style={{ ...btnStyle('#f59e0b', '#000'), width: 'auto', padding: '10px 16px', fontSize: '0.9em', flexShrink: 0 }}>Log</button>
+                </div>
+                {incomes.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <span style={{ color: '#888', fontSize: '0.75em' }}>Route To:</span>
+                    <select value={quickLinkedInc} onChange={(e) => setQuickLinkedInc(e.target.value)} style={{ background: '#000', color: '#10b981', border: '1px solid #333', borderRadius: '4px', padding: '4px 8px', fontSize: '0.8em', flex: 1 }}>
+                      <option value="None">General Cash Pool</option>
+                      {incomes.map(inc => <option key={inc.id} value={inc.id}>{inc.name}</option>)}
+                    </select>
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+                  <button onClick={() => addQuickSpend(5, 'Snack')} style={{ flex: 1, background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', padding: '6px', fontSize: '0.75em', fontWeight: 'bold' }}>+$5 Snack</button>
+                  <button onClick={() => addQuickSpend(10, 'Food')} style={{ flex: 1, background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', padding: '6px', fontSize: '0.75em', fontWeight: 'bold' }}>+$10 Food</button>
+                  <button onClick={() => addQuickSpend(25, 'Gas')} style={{ flex: 1, background: '#222', border: '1px solid #444', color: '#ccc', borderRadius: '4px', padding: '6px', fontSize: '0.75em', fontWeight: 'bold' }}>+$25 Gas</button>
+                </div>
+                {quickSpends.length > 0 && (
+                  <div style={{ maxHeight: '140px', overflowY: 'auto', borderTop: '1px dashed #333', paddingTop: '8px' }}>
+                    {quickSpends.map(spend => (
+                      <div key={spend.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #1a1a1a', fontSize: '0.85em' }}>
+                        <div>
+                          <span style={{ color: '#fff', fontWeight: 'bold' }}>{spend.name}</span> <span style={{ color: '#666', fontSize: '0.8em', marginLeft: '6px' }}>{spend.time}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ color: '#ef4444', fontWeight: 'bold' }}>-${Number(spend.amount).toFixed(2)}</span>
+                          <button onClick={() => deleteQuickSpend(spend.id)} style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '1em', cursor: 'pointer', padding: '0 4px' }}>×</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button onClick={() => setShowIncomeModal(true)} style={{ flex: 1, background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Add Income</button>
               <button onClick={() => setShowBillModal(true)} style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em' }}>+ Add Bill</button>
             </div>
@@ -288,7 +322,7 @@ export default function BudgetEngine() {
                     <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.2em' }}>{inc.name}</h3>
                     <span style={{ background: '#222', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', color: '#10b981' }}>Cycle: {inc.frequency}</span>
                   </div>
-                  <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2em' }}>${inc.amount.toFixed(2)}</div>
+                  <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.2em' }}>${Number(inc.amount).toFixed(2)}</div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#ccc', fontSize: '0.9em', borderTop: '1px dashed #333', paddingTop: '10px' }}>
                   <span>{inc.date || 'No Date'}</span>
@@ -313,7 +347,7 @@ export default function BudgetEngine() {
                         {linkedInc && <span style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', color: '#3b82f6' }}>Routed: {linkedInc.name}</span>}
                       </div>
                     </div>
-                    <div style={{ color: bill.isPaid ? '#10b981' : '#ef4444', fontWeight: 'bold', fontSize: '1.2em' }}>${bill.amount.toFixed(2)}</div>
+                    <div style={{ color: bill.isPaid ? '#10b981' : '#ef4444', fontWeight: 'bold', fontSize: '1.2em' }}>${Number(bill.amount).toFixed(2)}</div>
                   </div>
                   {bill.photo && (
                     <div style={{ marginBottom: '10px', border: '1px solid #333', padding: '5px', borderRadius: '6px', display: 'inline-block' }}>
@@ -355,8 +389,8 @@ export default function BudgetEngine() {
               <div key={arc.id} style={{ ...cardStyle, borderLeft: '4px solid #f59e0b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <strong style={{ color: '#fff', display: 'block', marginBottom: '5px' }}>{arc.date}</strong>
-                  <span style={{ color: '#10b981', marginRight: '10px', fontSize: '0.9em' }}>Pool: ${arc.totalPool.toFixed(2)}</span>
-                  <span style={{ color: '#ef4444', fontSize: '0.9em' }}>Used: ${arc.usedCash.toFixed(2)}</span>
+                  <span style={{ color: '#10b981', marginRight: '10px', fontSize: '0.9em' }}>Pool: ${Number(arc.totalPool).toFixed(2)}</span>
+                  <span style={{ color: '#ef4444', fontSize: '0.9em' }}>Used: ${Number(arc.usedCash).toFixed(2)}</span>
                 </div>
                 <button onClick={() => setViewingArchive(arc)} style={{ background: '#222', border: '1px solid #f59e0b', color: '#f59e0b', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold' }}>View Full Ledger</button>
               </div>
@@ -379,7 +413,6 @@ export default function BudgetEngine() {
             ))}
           </div>
         )}
-        {/* --- ADD INCOME MODAL --- */}
         {showIncomeModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, padding: '20px', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #10b981', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -395,7 +428,6 @@ export default function BudgetEngine() {
           </div>
         )}
 
-        {/* --- ADD BILL MODAL --- */}
         {showBillModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, padding: '20px', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ef4444', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -412,31 +444,28 @@ export default function BudgetEngine() {
               <option value="None">None (Unassigned)</option>
               {incomes.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
             </select>
-            <label style={{ color: '#10b981', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Attach Receipt / Proof (Optional)</label>
+            <label style={{ color: '#10b981', fontSize: '0.85em', fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>Attach Receipt (Optional)</label>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
               <label style={{ ...btnStyle('transparent', '#10b981'), border: '1px dashed #10b981', flex: 1, textAlign: 'center' }}>📸 Camera<input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePhotoCapture} /></label>
               <label style={{ ...btnStyle('transparent', '#3b82f6'), border: '1px dashed #3b82f6', flex: 1, textAlign: 'center' }}>🖼️ Upload<input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoCapture} /></label>
             </div>
-            {billPhoto && (<div style={{ textAlign: 'center', marginBottom: '15px' }}><img src={billPhoto} alt="Receipt Preview" style={{ height: '80px', borderRadius: '6px', border: '1px solid #10b981' }} /></div>)}
+            {billPhoto && (<div style={{ textAlign: 'center', marginBottom: '15px' }}><img src={billPhoto} alt="Receipt" style={{ height: '80px', borderRadius: '6px', border: '1px solid #10b981' }} /></div>)}
             <button onClick={addBill} style={{ ...btnStyle('#ef4444', '#fff'), marginTop: '10px' }}>Save Bill</button>
           </div>
         )}
 
-        {/* --- EXPORT MODAL --- */}
         {showExportModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div style={{ background: '#111', padding: '25px', borderRadius: '12px', border: '1px solid #3b82f6', width: '100%' }}>
               <h2 style={{ color: '#3b82f6', margin: '0 0 10px 0', textAlign: 'center', textTransform: 'uppercase' }}>Export Controls</h2>
-              <p style={{ color: '#ccc', textAlign: 'center', marginBottom: '25px', fontSize: '0.9em' }}>Select how you want to export your encrypted budget data.</p>
-              <button onClick={downloadCSVFile} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '10px' }}>📥 Download Excel (.CSV)</button>
-              <button onClick={shareCSV} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '10px' }}>📧 Email / Share (.CSV)</button>
+              <button onClick={downloadCSVFile} style={{ width: '100%', background: '#10b981', color: '#000', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '10px' }}>📥 Download Excel</button>
+              <button onClick={shareCSV} style={{ width: '100%', background: '#3b82f6', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '10px' }}>📧 Email / Share</button>
               <button onClick={copyCSVToClipboard} style={{ width: '100%', background: '#a855f7', color: '#fff', border: 'none', padding: '15px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '25px' }}>📋 Copy Raw Data</button>
               <button onClick={() => setShowExportModal(false)} style={{ width: '100%', background: 'transparent', color: '#ef4444', border: '1px dashed #ef4444', padding: '12px', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
             </div>
           </div>
         )}
 
-        {/* --- VIEW ARCHIVE MODAL --- */}
         {viewingArchive && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100, padding: '15px', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #f59e0b', paddingBottom: '10px', marginBottom: '15px' }}>
@@ -444,44 +473,32 @@ export default function BudgetEngine() {
               <button onClick={() => setViewingArchive(null)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 'bold' }}>Close</button>
             </div>
             <div style={{ background: '#111', padding: '20px', borderRadius: '8px' }}>
-              <h2 style={{ color: '#f59e0b', textAlign: 'center', margin: '0 0 5px 0', textTransform: 'uppercase' }}>Monthly Snapshot</h2>
               <h4 style={{ textAlign: 'center', margin: '0 0 20px 0', color: '#666' }}>Archived: {viewingArchive.date}</h4>
-
               <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>Incomes</h4>
               {viewingArchive.incomes.length === 0 ? <p style={{ fontStyle: 'italic', fontSize: '0.9em' }}>None</p> : viewingArchive.incomes.map(i => (
                 <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
-                  <span>{i.name}</span> <span style={{ color: '#10b981' }}>${i.amount.toFixed(2)}</span>
+                  <span>{i.name}</span> <span style={{ color: '#10b981' }}>${Number(i.amount).toFixed(2)}</span>
                 </div>
               ))}
-
-              <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Bills & Liabilities</h4>
+              <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Bills</h4>
               {viewingArchive.bills.length === 0 ? <p style={{ fontStyle: 'italic', fontSize: '0.9em' }}>None</p> : viewingArchive.bills.map(b => (
                 <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
-                  <span>{b.name} {b.isPaid ? '(PAID)' : '(UNPAID)'}</span> <span style={{ color: '#ef4444' }}>${b.amount.toFixed(2)}</span>
+                  <span>{b.name} {b.isPaid ? '(PAID)' : '(UNPAID)'}</span> <span style={{ color: '#ef4444' }}>${Number(b.amount).toFixed(2)}</span>
                 </div>
               ))}
-
               {viewingArchive.quickSpends && viewingArchive.quickSpends.length > 0 && (
                 <>
-                  <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Quick Pocket Spends</h4>
+                  <h4 style={{ color: '#666', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginTop: '20px' }}>Pocket Spends</h4>
                   {viewingArchive.quickSpends.map(q => (
                     <div key={q.id} style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
-                      <span>{q.name}</span> <span style={{ color: '#f59e0b' }}>${parseFloat(q.amount).toFixed(2)}</span>
+                      <span>{q.name}</span> <span style={{ color: '#f59e0b' }}>${Number(q.amount).toFixed(2)}</span>
                     </div>
                   ))}
                 </>
               )}
-
               <div style={{ borderTop: '2px solid #000', marginTop: '20px', paddingTop: '15px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}>
-                  <span>TOTAL POOL:</span> <span style={{ color: '#10b981' }}>${viewingArchive.totalPool.toFixed(2)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}>
-                  <span>TOTAL USED:</span> <span style={{ color: '#ef4444' }}>${viewingArchive.usedCash.toFixed(2)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em' }}>
-                  <span>UNASSIGNED:</span> <span style={{ color: viewingArchive.unassignedCash < 0 ? '#ef4444' : '#10b981' }}>${viewingArchive.unassignedCash.toFixed(2)}</span>
-                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}><span>TOTAL POOL:</span> <span style={{ color: '#10b981' }}>${Number(viewingArchive.totalPool).toFixed(2)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '5px' }}><span>TOTAL USED:</span> <span style={{ color: '#ef4444' }}>${Number(viewingArchive.usedCash).toFixed(2)}</span></div>
               </div>
             </div>
           </div>
